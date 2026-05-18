@@ -164,10 +164,16 @@ def write_turbsim_input(case: Case, analysis_time_s: float) -> Path:
 
 
 def run_turbsim(case: Case, turbsim_exe: Path) -> Path:
-    """Run TurbSim from inside the case dir. Returns path to wind.bts."""
+    """Run TurbSim from inside the case dir. Returns path to wind.bts.
+
+    Skip-if-done check uses size > 0, not just existence — a killed previous
+    run can leave a 0-byte wind.bts placeholder, and reusing that as if it
+    were complete causes OpenFAST to fail seconds into the next run."""
     bts = case.run_dir / "wind.bts"
-    if bts.exists():
+    if bts.exists() and bts.stat().st_size > 0:
         return bts
+    if bts.exists():
+        bts.unlink()  # remove the empty stub so TurbSim writes fresh
     t0 = time.time()
     log = case.run_dir / "turbsim.log"
     with log.open("w") as lf:
