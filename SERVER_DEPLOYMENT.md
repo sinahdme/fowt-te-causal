@@ -309,19 +309,19 @@ can multiply wall time.
 
 ## 9. Updating from new commits
 
-When Claude makes changes on the Windows machine and you want them on the server:
+For the recurring code-push → run → results-pull cycle, see the dedicated
+short doc: **[PER_ROUND_CHECKLIST.md](PER_ROUND_CHECKLIST.md)** — TL;DR
+table at the top, full step-by-step below, plus troubleshooting.
 
-**With Git (Option A)**:
-1. On Windows: Claude commits locally (you'll see "(1)" or similar next to the GitHub Desktop icon)
-2. You open GitHub Desktop → click "Push origin"
-3. On server: `cd /path/to/fowt-te-causal && git pull`
-4. If `environment.yml` changed: `conda env update -f environment.yml`
-5. If `repos/` editable contents changed: re-run §3a
+**Two cases that warrant re-running first-time steps from this doc:**
 
-**Without Git (Option B)**:
-1. On Windows: re-zip the vault
-2. scp/rsync to server, overwrite
-3. Same env update step if needed
+- If `environment.yml` changed → on server:
+  `conda env update -f environment.yml`
+- If `repos/` editable contents changed → on server: re-run §3a
+  (`pip install -e repos/openfast_toolbox` etc.)
+
+If neither changed, the per-round checklist's `git pull` → `pipeline.py all`
+→ `pull-results.sh` loop is all you need.
 
 ---
 
