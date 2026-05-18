@@ -1,0 +1,28 @@
+# Force LF line endings on all text — protects Python / shell / OpenFAST .dat
+# files from CRLF corruption when the repo is pulled to the Linux server.
+* text=auto eol=lf
+
+# Explicit text formats (kept LF on checkout regardless of platform)
+*.py    text eol=lf
+*.sh    text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.txt   text eol=lf
+*.dat   text eol=lf
+*.fst   text eol=lf
+*.IN    text eol=lf
+*.inp   text eol=lf
+
+# Binary formats — never touch line endings
+*.bts     binary
+*.outb    binary
+*.parquet binary
+*.zip     binary
+*.pdf     binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.docx    binary
+*.xlsx    binary
+*.pptx    binary

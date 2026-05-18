@@ -1,0 +1,90 @@
+# environment.yml — single conda env for the FOWT causal-TE project.
+#
+# Replaces the local two-env setup (openfast_env + te-fowt) with one env that
+# has OpenFAST binaries + Python analysis stack + JVM for IDTxl. Tested on
+# Linux x86_64; should also work on Windows (paths differ — see comments).
+#
+# Create:
+#     conda env create -f environment.yml
+#     conda activate fowt-te
+#
+# Then run the post-install steps in SERVER_DEPLOYMENT.md §"Post-conda steps"
+# (registers the local IDTxl + openfast_toolbox via .pth and pip-editable).
+#
+# Total install footprint ~3 GB. Allow 10-20 min for conda solve + downloads.
+#
+# Channel order matters: conda-forge first so openfast (Linux build) resolves
+# from there rather than defaults.
+
+name: fowt-te
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11.*
+
+  # OpenFAST binary (Linux x86_64) — supplies openfast, turbsim, fast_farm.
+  # On Linux, executables land in $CONDA_PREFIX/bin/. On Windows they land in
+  # $CONDA_PREFIX/Library/bin/.
+  - openfast=4.2.*
+
+  # JVM for IDTxl's JIDT backend (Schreiber-Schmitz TE + KSG estimators)
+  - openjdk=11.*
+
+  # Core scientific stack — pinned major versions
+  - numpy=2.*
+  - scipy>=1.13
+  - pandas=2.*
+  - pyarrow>=15        # Parquet I/O
+  - matplotlib-base>=3.8
+  - networkx>=3.2
+  - statsmodels>=0.14
+  - h5py>=3.10
+  - pyyaml>=6
+  - chardet            # openfast_toolbox dep
+  - dill               # openfast_toolbox dep
+  - openpyxl           # openfast_toolbox dep
+
+  # SALib — Saltelli sampling + Sobol/MI sensitivity analysis
+  - salib>=1.5
+
+  # IDTxl JVM bridge (must match openjdk major version)
+  - jpype1>=1.5
+
+  # IDTxl uses pkg_resources which was removed in setuptools 81+
+  - setuptools<81
+
+  # pip layer — for packages not on conda-forge
+  - pip
+  - pip:
+      # OpenMDAO + WISDEM stack (needed by WEIS, which provides RAFT + MoorPy)
+      - openmdao>=3.34
+      - wisdem
+      # ROSCO controller (Python helpers; the libdiscon shared lib comes too)
+      - rosco>=2.10
+      # WEIS supplies RAFT + MoorPy as transitive deps. We install it editable
+      # below (post-install step) so we can also reach repos/WEIS/examples/.
+      # Listed here purely for the transitive RAFT + MoorPy.
+      - raft
+      - moorpy
+      # OpenFAST output-file parser. We install it editable below; this entry
+      # documents the PyPI fallback name in case the editable install isn't used.
+      - openfast-toolbox==3.5.1
+
+# Notes on what is NOT in this file (handled in SERVER_DEPLOYMENT.md):
+#
+# 1. **IDTxl** — upstream `pip install idtxl` requires a C compiler for an
+#    unused Cython extension. Bypassed via a `.pth` file pointing at the
+#    cloned `repos/IDTxl/IDTxl-master/`. Post-install step writes this .pth.
+#
+# 2. **openfast_toolbox** — installed pip-editable from `repos/openfast_toolbox/`
+#    so we can patch it in place (NumPy 2.x broadcast fix at line 617). Listed
+#    above as a PyPI fallback in case the editable install isn't done.
+#
+# 3. **WEIS** — installed pip-editable from `repos/WEIS/` so RAFT + MoorPy
+#    resolve correctly and examples/ paths are reachable.
+#
+# 4. **Conda channels for openfast on Windows**: same `openfast` package
+#    exists for win-64 via conda-forge as of 2026. Identical YAML works
+#    cross-platform.

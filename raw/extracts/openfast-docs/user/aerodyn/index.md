@@ -1,0 +1,21 @@
+# AeroDyn Users Guide and Theory Manual
+
+This document offers a quick reference guide for the AeroDyn software program. It is intended to be used by the general user in combination with other OpenFAST manuals. The manual will be updated as new releases are issued and as needed to provide further information on advancements or modifications to the software. For reference, additional materials such as presentation slides, development plans, and publications can be downladed from the list below.
+
+- `Development and Validation of a New Blade Element Momentum Skewed-Wake Model within AeroDyn <https://www.nrel.gov/docs/fy15osti/63217.pdf>`
+- `The Unsteady Aerodynamics Module for FAST 8 <https://www.nrel.gov/docs/fy20osti/66347.pdf>`
+- `Added-Mass Effects on a Horizontal-Axis Tidal Turbine Using FAST v8 <https://doi.org/10.1016/j.renene.2018.04.023>`
+- `Predicting Cavitation on Marine and Hydrokinetic Turbine Blades with AeroDyn V15.04 <https://www.nrel.gov/docs/fy17osti/68398.pdf>`
+- `Development Plan for the Aerodynamic Linearization of OpenFAST <../../../OtherSupporting/AeroDyn/AeroLin_2019-12.pdf>`
+- `AeroDyn Meshes and Related Calculations <../../../OtherSupporting/AeroDyn/AeroDynMesh_Rev4.docx>`
+- `Calculation of Buoyancy on a Marine Hydrokinetic Turbine in AeroDyn <../../../OtherSupporting/AeroDyn/Buoyancy_Implementation_Plan_Rev11.docx>`
+- `Calculation of Fluid Inertia and Added Mass Loads on an MHK Turbine in AeroDyn <../../../OtherSupporting/AeroDyn/Fluid_Inertia_Added_Mass_Implementation_Plan.docx>`
+- `Determination of Added Mass Coefficients for Floating Hydrokinetic Turbine Blades using Computational Fluid Dynamics <../../../OtherSupporting/AeroDyn/UMERC24-Poster.pdf>`
+
+The documentation here was derived from AeroDyn Manual for AeroDyn version 15.04 by J.Jonkman et al.
+
+<div class="toctree" maxdepth="2">
+
+introduction.rst coordsys.rst input.rst output.rst modeling.rst driver.rst theory.rst theory_ua.rst theory_tailfin.rst zrefs.rst appendix.rst
+
+</div>

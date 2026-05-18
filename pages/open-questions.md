@@ -1,0 +1,286 @@
+---
+title: "Open Questions"
+type: open-questions
+created: 2026-05-12
+updated: 2026-05-13
+tags: [meta, planning, publication, multi-platform]
+---
+
+# Open Questions
+
+Tracked research / decision questions. Status legend:
+🟢 open · 🟡 under investigation · 🔵 resolved · ⚪ deferred
+
+---
+
+## 🔵 Q1 — Which OpenFAST output channels are the TE targets?
+
+**Resolved 2026-05-13** via [[sources/jeon-2025]] ingest. The 9 channels
+logged in the predecessor RL-optimisation validation campaign are now
+the locked TE-target / Sobol-response list:
+
+| Group | Channels |
+|---|---|
+| Structural loads | `RootMyc1`, `RootMxc1`, `TwrBsMyt` |
+| Platform motions | `PtfmHeave`, `PtfmSurge`, `PtfmPitch` |
+| Mooring | `FAIRTEN1`, `FAIRTEN2`, `FAIRTEN3` |
+
+These go into the OpenFAST `OutList` block of the `.fst` master deck and
+into `analysis/load_runs.py` channel list. **Action**: create
+`pages/entities/channel-<name>.md` stubs per [[SCHEMA]] §"Channel-naming
+convention" (deferred until Phase 2 templating starts).
+
+---
+
+## 🔵 Q2 — Which structural parameters do we sweep, with what ranges?
+
+**Parameter list locked 2026-05-13** via [[sources/jeon-2025]]. The 7
+substructure geometry variables from the predecessor optimisation are
+the Sobol/MI sweep parameters:
+
+| # | Variable | Symbol | Baseline (22 MW) |
+|---|----------|--------|------------------|
+| 1 | Main column diameter | `D_MCol` | 12.0 m |
+| 2 | Offset column diameter | `D_OCol` | 12.5 m |
+| 3 | Offset column radius (spacing) | `R_MO` | 65.0 m |
+| 4 | Pontoon diameter | `D_Pt` | 10.0 m |
+| 5 | Pontoon height | `H_Pt` | 8.0 m |
+| 6 | Freeboard | `H_FB` | 15.0 m |
+| 7 | Draft | `H_Draft` | 25.0 m |
+
+**IEA-15 baselines recovered 2026-05-13** from
+`repos/IEA-15-240-RWT/WT_Ontology/IEA-15-240-RWT_VolturnUS-S.yaml` +
+`*_MoorDyn.dat` — see [[entities/iea-15mw-volturnus-s]] §"Substructure
+geometry" and §"Mooring properties":
+
+| # | Symbol | IEA-15 baseline |
+|---|--------|------------------|
+| 1 | `D_MCol` | 10.0 m |
+| 2 | `D_OCol` | 12.5 m |
+| 3 | `R_MO` | 51.75 m |
+| 4 | `D_Pt` | 9.6148 m (equiv. circular; rect 12.5 × 7.0 in original Allen 2020) |
+| 5 | `H_Pt` | 7.0 m |
+| 6 | `H_FB` | 15.0 m |
+| 7 | `H_Draft` | 20.0 m |
+| 8 | `EA` | 3.27 × 10⁹ N |
+| 9 | `L_u` | 850 m |
+
+**Mooring parameters** (vars 8–9) added by project on top of the
+predecessor's geometry-only list, so the causal graph can answer:
+*is the fairlead-tension penalty in [[sources/jeon-2025]] Case_03
+caused by geometry or by under-sized mooring?* — Q9 lead candidate.
+
+**LHS ranges locked 2026-05-13**: **±20 % per variable around baseline**.
+Concrete bounds in [[PLAN]] Phase 5 §"LHS / Saltelli sample range".
+Constraint-violating samples (e.g. `D_OCol < D_Pt`) are flagged as
+infeasible, mirroring the predecessor's reward = −100 treatment;
+Sobol/MI indices computed on the feasible subset.
+
+**Hydro-evaluation method locked 2026-05-13**: **RAFT + OpenFAST hybrid**
+— RAFT for the 9-variable Saltelli ensemble; OpenFAST for top-winner
+validation + Phase 4 TE time series. Direct continuity with
+[[sources/jeon-2025]]'s RAFT→OpenFAST split. See [[entities/raft]] *(stub)*
+and [[entities/iea-15mw-volturnus-s]].
+
+**Status**: 🔵 fully resolved — parameter names, IEA-15 baselines, LHS
+ranges, and hydro-evaluation method all locked. Phase 5 can be templated.
+
+---
+
+## 🟡 Q3 — What summary statistics of each response feed the Sobol/MI analysis?
+
+**Predecessor used `max`** ([[sources/jeon-2025]] slide 13 comparison
+table). For continuity with the Case_03 validation we retain `max`.
+
+**Project addition**: also compute `std`, damage-equivalent load (DEL),
+and `mean`. Rationale: TE/MI on `std` and DEL is more meaningful for
+fatigue drivers — and this is exactly the analytical gap our work fills
+on top of the predecessor's `max`-only optimisation.
+
+**Still open**:
+- **Frequency-band powers** (low-freq vs wave-freq vs 1P/3P)? Multiplies
+  Sobol/MI cells but is more informative for fatigue. Lean **yes** for
+  mooring tensions and tower base moment, **no** for max-load channels.
+
+**Status**: 4-stat set (`max`, `std`, `DEL`, `mean`) locked; band-power
+extension pending.
+
+---
+
+## 🟢 Q4 — Embedding & decimation strategy for IDTxl
+
+OpenFAST default `DT_Out` is 0.05 s (20 Hz). KSG cost scales badly with N.
+We will decimate to 5–10 Hz pre-TE.
+
+**Open**: should embedding lengths be set per channel-pair (IDTxl
+auto-selection) or fixed globally for cross-case comparability?
+
+Trade-off: per-pair gives best estimates but TE values aren't directly
+comparable across pairs; fixed gives comparability but may underfit some
+pairs.
+
+**Status**: open — revisit during Phase 4 calibration on [[validation/case-3-iea15-single-case-te]].
+
+---
+
+## 🟡 Q5 — Single-platform vs multi-platform comparison
+
+**Partially resolved 2026-05-13** via [[sources/jeon-2025]]:
+
+- **Primary platform**: [[entities/iea-15mw-volturnus-s]] (locked) —
+  more validation literature, OC6 anchor.
+- **Second platform**: **IEA-22MW-RWT-Semi** (locked-in) — gives direct
+  continuity with the project owner's predecessor RL-optimisation work
+  (Jeon 2025). Same UMaine-semi family scaled up to 22 MW; multi-tool
+  reference (HAWC2 / QBlade / WISDEM cross-checks).
+  [[entities/iea-22-280-rwt-semi]] *(stub)* — `git clone https://github.com/IEAWindTask37/IEA-22-280-RWT`
+  when Phase 2 sims start.
+
+**Status**: deferred *execution* to after IEA-15 end-to-end success
+(scope discipline per [[PLAN]] §"Publication strategy" — first paper on
+IEA-15, IEA-22 results as the multi-platform extension figure).
+
+**Still alternative second platforms** (would replace IEA-22 only if Q9
+reframes the publication around platform-archetype contrast rather than
+scale-up):
+- Spar — OC3-Hywind ([[entities/oc3-hywind]] *(stub)*). Starkest TE
+  contrast vs semisub.
+- Other semisub — OC4 DeepCwind ([[entities/oc4-deepcwind]] *(stub)*).
+  Older, heavily cited.
+
+---
+
+## 🟢 Q6 — Are wind and wave correlated in the chosen DLCs?
+
+DLC set A uses correlated wave seeds; set B uses decoupled. Real ocean
+conditions exhibit wind-wave correlation (wind sea). For the TE
+analysis, this matters because correlated env channels need *conditional*
+TE to disentangle.
+
+**Status**: covered by DLC set design (A vs B); flagged here so it isn't
+forgotten when interpreting results.
+
+---
+
+## 🟢 Q7 — Target publication venue
+
+**Why it matters**: scoping decisions (multi-platform? experimental anchor?
+how much baseline detail?) flow from the venue. See [[PLAN]]
+§"Publication strategy" for the assessment.
+
+**Candidates**, ordered by reach:
+1. **Workshop / conference** — TORQUE 2026, EERA DeepWind 2027, ASME
+   OMAE 2027. Lowest bar; current scope already qualifies.
+2. **Wind Energy Science** (open-access, methodology-friendly) — reachable
+   with the strengthening moves below (Q8 + baselines + a design takeaway
+   per Q9). Best fit.
+3. **Marine Structures / Ocean Engineering** — viable if framed around
+   mooring / platform causal analysis.
+4. **(Stretch) Renewable Energy / Applied Energy** — needs experimental
+   anchor or multi-platform.
+
+**Status**: open. Pick venue early — affects DLC matrix size and figure
+budget.
+
+---
+
+## 🔵 Q8 — Hypothesis predictions (pre-registered list)
+
+**Pre-registered 2026-05-13** — predictions locked before any campaign
+simulation runs. Confirmed predictions read stronger than discovered
+correlations; this list is the publication's defense against p-hacking
+accusations. **No edits after the campaign launches.**
+
+Two structural changes from the original draft:
+- Original H5 referenced controller gains, but the locked Phase 5 sweep
+  ([[PLAN]] §"Parameter sweep list") includes only **substructure
+  geometry + mooring** (9 vars). H5 is therefore re-targeted to the
+  fairlead-tension trade-off surfaced by [[sources/jeon-2025]] —
+  more directly testable and aligned with the Q9 lead case study.
+- H4 expanded to include mooring `L_u` (variable 9) and to bound the
+  geometry-variable contribution.
+
+| # | Pre-registered prediction | Method that confirms |
+|---|---|---|
+| **H1** | `TE(Wind1VelX → PtfmPitch)` significant (p < 0.05) in both DLC-A and DLC-B; `TE(PtfmPitch → Wind1VelX) ≈ 0` (no back-action sanity check) | [[validation/case-3-iea15-single-case-te]] |
+| **H2** | `TE(Wave1Elev → PtfmHeave)` significant and dominant within the 0.1–0.3 Hz wave band; bivariate Granger and coherence `γ²(f)` agree at the peak | Phase 4 spectral break-down + baselines |
+| **H3** | Conditional `TE(wind → PtfmPitch \| wave)` ≈ bivariate `TE(wind → PtfmPitch)` in DLC-B (decoupled wind/wave seeds), but < 80 % of bivariate in DLC-A (correlated). I.e. "conditional shrinks more when environment is correlated" — direct demonstration that conditional TE is doing real work | DLC-A vs DLC-B contrast |
+| **H4** | Mooring contribution dominates platform surge variance: Sobol-`ST(EA \| std(PtfmSurge)) > 0.5` AND `ST(L_u \| std(PtfmSurge)) > 0.2`; aggregate geometry-variable contribution `ΣST(D_*, R_MO, H_*) < 0.3` | [[validation/case-4-sobol-3pt-mooring-ea]] → Phase 5 full Saltelli |
+| **H5** | **Replaces controller-gain prediction**. Fairlead-tension trade-off explained by mooring sizing + wave drive: (a) `ST(EA \| std(FAIRTEN1)) > ST(geometry-combined \| std(FAIRTEN1))`; (b) conditional `TE(wave → FAIRTEN1 \| wind) > 2 × TE(wind → FAIRTEN1 \| wave)`. I.e., fairlead-tension is wave-driven, not wind-driven, and mooring sizing dominates over substructure geometry | Phase 5 (Sobol) + Phase 4 (conditional TE) — this is the Q9 lead case study |
+| **H6** | `TE(wave → PtfmPitch)` local-in-time PSD peaks at the platform pitch eigenfrequency 0.03–0.04 Hz (VolturnUS-S design value ≈ 0.0345 Hz); coherence `γ²(f)` shows the same peak; Granger baseline misses the second harmonic if any | Phase 4 spectral break-down |
+
+**Rules of pre-registration** (applied to this analysis):
+- The predictions above are committed *before* the Phase 2 campaign
+  launches. Any reformulation that affects what counts as "confirmed"
+  invalidates pre-registration and must be flagged in the publication
+  with the original text reproduced.
+- Hypotheses are evaluated as `confirmed` / `partially-confirmed` /
+  `not-confirmed` per the explicit numeric thresholds above.
+  `not-confirmed` is reported with equal prominence — that's the
+  scientific value of pre-registration.
+- Anything we learn post-hoc that wasn't in this list is reported as
+  **exploratory**, not confirmatory.
+
+Methodological clarifications:
+- **DLC-A vs DLC-B** is the conditional-TE-validating contrast in
+  [[PLAN]] Phase 2 §"DLC matrix" — A uses correlated wind/wave seeds,
+  B uses decoupled seeds.
+- **Local-in-time PSD** for H6 means: estimate `TE(wave → pitch)` per
+  short window (e.g., 60 s overlapping), then Fourier-transform the
+  resulting TE(t) time series. Distinct from the bivariate-TE single
+  number per (source, target) pair.
+
+**Status**: 🔵 resolved — locked 2026-05-13 ahead of Phase 2 campaign.
+
+---
+
+## 🟡 Q9 — Concrete design-decision case study
+
+**Why it matters**: the engineering "so what" required for journal
+acceptance (see [[PLAN]] §"Publication strategy"). The combined
+causal graph must change at least one design recommendation versus a
+Sobol-only or coherence-only analysis.
+
+**Lead candidate (2026-05-13)** — surfaced by [[sources/jeon-2025]]
+slide 13:
+
+> Mass-only optimisation produced Case_03 with mass −21.5 %, but
+> fairlead tensions +19 % / +59 % / +57 %, platform heave +32 %,
+> pitch +10 %. The mooring was held fixed; the trade-off concentrated
+> load into mooring and motion responses.
+
+**Project's analytical contribution**: conditional TE + Sobol on the
+same parameter sweep can disentangle the trade-off's mechanism in a way
+the predecessor's RAFT-RL framework cannot:
+
+- **Sobol-`ST`(D_OCol, R_MO, H_Draft | std(FAIRTEN))** reveals which
+  geometric variable drives the mooring-tension penalty.
+- **Conditional `TE(wave → FAIRTEN | wind)` vs `TE(wind → FAIRTEN | wave)`**
+  reveals whether the penalty is wave-driven (surge-coupled) or
+  wind-driven (controller-mediated).
+- **Joint analysis** answers the design question: should the next
+  optimisation iteration add mooring `EA` and unstretched length to the
+  decision variables (predecessor's own recommendation), or retune
+  controller gains, or change the column-spacing constraint? The Sobol-only
+  view ranks contributions but cannot separate wave vs controller paths.
+
+**Remaining candidates** (defer; pick a 2nd if Q9-lead doesn't pay off):
+
+- **Tower fatigue path**. Conditional TE may show that part of `TwrBsMyt`
+  low-freq variance attributed by Sobol to platform mass is in fact
+  controller-mediated. Recommendation: re-tune `PC_KP` before oversizing.
+- **Heave-pitch coupling via ballast**. TE may resolve directionality;
+  Sobol on a single ballast parameter cannot.
+
+**Status**: lead candidate locked; confirm narrative after Phase 4
+baselines on the IEA-15 campaign and the IEA-22 multi-platform run.
+
+---
+
+## 🔵 Q0 — Whether to use TE for structural parameters (vs Sobol)
+
+**Resolved 2026-05-12**: Use Sobol + MI, not TE, for design parameters.
+Recorded in `phase5_param_method` memory and [[concepts/sobol-sensitivity]].
+
+**Why**: TE is defined on time series; design parameters are constants
+per OpenFAST run.
