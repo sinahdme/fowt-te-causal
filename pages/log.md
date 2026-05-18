@@ -718,3 +718,79 @@ narrative `pages/log.md` is authored here, never on the server.
 creates a private GitHub repo via the web UI, then in GitHub Desktop:
 File → Add Local Repository → point at the vault → Publish. See
 [[SERVER_DEPLOYMENT]] §1 Option A.
+
+## [2026-05-18] structure | Server deployed, two bugs patched, production pipeline launched
+
+End-to-end server setup completed in one session.
+
+**Server**: `lams@<host>:/home/lams/Desktop/sina/fowt_te_causal/fowt-te-causal/`
+**Python env**: existing `raft-env` (anaconda3) — already had scipy, pandas,
+SALib; pip-installed the remaining 11 packages onto it. Repos cloned
+under `repos/`: IDTxl, openfast_toolbox, RAFT (standalone, not WEIS),
+IEA-15-240-RWT, r-test. IDTxl registered via `site-packages/idtxl.pth`
+bypass. JDK 11 from system (`/usr/lib/jvm/java-11-openjdk-amd64`).
+OpenFAST + TurbSim from conda-forge (env binaries).
+
+**Env vars** added to `~/.bashrc`:
+- `OPENFAST_EXE`, `TURBSIM_EXE`: `/home/lams/anaconda3/envs/raft-env/bin/{openfast,turbsim}`
+- `ROSCO_DLL`: `…/site-packages/rosco/lib/libdiscon.so`
+- `JAVA_HOME`: `/usr/lib/jvm/java-11-openjdk-amd64`
+- `PYTHONUTF8=1`
+
+**SSH**: ed25519 key generated on server, public key uploaded to GitHub
+account `sinahdme`. Repo cloned via `git@github.com:sinahdme/fowt-te-causal.git`.
+
+**Three production-blocking bugs found and fixed**:
+
+1. **OpenFAST v4.1.2 vs v4.2 ElastoDyn format mismatch.** Server's
+   conda-forge openfast was 4.1.2; IEA-15 deck requires v4.2.x. Fix:
+   `conda install openfast=4.2 -c conda-forge -y` (bumped to 4.2.1,
+   no numpy/scipy churn).
+
+2. **`patch_hydrodyn` false-positive on re-runs.** Used `new_txt == txt`
+   to detect regex miss, but a deterministic seed produces a no-op
+   match (same value written), failing the check incorrectly. Fixed:
+   switched to `re.subn` with explicit count check.
+   Commit `2ae0df7`, `sims/run_campaign.py`.
+
+3. **`run_turbsim` treated 0-byte wind.bts as finished.** Killed previous
+   run left empty wind.bts placeholders; `bts.exists()` returned True,
+   skipped TurbSim, OpenFAST then crashed seconds into the next run.
+   Fixed: check `bts.stat().st_size > 0`, unlink the stub if zero.
+   Commit `36fd851`, `sims/run_campaign.py`.
+
+**Performance surprise**: TurbSim on this server is ~50× slower per
+core than the Windows dev box — a single 180 s wind file took 4117 CPU
+seconds (~69 min). Conda-forge binary likely unoptimized, or the
+machine has slow per-core perf despite 65 cores. SERVER_DEPLOYMENT.md's
+"~4 h total" estimate is unrealistic for this hardware; revised estimate
+based on actual measurements: **5–8 h** for full pipeline (TurbSim parallel
+across 32 workers brings the wall time down to ~70 min per Phase 2 DLC).
+
+**Phase 5 N=256**: completed cleanly in <2 min. Output:
+`data/raft_lhs_v2-N64.parquet` (existing suffix retained per pipeline
+default; need to confirm whether this is the 64 or 256 file once
+results are pulled back).
+
+**Phase 2 dlc16** currently running (launched 21:08 KST):
+- PID 4120121 (`pipeline.py`)
+- 6 TurbSim instances active
+- Log: `analysis/production-20260518-2108.log`
+- No failures so far
+
+**Pre-existing orphan processes** found on server: dozens of
+`python run_pipeline.py --step openfast` and `--step raft_hf` from
+March/April, all sleeping, 0% CPU. From the user's previous FOWT work.
+Not affecting this run; clean up with `kill <PID>` opportunistically.
+
+**Post-PC-restart instructions** for the user (server work survives
+the restart via nohup + disown):
+1. SSH back to server (same credentials as today).
+2. `cd ~/Desktop/sina/fowt_te_causal/fowt-te-causal`
+3. `tail -f analysis/production-20260518-2108.log` to see progress, or
+   `ls sims/*/IEA-15-240-RWT-UMaineSemi/*.outb | wc -l` to count
+   completed cases (max 54 = 6 dlc16 + 24 dlca + 24 dlcb).
+4. When pipeline exits, from Git Bash on Windows:
+   `./pull-results.sh lams@<server>:/home/lams/Desktop/sina/fowt_te_causal/fowt-te-causal`
+5. Tell Claude on the Windows side: "the pipeline finished, look at
+   `analysis/*.log` and `data/*.parquet`."
