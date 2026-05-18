@@ -214,11 +214,14 @@ def patch_hydrodyn(case: Case) -> None:
     # WaveSeed(1) — primary wave random seed. NB: pattern ends with `\)`
     # not `\)\b` because \b requires word/non-word transition; ")" is
     # non-word and the following whitespace is also non-word — no boundary.
-    new_txt = re.sub(
+    # Use re.subn to count substitutions: a no-op match (replacing the value
+    # with the same value on a re-run) still counts as a match, so we can't
+    # rely on `new_txt == txt` to detect a regex miss.
+    new_txt, n = re.subn(
         r"^\s*\S+(\s+WaveSeed\(1\))",
         f"{case.wave_seed}\\1", txt, count=1, flags=re.M,
     )
-    if new_txt == txt:
+    if n == 0:
         raise RuntimeError(f"patch_hydrodyn: WaveSeed(1) line not matched in {sea.name}")
     txt = new_txt
     sea.write_text(txt, encoding="utf-8")
