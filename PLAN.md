@@ -367,6 +367,47 @@ Sanity checks:
   embedding is wrong. The same IDTxl-Granger pipeline should also show
   ~0 in this direction (cross-check on embedding).
 
+### Methodological extension — ensemble TE across seeds (Wollstadt 2014)
+
+Our DLC sets are by construction multi-realisation ensembles: 6 seeds
+per (DLC, wind-speed) bin, each a draw from the same NTM + JONSWAP / SSS
+generative process. Wollstadt et al. 2014 (*"Efficient transfer entropy
+analysis of non-stationary neural time series,"* PLOS ONE 9(7) e102833)
+introduced **ensemble TE** specifically for repeated-trial designs of
+this shape: pool the realisations as one estimator instead of averaging
+per-trial TE estimates.
+
+For us this gives:
+- **Higher effective sample size**: N_eff scales with `seeds × samples`,
+  not `samples` — sharper significance against the surrogate null.
+- **Robust to within-run non-stationarity**: assumes stationarity *across*
+  realisations rather than *within* a single 1-hr run, which is a much
+  weaker requirement.
+- **Cleaner per-DLC TE matrix**: one value per (source, target, DLC bin)
+  instead of one per (source, target, DLC bin, seed), simplifying the
+  conditional-TE contrast figure for DLC-A vs DLC-B (H3 in
+  [[open-questions]] Q8) and the publication-baseline comparison table.
+
+Implementation route: IDTxl natively supports replicated data via the
+`replications` axis on `Data`. The refactor is to stack the 6 seeds'
+decimated time series along the replication axis in `te_pipeline.py`,
+then call `BivariateTE` / `MultivariateTE` once per (source, target,
+DLC) cell instead of per (source, target, DLC, seed). No new dependencies.
+
+**Decision rule** ([[open-questions]] Q10): adopt ensemble TE if the
+per-seed Phase 4 results show seed-to-seed TE variance large enough that
+the per-seed approach is statistically weak (e.g., one seed significant,
+five not). Otherwise keep per-seed-then-aggregate and treat ensemble TE
+as a robustness check.
+
+**Publication framing upgrade**: ensemble adoption shifts the
+methodological narrative from "TE *applied to* FOWT" to "TE *methodology
+extended to* FOWT seed ensembles" — same Wollstadt-group lineage as our
+existing IDTxl base, direct citation chain to Wollstadt 2014. This is a
+genuine methodological contribution (FOWT TE papers to date treat seeds
+independently) and is a Wind Energy Science strengthening move beyond
+the three listed in §"Publication strategy".
+
 ---
 
 ## Phase 5 — Causal effect of structural parameters

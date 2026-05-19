@@ -277,6 +277,58 @@ baselines on the IEA-15 campaign and the IEA-22 multi-platform run.
 
 ---
 
+## 🟡 Q10 — Adopt ensemble TE (Wollstadt 2014) for the per-DLC seed ensemble
+
+**Why it matters**: our DLC sets are *exactly* the use case Wollstadt
+et al. 2014 designed ensemble TE for — multiple independent realisations
+of the same generative coupling (6 wind/wave seeds per DLC bin, all
+nominally drawing from the same NTM + JONSWAP / SSS process). Pooling
+the seed ensemble as one estimator instead of averaging per-seed TE
+gives:
+
+- **Higher statistical power** — N_eff scales with `seeds × samples`
+  instead of `samples`, sharper significance against the surrogate null.
+- **Handles within-run non-stationarity** — the OpenFAST 1-hr runs have
+  transient + slow drifts the ensemble approach is robust to (assumes
+  inter-realisation stationarity, not within-realisation).
+- **Cross-DLC comparability** — one TE value per (source, target, DLC
+  bin) instead of one per (source, target, DLC bin, seed) makes the
+  paper's figures simpler and the conditional-TE contrast (DLC-A vs
+  DLC-B per [[PLAN]] Phase 4 H3) sharper.
+
+**Publication angle**: re-frames the paper from "TE *applied to* FOWT"
+to "TE *methodology extended to* FOWT seed ensembles." Direct citation
+chain to Wollstadt et al. 2014 *"Efficient transfer entropy analysis of
+non-stationary neural time series,"* PLOS ONE 9(7) e102833. Same lineage
+as our existing IDTxl base ([[papers/wollstadt-2019]]), so the framing
+is "we extend the Wollstadt-group ensemble approach from neuroscience
+multi-trial designs to engineering DLC ensembles."
+
+**Implementation cost**: IDTxl already supports replicated/multi-trial
+data via the `replications` axis on `Data`. Mostly a `te_pipeline.py`
+refactor: stack the 6 seeds' decimated time series along the replication
+axis, call `BivariateTE` / `MultivariateTE` once per (source, target,
+DLC) cell instead of per (source, target, DLC, seed). ~1 day of work,
+no new dependencies.
+
+**Status**: 🟡 under investigation. Defer concrete decision until the
+current campaign's per-seed Phase 4 results are in — if seed-to-seed
+TE variance is large enough that the per-seed approach is statistically
+weak, ensemble TE becomes the obvious upgrade. Tracked here so it isn't
+lost in the analysis-after-results scramble.
+
+**Related Wibral-group refinements** considered and *not* adopted now:
+- *Twin surrogates* (Thiel et al. 2006) — circular-shift surrogates
+  ([[concepts/surrogate-significance]]) already preserve the spectrum
+  and are sufficient for our 36000-sample runs.
+- *Partial information decomposition* (Wibral 2017, unique/shared/
+  synergistic) — needs more samples than we'll have per DLC bin to
+  estimate stably.
+- *Local TE* (Lizier 2008, time-resolved) — H6 already does this via
+  "local-in-time PSD of TE(t)"; full local TE machinery is overkill.
+
+---
+
 ## 🔵 Q0 — Whether to use TE for structural parameters (vs Sobol)
 
 **Resolved 2026-05-12**: Use Sobol + MI, not TE, for design parameters.
