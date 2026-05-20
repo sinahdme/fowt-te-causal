@@ -794,3 +794,54 @@ the restart via nohup + disown):
    `./pull-results.sh lams@<server>:/home/lams/Desktop/sina/fowt_te_causal/fowt-te-causal`
 5. Tell Claude on the Windows side: "the pipeline finished, look at
    `analysis/*.log` and `data/*.parquet`."
+
+## [2026-05-20] structure | Slow-drift physics correction and downstream code updates
+
+Triggered by an internal review of `2026-05-20-technical-report-ver03.docx`
+(see [[../reports/2026-05-20-technical-report-ver03-review]]). The §6.3
+sentence "the platform pitch eigenfrequency (~0.034 Hz) sits well within
+the spectral peak of the SSS wave forcing" is physically wrong: at
+Tp = 12.95 s the first-order JONSWAP peak is at fp ≈ 0.077 Hz, not
+0.034 Hz. The pitch eigenfrequency is in the **low-frequency tail** of
+the first-order spectrum; what excites pitch there is **second-order
+difference-frequency wave forcing** (slow-drift).
+
+Verification audit of the existing OpenFAST campaign: the IEA-15
+UMaineSemi `HydroDyn.dat` has `DiffQTF = 12` enabled (using the
+WAMIT `.12s` file shipped with the deck), so the simulated platform
+dynamics **do** include the slow-drift forcing. The 54-case campaign
+data is therefore physically valid for this mechanism — no re-run is
+needed for the simulation half.
+
+**However**, three downstream analysis settings are tuned for shorter
+timescales than the slow-drift period (~29 s = 145 samples at 5 Hz)
+and need to be raised before Phase 4 can detect the wave→pitch coupling
+at the pitch eigenfrequency. Three commits land today:
+
+1. `analysis/te_pipeline.py`: `TESettings.max_lag` raised from
+   **30 → 150 samples** (6 s → 30 s embedding window). Filed as
+   [[open-questions]] Q12. CLI default also bumped.
+2. `analysis/te_pipeline.py`: `coherence_baseline()` now accepts
+   `nperseg_target` (default 4096), giving Welch Δf ≈ 0.0012 Hz —
+   sharp enough to resolve the pitch eigenfreq (0.0345 Hz) from the
+   JONSWAP peak (0.077 Hz). Filed as [[open-questions]] Q13.
+3. Phase 5 N=256 plan revised: instead of N=64's median-imputation
+   for infeasible Y, the production run will use **rejection sampling
+   within the feasible region**. Filed as [[open-questions]] Q14
+   (under investigation; decision before launch).
+
+**Report ver05** built with these fixes plus an interpretive sentence
+in §6.4 noting that the unexpected L_u dominance over EA in the
+preliminary Sobol is physically consistent with the slow-drift
+mechanism: L_u sets the surge natural frequency (~0.01 Hz, in the
+slow-drift band) while EA matters only at higher frequencies where the
+catenary geometry is taut. The L_u finding and the §6.3 pitch null
+are therefore the **same physical story** seen from two channels.
+
+**Implication for the H1 evaluation strategy**: the DLC-1.6 batch H1
+null observed on 2026-05-15 may need to be re-evaluated with the
+new max_lag=150 setting before it can be properly interpreted as a
+controller-rejection signature rather than an embedding-too-short
+artifact. The May 14 case-iea15-real H1 first-cut PASS (`TE = +0.0052
+nats, p = 0.005` at 300 s NTM, single seed) was not in the SSS regime
+and is less affected — the wind-driven direct path dominates there.

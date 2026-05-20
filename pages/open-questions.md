@@ -399,6 +399,88 @@ control), which isn't our setup.
 
 ---
 
+## 🔵 Q12 — Embedding window for slow-drift coupling
+
+**Resolved 2026-05-20** during the ver03 report review (physics audit
+of §6.3): the IEA-15 UMaineSemi HydroDyn deck has `DiffQTF = 12`
+enabled, so platform-pitch slow-drift dynamics at the pitch eigenfrequency
+(~0.0345 Hz, period ~29 s) **are** present in the `.outb` files. The
+original `te_pipeline.py` setting `max_lag = 30` covers only 6 s at
+the 5 Hz decimated rate — about ⅕ of one slow-drift cycle, far too
+short for the KSG embedding to capture wave → pitch coupling at the
+slow-drift frequency.
+
+**Fix** (committed 2026-05-20): `TESettings.max_lag` raised to **150
+samples (30 s window)**, covering one full slow-drift cycle. CLI default
+also bumped. Cost: per-pair KSG estimator runtime scales roughly with
+max_lag during the max-stat embedding search — expect ~3–5× slower
+per-pair than at max_lag = 30, balanced by the scope-reduction options
+under Q7.
+
+**Why this matters**: H6 specifically predicts a TE(wave → pitch)
+local-in-time PSD peak at the pitch natural frequency. Under the old
+max_lag = 30, KSG would systematically miss this coupling because the
+embedding cannot resolve the 30-s temporal structure. The May 15
+case-iea15-real H1 first-cut PASS (`TE = +0.0052 nats, p = 0.005`) was
+on a short 300 s NTM run where the slow-drift signature is weaker and
+the wind-driven direct path dominates — that result is unaffected.
+The DLC-1.6 H1 batch null may need re-running with the corrected
+embedding before it can be properly interpreted as a controller-rejection
+result rather than an embedding artifact.
+
+**Status**: 🔵 resolved — fix in `analysis/te_pipeline.py`.
+
+---
+
+## 🔵 Q13 — Coherence Welch NPERSEG for slow-drift frequency resolution
+
+**Resolved 2026-05-20** during the same physics audit. The previous
+`coherence_baseline()` used `nperseg = min(N//4, 256)`, giving
+Δf ≈ 0.02 Hz at 5 Hz sampling — too coarse to resolve the pitch
+eigenfreq (0.0345 Hz) from the first-order JONSWAP peak (~0.077 Hz at
+Tp = 12.95 s). For H6 the linear-baseline coherence γ²(f) needs to
+show a sharp peak at the eigenfreq alongside the JONSWAP peak; at
+Δf = 0.02 Hz the two would smear together.
+
+**Fix** (committed 2026-05-20): added `TESettings.coherence_nperseg = 4096`,
+plumbed through to `coherence_baseline()`. At 5 Hz × 4096 samples =
+Δf ≈ 0.0012 Hz, more than sharp enough. With N = 15 001 the
+Welch averaging uses ~3 overlapping segments — borderline but workable;
+ensemble TE (Q10) would also enable seed-averaging the coherence which
+improves SNR further.
+
+**Status**: 🔵 resolved — fix in `analysis/te_pipeline.py`.
+
+---
+
+## 🟡 Q14 — Constrained Saltelli sampling for Phase 5 N = 256
+
+**Filed 2026-05-20** from the same review. At N = 64 we computed Sobol
+indices on the 44 %-feasible subset using **median imputation** for
+infeasible Y values. This compresses the response variance and distorts
+Sobol indices in an unpredictable direction — `ST > 1.0` is the visible
+symptom; an unknown share of the magnitudes is also affected.
+Increasing N alone does not fix this.
+
+**Two options**:
+1. **Rejection sampling within feasible region** — generate Saltelli
+   sample, drop infeasibles, re-generate to maintain the required N.
+   Bias-free but the sampling design loses its Saltelli structure.
+2. **Constrained Saltelli scheme** — generate samples directly on the
+   feasible region. Preserves Saltelli structure but the radial sample
+   construction (`A_B` matrix from Saltelli 2010) requires the feasible
+   region to be a Cartesian product, which it isn't here
+   (`D_OCol > D_Pt` couples two variables).
+
+**Recommendation**: rejection sampling for v1. The Sobol structure is
+preserved on average; only the realised sample size shrinks. With
+N = 256 base and ~44 % feasibility we end up with ~1100 effective
+feasible points across 9 variables — adequate for stable ST estimates.
+
+**Status**: 🟡 under investigation. Decision before Phase 5 N=256 launch.
+
+---
+
 ## 🔵 Q0 — Whether to use TE for structural parameters (vs Sobol)
 
 **Resolved 2026-05-12**: Use Sobol + MI, not TE, for design parameters.

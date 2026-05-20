@@ -26,6 +26,15 @@ data/*.parquet.kept
 reports/**/*.parquet
 reports/**/*.json
 
+# ───────────────────────── Generated report artifacts ─────────────────────────
+# .docx outputs and unpack/extract artifacts — keep source (.js/.py) tracked.
+reports/*.docx
+reports/_unpacked_*/
+reports/_v*_extracted.md
+reports/_ver*_extracted.md
+reports/~$*
+reports/~WRL*.tmp
+
 # ───────────────────────── Runtime logs ────────────────────────────────────────
 # Pipeline stdout/stderr — regenerated each run. Narrative log is pages/log.md.
 analysis/*.log

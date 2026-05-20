@@ -62,7 +62,14 @@ class TESettings:
     transient_drop_s: float = 600.0     # PLAN-canonical for 3600 s runs
     jitter_scale: float = 1e-10         # kraskov-2004 §III.A
     kraskov_k: int = 4
-    max_lag: int = 30                   # = 6 s window at 5 Hz
+    # Embedding window: needs to span at least one period of the slowest
+    # dynamics of interest. Platform pitch / surge / heave eigenfrequencies
+    # for VolturnUS-S are ~0.0345 / 0.01 / 0.05 Hz; the wave second-order
+    # difference-frequency forcing (DiffQTF=12 in HydroDyn) drives pitch at
+    # the pitch natural frequency, period ~29 s = 145 samples at 5 Hz.
+    # max_lag=150 captures one full slow-drift cycle. Raised from 30 on
+    # 2026-05-20 after the slow-drift physics correction (see report §6.3).
+    max_lag: int = 150                  # = 30 s window at 5 Hz
     min_lag: int = 1
     n_perm: int = 200
     alpha: float = 0.05
@@ -70,6 +77,11 @@ class TESettings:
     # Coherence-baseline band
     band_lo_hz: float = 0.01
     band_hi_hz: float = 0.5
+    # Welch segment length for coherence γ²(f). 4096 samples at 5 Hz gives
+    # Δf ≈ 0.0012 Hz, sharp enough to resolve the platform pitch eigenfreq
+    # (0.0345 Hz) separately from the JONSWAP peak (0.077 Hz for Tp=12.95).
+    # Raised from 256 on 2026-05-20.
+    coherence_nperseg: int = 4096
     # Optional: limit pairs to enable smoke testing
     env_sources: tuple = DEFAULT_ENV_SOURCES
     responses: tuple = DEFAULT_RESPONSES
@@ -241,10 +253,17 @@ def run_ais(target: np.ndarray, settings: TESettings) -> dict:
 # ----------------------------------------------------------------------------
 
 def coherence_baseline(source: np.ndarray, target: np.ndarray,
-                       fs: float, band_lo: float, band_hi: float) -> dict:
-    """Peak magnitude-squared coherence γ²(f) in the [band_lo, band_hi] Hz band."""
+                       fs: float, band_lo: float, band_hi: float,
+                       nperseg_target: int = 4096) -> dict:
+    """Peak magnitude-squared coherence γ²(f) in the [band_lo, band_hi] Hz band.
+
+    nperseg_target sets the upper cap on the Welch segment length; the
+    actual nperseg used is min(N//4, nperseg_target). For our 15001-sample
+    case at 5 Hz, nperseg=4096 gives Δf≈0.0012 Hz, enough resolution to
+    separate the platform pitch eigenfreq (0.0345 Hz) from the JONSWAP
+    peak (~0.077 Hz at Tp=12.95 s)."""
     from scipy.signal import coherence
-    nperseg = min(len(source) // 4, 256)
+    nperseg = min(len(source) // 4, nperseg_target)
     f, cxy = coherence(source, target, fs=fs, nperseg=nperseg)
     band = (f >= band_lo) & (f <= band_hi)
     if not band.any():
@@ -426,6 +445,7 @@ def per_case_pipeline(
                     coh = coherence_baseline(
                         src_arr, resp_arr, fs_out,
                         settings.band_lo_hz, settings.band_hi_hz,
+                        nperseg_target=settings.coherence_nperseg,
                     )
                     rows.append({
                         "case": case_id, "source": src_name, "target": resp_name,
@@ -493,7 +513,9 @@ def main() -> int:
                         help="Optional output path for pickled NetworkX graph")
     parser.add_argument("--decimate-target-hz", type=float, default=5.0)
     parser.add_argument("--transient-drop-s", type=float, default=600.0)
-    parser.add_argument("--max-lag", type=int, default=30)
+    parser.add_argument("--max-lag", type=int, default=150,
+                        help="Embedding window in samples (at decimated rate). "
+                             "Default 150 = 30 s at 5 Hz, covers one slow-drift cycle.")
     parser.add_argument("--n-perm", type=int, default=200)
     parser.add_argument("--no-conditional", action="store_true")
     parser.add_argument("--no-granger", action="store_true")
