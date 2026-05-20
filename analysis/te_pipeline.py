@@ -311,6 +311,7 @@ def per_case_pipeline(
         for resp in settings.responses:
             if resp not in cached:
                 continue
+            print(f"  AIS({resp}) starting...", flush=True)
             t0 = time.time()
             try:
                 r = run_ais(cached[resp], settings)
@@ -318,7 +319,11 @@ def per_case_pipeline(
                 print(f"  AIS({resp}) = {r['ais_nats']:.4f} nats "
                       f"(p={r['p_value']:.4f}, {time.time()-t0:.0f}s)", flush=True)
             except Exception as e:
-                warnings.warn(f"AIS({resp}) failed: {e}")
+                import traceback
+                print(f"  !! AIS({resp}) raised {type(e).__name__}: {e}",
+                      file=sys.stderr, flush=True)
+                traceback.print_exc()
+                sys.stderr.flush()
                 ais_table[resp] = float("nan")
 
     rows: list[dict] = []
@@ -334,6 +339,7 @@ def per_case_pipeline(
             resp_arr = cached[resp_name]
 
             # Bivariate KSG-TE
+            print(f"  bivariate_KSG  {src_name:>10} -> {resp_name:<10} starting...", flush=True)
             t0 = time.time()
             try:
                 r = run_bivariate_te(src_arr, resp_arr, settings)
@@ -352,7 +358,11 @@ def per_case_pipeline(
                       f"TE={r['te_nats']:+.4f} p={r['p_value']:.4f}  "
                       f"({time.time()-t0:.0f}s)", flush=True)
             except Exception as e:
-                warnings.warn(f"bivariate_te {src_name}->{resp_name}: {e}")
+                import traceback
+                print(f"  !! bivariate_te {src_name}->{resp_name} raised {type(e).__name__}: {e}",
+                      file=sys.stderr, flush=True)
+                traceback.print_exc()
+                sys.stderr.flush()
 
             # Bivariate Gaussian-Granger baseline (same pipeline, swap estimator)
             if do_granger:
@@ -372,7 +382,11 @@ def per_case_pipeline(
                           f"I={r['te_nats']:+.4f} p={r['p_value']:.4f}  "
                           f"({time.time()-t0:.0f}s)", flush=True)
                 except Exception as e:
-                    warnings.warn(f"granger {src_name}->{resp_name}: {e}")
+                    import traceback
+                    print(f"  !! granger {src_name}->{resp_name} raised {type(e).__name__}: {e}",
+                          file=sys.stderr, flush=True)
+                    traceback.print_exc()
+                    sys.stderr.flush()
 
             # Conditional KSG-TE: TE(src -> resp | other_env)
             if do_conditional:
@@ -400,7 +414,11 @@ def per_case_pipeline(
                               f"| {other_env:<9} TE={r['te_nats']:+.4f} "
                               f"p={r['p_value']:.4f} ({time.time()-t0:.0f}s)", flush=True)
                     except Exception as e:
-                        warnings.warn(f"cond_te {src_name}->{resp_name}|{other_env}: {e}")
+                        import traceback
+                        print(f"  !! cond_te {src_name}->{resp_name}|{other_env} raised {type(e).__name__}: {e}",
+                              file=sys.stderr, flush=True)
+                        traceback.print_exc()
+                        sys.stderr.flush()
 
             # Coherence baseline
             if do_coherence:
@@ -421,7 +439,9 @@ def per_case_pipeline(
                         "runtime_s": 0.0,
                     })
                 except Exception as e:
-                    warnings.warn(f"coherence {src_name}->{resp_name}: {e}")
+                    print(f"  !! coherence {src_name}->{resp_name} raised {type(e).__name__}: {e}",
+                          file=sys.stderr, flush=True)
+                    sys.stderr.flush()
 
     print(f"  case done in {time.time()-t_load0:.0f}s, {len(rows)} rows", flush=True)
     return pd.DataFrame(rows)
@@ -494,8 +514,11 @@ def main() -> int:
         settings.env_sources = ("Wind1VelX",)
         settings.responses = ("PtfmPitch",)
 
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+
     dfs: list[pd.DataFrame] = []
-    for inp in args.inputs:
+    for i, inp in enumerate(args.inputs, 1):
+        print(f"\n=== [{i}/{len(args.inputs)}] {inp} ===", flush=True)
         try:
             df = per_case_pipeline(
                 inp, settings,
@@ -505,15 +528,37 @@ def main() -> int:
                 do_ais=not args.no_ais,
             )
             dfs.append(df)
+            print(f"  [{i}/{len(args.inputs)}] OK ({len(df)} rows)", flush=True)
         except Exception as e:
-            warnings.warn(f"per_case_pipeline({inp}) failed: {e}")
+            import traceback
+            print(f"!! per_case_pipeline({inp}) raised {type(e).__name__}: {e}",
+                  file=sys.stderr, flush=True)
+            traceback.print_exc()
+            sys.stderr.flush()
+        except BaseException as e:
+            import traceback
+            print(f"!! per_case_pipeline({inp}) killed by {type(e).__name__}: {e}",
+                  file=sys.stderr, flush=True)
+            traceback.print_exc()
+            sys.stderr.flush()
+            raise
+
+        # Checkpoint: write partial parquet after every case so a later crash
+        # doesn't lose what we already computed.
+        if dfs:
+            try:
+                pd.concat(dfs, ignore_index=True).to_parquet(
+                    args.output, compression="zstd")
+                print(f"  [checkpoint] {args.output.name}: {sum(len(d) for d in dfs)} rows "
+                      f"across {len(dfs)} case(s)", flush=True)
+            except Exception as e:
+                print(f"!! checkpoint write failed: {e}", file=sys.stderr, flush=True)
 
     if not dfs:
         print("No cases produced results.")
         return 1
 
     full = pd.concat(dfs, ignore_index=True)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
     full.to_parquet(args.output, compression="zstd")
     print(f"\nWrote {args.output}  ({len(full)} rows)")
 
