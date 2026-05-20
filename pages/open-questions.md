@@ -329,6 +329,76 @@ lost in the analysis-after-results scramble.
 
 ---
 
+## 🟡 Q11 — Controller-off comparison to quantify ROSCO's disturbance-rejection contribution
+
+**Why it matters**: a well-tuned controller suppresses the disturbance
+from X (wind) before it reaches Y (platform pitch / loads). Bivariate
+TE on closed-loop FOWT therefore *underestimates* the physical
+wind→response causality and risks reporting `TE → 0` for a real causal
+path that the controller is doing its job hiding. Methodology references:
+
+- **Schreiber 2000** TE was defined for open-loop X → Y.
+- **Massey 1990** *directed information* extends the framework to systems
+  with feedback (Y can influence X's future).
+- **Lizier 2014** "Measuring the dynamics of information processing" —
+  TE in closed-loop systems requires conditioning on the controller's
+  internal state, otherwise spurious bidirectional TE arises from the
+  hidden mediator.
+- **Wibral et al. 2013** — interaction-delay reconstruction in
+  controlled / feedback configurations.
+
+**The proposed contrast**: re-run a single representative DLC bin
+(`dlc16` at V=11 m/s, 6 seeds) with **ROSCO disabled** — set
+ServoDyn `CompServo=0` (or pin pitch + torque at the rated-condition
+fixed point). Compute the same Phase 4 TE pipeline on both versions.
+
+The headline quantity is then:
+
+$$
+\Delta\text{TE}_\text{ctrl}(X\to Y)
+  = \text{TE}_\text{ctrl-off}(X\to Y) - \text{TE}_\text{ctrl-on}(X\to Y)
+$$
+
+interpretable as the **share of (X → Y) causality the controller absorbs
+via disturbance rejection**. For wind→pitch this should be substantial
+(ROSCO's floating-feedback gain is specifically designed for this).
+For wave→heave this should be near zero (controller doesn't act on
+heave directly).
+
+**Why this is publishable on its own**: extends TE methodology to
+explicitly quantify controller contribution to FOWT response causality.
+That's a real methodological contribution to the wind-energy TE
+literature, separate from (and complementary to) the per-DLC results.
+
+**Note on bivariate vs conditional**: the cleanest analysis conditions
+on ROSCO's pitch-demand signal (`BlPitch1` if available in `.outb`).
+That isolates the open-loop residual without re-running OpenFAST.
+The controller-off campaign is the "ground truth" against which the
+conditional-TE-on-pitch-demand approach can be validated.
+
+**Decision rule**: defer concrete commitment until controller-on Phase 4
+results are in. If H5 results (Q9 — fairlead-tension trade-off) show
+the controller-mediated path is small / inconclusive, the controller-off
+contrast becomes a stronger framing for the paper. If H5 cleanly
+resolves with controller-on alone, Q11 becomes an appendix figure
+rather than a primary contribution.
+
+**Implementation cost**: 1 DLC bin × 6 seeds × ~95 min wall = ~95 min
+of server compute. Trivial relative to the main campaign. Patch:
+`run_campaign.py` accepts a `--controller-off` flag that sets
+`CompServo=0` and skips the DLL_FileName patch.
+
+**Direction-reversal caveat** (raised by user 2026-05-20):
+TE *direction* does NOT reverse for exogenous drivers — `TE(pitch → wind)`
+stays ≈ 0 because wind doesn't depend on pitch (this is H1's sanity
+check). What gets distorted is the *magnitude* of `TE(wind → pitch)`
+and the appearance of spurious bidirectional artifacts from hidden
+controller-state mediation. Direction-reversal only appears in genuine
+feedback systems where Y can influence X (e.g., wake-aware multi-turbine
+control), which isn't our setup.
+
+---
+
 ## 🔵 Q0 — Whether to use TE for structural parameters (vs Sobol)
 
 **Resolved 2026-05-12**: Use Sobol + MI, not TE, for design parameters.
