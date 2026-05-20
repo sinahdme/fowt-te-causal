@@ -156,8 +156,18 @@ def run_phase2(dlc: str, workers: int, tmax: float = 3600.0,
 
 def run_phase4(workers: int, dlcs: tuple[str, ...] = ALL_DLCS,
                out_file: str = "reports/te_table.parquet",
-               smoke: bool = False, force: bool = False) -> int:
-    """Phase 4 — TE pipeline over every .outb produced by the requested DLCs."""
+               smoke: bool = False, force: bool = False,
+               n_perm: int | None = None,
+               max_lag: int | None = None,
+               no_conditional: bool = False,
+               no_granger: bool = False,
+               no_ais: bool = False) -> int:
+    """Phase 4 — TE pipeline over every .outb produced by the requested DLCs.
+
+    Scope-control knobs (added 2026-05-20 after the max_lag=150 wall-time
+    blow-up): n_perm and max_lag override the te_pipeline.py defaults;
+    no_conditional / no_granger / no_ais disable individual estimators
+    to cut runtime. None = use te_pipeline.py default."""
     if not force and phase4_status(out_file).done:
         print(f"[phase4] already done ({out_file}); pass --force to re-run.")
         return 0
@@ -186,7 +196,18 @@ def run_phase4(workers: int, dlcs: tuple[str, ...] = ALL_DLCS,
            *outb_paths, "-o", out_file]
     if smoke:
         cmd.append("--smoke")
-    return _run(cmd, label=f"phase4  cases={len(outb_paths)}  smoke={smoke}")
+    if n_perm is not None:
+        cmd += ["--n-perm", str(n_perm)]
+    if max_lag is not None:
+        cmd += ["--max-lag", str(max_lag)]
+    if no_conditional:
+        cmd.append("--no-conditional")
+    if no_granger:
+        cmd.append("--no-granger")
+    if no_ais:
+        cmd.append("--no-ais")
+    return _run(cmd, label=f"phase4  cases={len(outb_paths)}  smoke={smoke}  "
+                           f"n_perm={n_perm}  max_lag={max_lag}")
 
 
 def run_graph(in_file: str = "reports/te_table.parquet",
@@ -237,7 +258,11 @@ def cmd_phase2(args) -> int:
 
 
 def cmd_phase4(args) -> int:
-    return run_phase4(workers=args.te_workers, smoke=args.smoke, force=args.force)
+    return run_phase4(workers=args.te_workers, smoke=args.smoke, force=args.force,
+                      n_perm=args.n_perm, max_lag=args.max_lag,
+                      no_conditional=args.no_conditional,
+                      no_granger=args.no_granger,
+                      no_ais=args.no_ais)
 
 
 def cmd_graph(args) -> int:
@@ -305,6 +330,17 @@ def main() -> int:
     p2.set_defaults(func=cmd_phase2)
     p4 = sub.add_parser("phase4")
     p4.add_argument("--smoke", action="store_true")
+    p4.add_argument("--n-perm", type=int, default=None,
+                    help="Surrogate count override (te_pipeline.py default = 200). "
+                         "Use 50 for the scope-reduced first-pass campaign.")
+    p4.add_argument("--max-lag", type=int, default=None,
+                    help="Embedding max-lag override (te_pipeline.py default = 150).")
+    p4.add_argument("--no-conditional", action="store_true",
+                    help="Skip conditional / multivariate TE (saves ~⅓ of per-pair time).")
+    p4.add_argument("--no-granger", action="store_true",
+                    help="Skip Gaussian-Granger baseline.")
+    p4.add_argument("--no-ais", action="store_true",
+                    help="Skip AIS (only do this if you don't need TE_frac normalisation).")
     p4.set_defaults(func=cmd_phase4)
     sub.add_parser("graph").set_defaults(func=cmd_graph)
     sub.add_parser("all").set_defaults(func=cmd_all)
