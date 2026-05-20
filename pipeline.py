@@ -159,6 +159,7 @@ def run_phase4(workers: int, dlcs: tuple[str, ...] = ALL_DLCS,
                smoke: bool = False, force: bool = False,
                n_perm: int | None = None,
                max_lag: int | None = None,
+               decimate_target_hz: float | None = None,
                no_conditional: bool = False,
                no_granger: bool = False,
                no_ais: bool = False) -> int:
@@ -200,6 +201,8 @@ def run_phase4(workers: int, dlcs: tuple[str, ...] = ALL_DLCS,
         cmd += ["--n-perm", str(n_perm)]
     if max_lag is not None:
         cmd += ["--max-lag", str(max_lag)]
+    if decimate_target_hz is not None:
+        cmd += ["--decimate-target-hz", str(decimate_target_hz)]
     if no_conditional:
         cmd.append("--no-conditional")
     if no_granger:
@@ -207,7 +210,7 @@ def run_phase4(workers: int, dlcs: tuple[str, ...] = ALL_DLCS,
     if no_ais:
         cmd.append("--no-ais")
     return _run(cmd, label=f"phase4  cases={len(outb_paths)}  smoke={smoke}  "
-                           f"n_perm={n_perm}  max_lag={max_lag}")
+                           f"n_perm={n_perm}  max_lag={max_lag}  fs={decimate_target_hz}")
 
 
 def run_graph(in_file: str = "reports/te_table.parquet",
@@ -260,6 +263,7 @@ def cmd_phase2(args) -> int:
 def cmd_phase4(args) -> int:
     return run_phase4(workers=args.te_workers, smoke=args.smoke, force=args.force,
                       n_perm=args.n_perm, max_lag=args.max_lag,
+                      decimate_target_hz=args.decimate_target_hz,
                       no_conditional=args.no_conditional,
                       no_granger=args.no_granger,
                       no_ais=args.no_ais)
@@ -335,6 +339,10 @@ def main() -> int:
                          "Use 50 for the scope-reduced first-pass campaign.")
     p4.add_argument("--max-lag", type=int, default=None,
                     help="Embedding max-lag override (te_pipeline.py default = 150).")
+    p4.add_argument("--decimate-target-hz", type=float, default=None,
+                    help="Decimated sample rate (te_pipeline.py default = 5 Hz). "
+                         "Use 2.0 to drop N from 15001 to 6001 with no aliasing of "
+                         "FOWT-relevant modes; cuts per-case runtime by ~10×.")
     p4.add_argument("--no-conditional", action="store_true",
                     help="Skip conditional / multivariate TE (saves ~⅓ of per-pair time).")
     p4.add_argument("--no-granger", action="store_true",
