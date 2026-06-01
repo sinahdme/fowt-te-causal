@@ -682,24 +682,40 @@ Phase 2 prep — three blockers from 2026-05-15 defensibility audit
   no-clobber output dirs, env-var conda paths. DLC-1.6 6-seed
   batch completed locally; DLC-A and DLC-B deferred to server.
 
-Now active — **server deployment** (production runs do not happen on
-this Windows box; see §Compute target):
+Server deployment + production campaign — **DONE** (2026-05-18 → 05-26;
+see [[log]] entries of those dates):
 
-- ⏳ Init local git repo + first commit + push to GitHub
-  (prerequisite for §1 Option A in [[SERVER_DEPLOYMENT]]).
-- ⏳ Server-side: clone, `conda env create -f environment.yml`,
-  editable installs (§3a), `idtxl.pth` bypass (§3b), env vars (§4),
-  smoke test (§6).
-- ⏳ Launch `python pipeline.py all --raft-workers 60
-  --openfast-workers 32 --te-workers 40 --N 256` on server (~4 h).
+- ✅ Repo bootstrapped, pushed to GitHub, cloned + env-built on the
+  65-core server ([[SERVER_DEPLOYMENT]]); 3 production bugs patched.
+- ✅ Phase 2 — all 54 OpenFAST cases done (6 DLC-1.6 + 24 DLC-A +
+  24 DLC-B, 1 h each), pulled back to `sims/`.
+- ✅ Phase 5 — N=256 Sobol done (2816 evals, 971 feasible). L_u-dominates
+  / EA-negligible pattern holds; CIs ~halved vs N=64.
+- ✅ Phase 4 — **bivariate first pass** done (`reports/te_table.parquet`,
+  54 cases) but with **scope-reduced** settings: 2 Hz, `max_lag=60`,
+  `n_perm=50`, `--no-conditional --no-granger`.
+- ✅ Hypotheses H1–H6 scored vs results — `reports/hypothesis-scorecard.md`.
+- ✅ Reporting through ver07 + Phase 6 figures (`reports/figs/`).
 
-Pre-deploy housekeeping on this Windows box (cheap, blocks nothing):
+Now active — **Phase 4 full-settings rerun** (journal-tier gap closure;
+decided 2026-06-01). The first pass left three publication blockers, all
+closed by one rerun:
 
-- ⏳ Interpret the DLC-1.6 H1 null
-  (`analysis/h1_dlc16_batch.log`: 0/6 significant for
-  `TE(Wind1VelX → PtfmPitch)` — contradicts the case-3 first-cut
-  PASS) and decide whether it changes H1 scope before the server
-  campaign produces DLC-A results.
+- ⏳ **Granger baseline** (Gap 1) — mandatory per §Publication strategy
+  ("no baseline comparison kills it"); skipped by `--no-granger`.
+- ⏳ **Conditional TE** (Gap 2) — the project's headline novelty;
+  skipped by `--no-conditional`. Unblocks H3 + rigorous H5b.
+- ⏳ **Re-test H1 / H6 nulls at `max_lag=150`** — first pass used
+  `max_lag=60` / 2 Hz, shorter than the 2026-05-20 slow-drift physics
+  correction requires. The "ROSCO rejects wind" (H1-null) narrative is
+  only defensible if the null survives the corrected embedding.
+
+Launcher: `analysis/run_phase4_full.sh` (server; conditional + Granger +
+AIS + coherence ON, `max_lag=150`, 5 Hz, `n_perm=200`; writes
+`te_table_full.parquet`, leaves the first-pass table intact). Sequence:
+timing probe on one case → sharded run + merge → pull back → re-score →
+controller-off Q11 run if H1 null holds → H6 windowed-TE driver →
+finalize report ver08.
 
 ### Phase 1 scaffolding actions (executed 2026-05-12)
 

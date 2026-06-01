@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-05-13
+updated: 2026-06-01
 tags: [meta, log, publication]
 ---
 
@@ -845,3 +845,66 @@ controller-rejection signature rather than an embedding-too-short
 artifact. The May 14 case-iea15-real H1 first-cut PASS (`TE = +0.0052
 nats, p = 0.005` at 300 s NTM, single seed) was not in the SSS regime
 and is less affected — the wind-driven direct path dominates there.
+
+## [2026-05-26] structure | Campaign completed — catch-up entry (DLC-A/B, Phase 4 bivariate, N=256 Sobol, scorecard, reports)
+
+Consolidated catch-up: the narrative log lapsed after 2026-05-20 while
+the campaign finished on the server. Reconstructed here from git history
+(commits `c11bbb9`, `0dd383f`, `98f2f4d`), `reports/hypothesis-scorecard.md`,
+and the report drafts. Authoritative numbers live in the scorecard.
+
+- **Phase 2 — full DLC matrix done.** All 54 OpenFAST cases completed
+  (6 DLC-1.6 + 24 DLC-A + 24 DLC-B), 1 h each. Pulled back to `sims/`.
+- **Phase 4 — bivariate first pass done.** `reports/te_table.parquet`
+  (54 cases) via `analysis/run_phase4_parallel.sh` with the
+  **scope-reduced** settings: bivariate KSG only, 2 Hz, `max_lag=60`,
+  `n_perm=50`, `--no-conditional --no-granger`. This is a first-pass
+  table, **not** the publication-grade run (see 2026-06-01 below).
+- **Phase 5 — N=256 production Sobol done** (commit `98f2f4d`, after a
+  WEIS-clone fix). 2816 RAFT evals, 971 feasible. Focus-channel Sₜ now
+  in [0,1] with CIs ~halved vs N=64. **L_u-dominates / EA-negligible
+  pattern survives N=64 → N=256 cleanly.**
+- **Hypothesis scorecard** (`reports/hypothesis-scorecard.md`, 2026-05-25)
+  scores H1–H6 against the above. Headline: two pre-registration-paid
+  surprises — (1) EA-vs-L_u inversion (H4/H5a), (2) wind→pitch TE null
+  (H1). H3 / rigorous H5b / windowed-H6 left **unevaluable** by the
+  `--no-conditional --no-granger` first pass.
+- **Reporting** progressed to ver04–ver07 (`reports/*.docx`,
+  `2026-05-21-...-ver06.pdf`) + Phase 6 figures (`reports/figs/`:
+  fig3 TE network, fig4 Sobol-ST, fig5 combined causal graph).
+
+**Known gaps carried forward** (all trace to the first-pass scope cuts):
+Granger baseline missing (plan calls it mandatory), conditional TE missing
+(the project's headline novelty), and the H1/H6 nulls measured at
+`max_lag=60` / 2 Hz — shorter than the 2026-05-20 slow-drift physics
+correction (`max_lag=150`) says is needed. Addressed next.
+
+## [2026-06-01] structure | Phase 4 full-settings rerun launcher (journal-tier gap closure)
+
+Decision (this session): target **journal tier** (WES / Marine
+Structures) and close the first-pass gaps with one full-settings Phase 4
+rerun instead of writing up bivariate-only results.
+
+- **`analysis/run_phase4_full.sh`** added — sharded launcher mirroring
+  `run_phase4_parallel.sh` but with the publication-grade settings:
+  conditional + Granger + AIS + coherence **ON**, `--max-lag 150`
+  (30 s slow-drift window at 5 Hz), `--decimate-target-hz 5.0`,
+  `--n-perm 200`. These are the `te_pipeline.py` `TESettings` defaults;
+  the first pass had overridden them down. Writes
+  `reports/te_table_full_p<W>.parquet` so the bivariate
+  `te_table.parquet` stays reproducible.
+- **`analysis/merge_parquet_parts.py`** — added `--prefix` / `--out`
+  (backward-compatible) so full-rerun shards merge into
+  `te_table_full.parquet` without clobbering the first-pass table.
+
+**Closes in one run**: Gap 1 (Granger baseline for every pair, needed for
+the publication baseline-comparison table), Gap 2 (conditional TE → H3
+and rigorous H5b), and re-tests the H1 / H6 nulls at the physics-correct
+`max_lag=150`. Cost is ~20–50× the first pass per case — **server work**;
+header documents a one-case timing probe before sharding 54.
+
+**Sequence from here**: (1) timing probe on one DLC-A case; (2) full
+sharded run (~36 workers) + merge; (3) pull back, re-score H1/H3/H5b/H6
+against `te_table_full.parquet`; (4) controller-off Q11 run if the H1
+null survives — quantifies ROSCO's wind-disturbance rejection; (5) H6
+windowed-TE driver (lowest priority). Then finalize report ver08.

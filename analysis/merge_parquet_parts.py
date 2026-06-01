@@ -8,23 +8,33 @@ publication figures) expects.
 
 Usage:
     python analysis/merge_parquet_parts.py
+    # full-settings rerun shards:
+    python analysis/merge_parquet_parts.py --prefix te_table_full_p --out te_table_full.parquet
 """
 
 from __future__ import annotations
 
-import glob
+import argparse
 from pathlib import Path
 
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 parts_dir = ROOT / "reports"
-parts = sorted(parts_dir.glob("te_table_p*.parquet"))
+
+ap = argparse.ArgumentParser(description=__doc__)
+ap.add_argument("--prefix", default="te_table_p",
+                help="Shard filename prefix to glob (default: te_table_p).")
+ap.add_argument("--out", default="te_table.parquet",
+                help="Merged output filename under reports/ (default: te_table.parquet).")
+args = ap.parse_args()
+
+parts = sorted(parts_dir.glob(f"{args.prefix}*.parquet"))
 
 if not parts:
     raise SystemExit(
-        f"No te_table_p*.parquet files found under {parts_dir}. "
-        f"Run analysis/run_phase4_parallel.sh first."
+        f"No {args.prefix}*.parquet files found under {parts_dir}. "
+        f"Run the Phase 4 launcher first."
     )
 
 print(f"Merging {len(parts)} parts:")
@@ -48,7 +58,7 @@ dedup_dropped = before - len(combined)
 if dedup_dropped:
     print(f"  (dropped {dedup_dropped} duplicate (case, source, target, method) rows)")
 
-out = parts_dir / "te_table.parquet"
+out = parts_dir / args.out
 combined.to_parquet(out, compression="zstd")
 print(f"\nWrote {out}  ({len(combined)} rows total)")
 
