@@ -908,3 +908,38 @@ sharded run (~36 workers) + merge; (3) pull back, re-score H1/H3/H5b/H6
 against `te_table_full.parquet`; (4) controller-off Q11 run if the H1
 null survives — quantifies ROSCO's wind-disturbance rejection; (5) H6
 windowed-TE driver (lowest priority). Then finalize report ver08.
+
+## [2026-06-01] structure | New server bootstrap + IDTxl silent-exit bug fixed
+
+User deployed the full pipeline on a **new** Linux box
+(`isaactest@oem-MD72-HB3-00`, env `fowt-te` from `environment.yml`,
+conda-forge OpenFAST 4.2.1 + openjdk 11.0.30 + jpype1 1.7.1),
+regenerating everything from scratch (old server's 54 `.outb` not
+transferred). **TurbSim is healthy here** (~90 s/case, dlc16 in 2.8 min)
+— *not* the old server's 50× slowdown — so regeneration is viable.
+
+Three clean-env gaps surfaced and were fixed (all now in
+[[SERVER_DEPLOYMENT]] §3d + §8):
+1. `environment.yml` missing `mpmath` (IDTxl Rudelt import) → `pip install mpmath`.
+2. `environment.yml` missing `rosco` (ServoDyn `libdiscon.so`) → `pip install rosco`.
+3. **The big one** — `idtxl/estimators_opencl.py:16` has a bare `sys.exit()`
+   in its `except ImportError` block. With no `pyopencl` installed and the
+   `_find_estimator` module-import order reaching `estimators_opencl` before
+   `estimators_jidt`, that `sys.exit()` killed the whole process: **`EXIT=0`,
+   no traceback, empty TE table**. Patched to `pass` in the clone (`.bak`
+   kept). This worked on local/old-server only by import-order luck (JIDT
+   found first). Would have silently produced 54 empty Phase-4 cases.
+
+Diagnostic path (recorded because the failure was maximally deceptive —
+exit 0 looks like success): bisected with minimal reproductions — bare
+`jpype.startJVM` OK → IDTxl's exact start args + class load OK → JVM after
+numpy OK → OpenBLAS thread-pin no effect → per-module import loop pinpointed
+`estimators_opencl` as the killer → read source → `sys.exit()`. The local
+Windows `te-fowt` run was the known-good baseline throughout
+(`te ≈ 0.45`, `DONE`). **Lesson reinforced: validate the JIDT path with
+`test_ar1_te.py` (a real estimate, not just imports) before launching any
+campaign** — now a required step in §3d.
+
+Campaign launch (Phase 5 N=256 + Phase 2 dlc16/dlca/dlcb @ TMax=3600,
+then `run_phase4_full.sh`) proceeds once `test_ar1_te.py` is green on the
+new box.

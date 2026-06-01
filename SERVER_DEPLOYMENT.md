@@ -144,7 +144,7 @@ echo "/path/to/fowt-te-causal/repos/IDTxl/IDTxl-master" > $SITE_PACKAGES/idtxl.p
 ```bash
 python -c "
 import importlib
-for pkg in ('openfast_toolbox', 'idtxl', 'raft', 'salib', 'jpype'):
+for pkg in ('openfast_toolbox', 'idtxl', 'raft', 'SALib', 'jpype'):
     try:
         m = importlib.import_module(pkg)
         print(f'{pkg:20s} OK  ({getattr(m, \"__file__\", \"<namespace>\")})')
@@ -153,7 +153,31 @@ for pkg in ('openfast_toolbox', 'idtxl', 'raft', 'salib', 'jpype'):
 "
 ```
 
-All five should print `OK`.
+All five should print `OK`. **Note the import name is `SALib` (capital), not
+`salib`** — a lowercase check fails even though the package is installed.
+
+### 3d. Clean-env gaps + IDTxl patch (apply proactively)
+
+`environment.yml` is incomplete for a from-scratch env, and a fresh IDTxl
+clone has a process-killing wart. Apply all three before the smoke test
+(details + rationale in §8 Troubleshooting):
+
+```bash
+# Missing transitive deps not in environment.yml
+pip install mpmath          # IDTxl Rudelt-estimator import (discovery-time)
+pip install rosco           # Phase 2 ServoDyn libdiscon.so
+
+# Patch IDTxl's estimators_opencl.py bare sys.exit() (silent EXIT=0 killer)
+F=$(python -c "import idtxl, os; print(os.path.join(os.path.dirname(idtxl.__file__), 'estimators_opencl.py'))")
+cp "$F" "$F.bak"
+sed -i 's/^    sys\.exit()$/    pass  # patched: bare sys.exit() killed the process when pyopencl is absent/' "$F"
+```
+
+Then confirm IDTxl runs a real estimate end-to-end (not just imports) — this
+is the check that would have caught the silent killer:
+```bash
+python analysis/test_ar1_te.py    # expect forward TE significant, reverse ~0, exit 0
+```
 
 ---
 
@@ -284,6 +308,40 @@ Editable install didn't re-register. Re-run §3a:
 
 ### `ImportError: No module named 'idtxl'`
 `.pth` file missing or wrong path. Re-run §3b.
+
+### TE pipeline / `test_ar1_te.py` exits with **code 0 and no result** (silent death)
+A fresh `git clone` of IDTxl + an env without `pyopencl` triggers an IDTxl
+wart: `idtxl/estimators_opencl.py` line 16 calls a bare `sys.exit()` in its
+`except ImportError` block. IDTxl's `_find_estimator` imports *every*
+estimator module while searching for `JidtKraskovCMI`; when the import order
+reaches `estimators_opencl` before `estimators_jidt`, that `sys.exit()` kills
+the whole process — no traceback, no segfault, **`EXIT=0`**. Every TE case
+then "succeeds" while writing an empty table. Diagnosed 2026-06-01 (took a
+while because every individual piece — JVM, jar, class load — works in
+isolation; only the full `_find_estimator` import loop trips it).
+
+Fix (patch the clone; the OpenCL estimator is unused — we only use JIDT):
+```bash
+F=$(python -c "import idtxl, os; print(os.path.join(os.path.dirname(idtxl.__file__), 'estimators_opencl.py'))")
+cp "$F" "$F.bak"
+sed -i 's/^    sys\.exit()$/    pass  # patched: bare sys.exit() killed the process when pyopencl is absent/' "$F"
+grep -n "sys.exit\|# patched" "$F"   # line 16 -> pass; line ~419 sys.exit(1) is a method body, leave it
+```
+Safe because nothing references `cl` at import/class-definition time (only in
+method bodies, never called without OpenCL). Alternative: `pip install pyopencl`
+on boxes that have an OpenCL ICD loader. The patch lives in the un-versioned
+`repos/IDTxl` clone, so re-apply it after any re-clone; the `.bak` is the undo.
+
+### `ModuleNotFoundError: No module named 'mpmath'` (during IDTxl estimator discovery)
+`environment.yml` doesn't pull `mpmath` (a transitive dep of IDTxl's Rudelt
+estimator, imported during discovery even though we don't use it). Fix:
+`pip install mpmath`.
+
+### Phase 2 `SrvD_Init` / `libdiscon.so`: ROSCO not installed in a clean env
+`environment.yml` doesn't include `rosco`. On a fresh env: `pip install rosco`
+(bundles a prebuilt `libdiscon.so` under `site-packages/rosco/lib/`). Verify
+the `.so` actually exists — some wheels ship without the compiled binary; if
+missing, copy it from a working box.
 
 ### `Grid3DField_GetCell: G3D wind array boundaries violated`
 TurbSim GridHeight too small. Should not happen if `run_campaign.py` patches
