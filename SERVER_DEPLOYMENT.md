@@ -337,6 +337,15 @@ on boxes that have an OpenCL ICD loader. The patch lives in the un-versioned
 estimator, imported during discovery even though we don't use it). Fix:
 `pip install mpmath`.
 
+### `KeyError: 'max_shift'` in `test_ar1_te.py` / IDTxl surrogate generation
+IDTxl's circular-shift surrogates (`perm_type: "circular"`) **require** an
+explicit `max_shift` in the settings (`idtxl/data.py:704` raises `KeyError`
+otherwise). `te_pipeline.py` sets it (`max(1, len(target)//4)`); the standalone
+`test_ar1_te.py` validation script was missing it and crashed before producing
+an estimate. Fixed in-repo — add `"max_shift": max(1, len(target) // 4)` to the
+settings dict if you see this. Note this is a *test-script* bug; the production
+pipeline already sets it, so a clean campaign run is unaffected.
+
 ### Phase 2 `SrvD_Init` / `libdiscon.so`: ROSCO not installed in a clean env
 `environment.yml` doesn't include `rosco`. On a fresh env: `pip install rosco`
 (bundles a prebuilt `libdiscon.so` under `site-packages/rosco/lib/`). Verify

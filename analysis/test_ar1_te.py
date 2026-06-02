@@ -91,6 +91,9 @@ def run_te(source: np.ndarray, target: np.ndarray, n_perm: int = 200, ksg_k: int
         # target. Equivalent to IAAFT for our purposes; the IDTxl default
         # 'random' would destroy auto-correlation too (weakest null).
         "perm_type": "circular",
+        # IDTxl's circular permutation REQUIRES max_shift (data.py:704 raises
+        # KeyError otherwise). Mirror te_pipeline.py: shift up to len/4.
+        "max_shift": max(1, len(target) // 4),
     }
     analysis = BivariateTE()
     results = analysis.analyse_single_target(settings=settings, data=data, target=1, sources=[0])

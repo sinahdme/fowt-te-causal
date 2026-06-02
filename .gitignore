@@ -23,6 +23,11 @@ sims/dlcb_*/
 data/*.parquet
 data/*.json
 data/*.parquet.kept
+# Top-level reports/*.parquet too: reports/**/*.parquet only matches subdirs,
+# so reports/te_table.parquet was tracked and shipped a stale first-pass table
+# to fresh clones, making phase4 look done. Untracked via git rm --cached.
+reports/*.parquet
+reports/*.json
 reports/**/*.parquet
 reports/**/*.json
 

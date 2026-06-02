@@ -90,9 +90,29 @@ def phase2_dlc_status(dlc: str) -> PhaseStatus:
     return PhaseStatus(f"phase2-{dlc}", done, detail)
 
 
+# A journal-tier full Phase 4 table must carry the Granger baseline and the
+# conditional TE, not just bivariate KSG + coherence. Checking only file
+# existence let a committed scope-reduced first-pass table masquerade as a
+# completed full run and silently skip the rerun on a fresh clone (2026-06-02).
 def phase4_status(out_file: str = "reports/te_table.parquet") -> PhaseStatus:
     p = PROJECT_ROOT / out_file
-    return PhaseStatus("phase4", p.exists(), f"{p.name}{' present' if p.exists() else ' missing'}")
+    if not p.exists():
+        return PhaseStatus("phase4", False, f"{p.name} missing")
+    try:
+        import pandas as pd
+        methods = set(pd.read_parquet(p, columns=["method"])["method"].unique())
+    except Exception as e:  # unreadable / pandas+pyarrow absent → treat as not done
+        return PhaseStatus("phase4", False, f"{p.name} present but unreadable ({e})")
+    # conditional TE is emitted as "conditional_te_ksg|<env>" — match by prefix.
+    have = {
+        "bivariate": "bivariate_te_ksg" in methods,
+        "granger": "bivariate_granger" in methods,
+        "conditional_te": any(m.startswith("conditional_te_ksg") for m in methods),
+    }
+    if all(have.values()):
+        return PhaseStatus("phase4", True, f"{p.name}: full ({len(methods)} methods)")
+    missing = [k for k, ok in have.items() if not ok]
+    return PhaseStatus("phase4", False, f"{p.name}: first-pass only, missing {missing}")
 
 
 def graph_status(out_file: str = "reports/te_graph.pkl") -> PhaseStatus:
