@@ -29,10 +29,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import multiprocessing as mp
 import sys
 import time
 import warnings
-from dataclasses import dataclass, field
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import numpy as np
@@ -80,6 +83,13 @@ class TESettings:
     # uses JidtGaussianCMI regardless (analytic, GPU buys nothing).
     ksg_estimator: str = "JidtKraskovCMI"
     gpuid: int = 0
+    # Parallelism. n_workers=1 keeps the original serial path. With >1, the
+    # independent AIS/TE jobs run in a spawn-based process pool, round-robined
+    # across gpu_ids (each worker drives its own OpenCL context). Since a single
+    # N~15k KSG estimate leaves an A100 almost idle (latency-bound), packing
+    # many jobs per device is how the wall-clock actually drops.
+    n_workers: int = 1
+    gpu_ids: tuple = (0,)
     # Coherence-baseline band
     band_lo_hz: float = 0.01
     band_hi_hz: float = 0.5
@@ -306,6 +316,69 @@ def coherence_baseline(source: np.ndarray, target: np.ndarray,
 
 
 # ----------------------------------------------------------------------------
+# Parallel job execution (one heavy IDTxl task per job)
+# ----------------------------------------------------------------------------
+
+def _te_frac(te_nats: float, ais_val: float, do_ais: bool) -> float:
+    """TE / AIS effect-size fraction; NaN when the denominator is unusable."""
+    if not do_ais or ais_val is None:
+        return float("nan")
+    try:
+        if ais_val == 0 or math.isnan(ais_val):
+            return float("nan")
+    except TypeError:
+        return float("nan")
+    return te_nats / ais_val
+
+
+def _run_heavy_job(job: dict, settings: "TESettings") -> dict:
+    """Worker entry point: run one AIS/TE task, returning metadata + result
+    (never the input arrays, to keep the pickled return small).
+
+    Pinned to job['gpuid'] so a pool spreads OpenCL work across devices.
+    Exceptions are caught and flagged ok=False so one bad pair can't sink the
+    whole sweep — mirrors the per-task try/except of the serial version.
+    """
+    s = replace(settings, gpuid=job["gpuid"])
+    kind = job["kind"]
+    arr = job["arrays"]
+    t0 = time.time()
+    ok, err, r = True, None, {}
+    try:
+        if kind == "ais":
+            r = run_ais(arr["target"], s)
+        elif kind == "bivariate_ksg":
+            r = run_bivariate_te(arr["src"], arr["target"], s)
+        elif kind == "granger":
+            r = run_bivariate_te(arr["src"], arr["target"], s,
+                                 estimator="JidtGaussianCMI")
+        elif kind == "conditional":
+            r = run_multivariate_te(arr["src"], arr["target"], arr["cond"], s)
+        else:
+            raise ValueError(f"unknown job kind {kind!r}")
+    except Exception as e:
+        import traceback
+        ok, err = False, f"{type(e).__name__}: {e}"
+        traceback.print_exc()
+        sys.stderr.flush()
+    dt = time.time() - t0
+    label = f"{kind:13s} {(job.get('source') or '-'):>10} -> {job['target']:<10}"
+    if ok and kind == "ais":
+        print(f"  [done {dt:5.0f}s gpu{job['gpuid']}] AIS({job['target']}) "
+              f"= {r.get('ais_nats', float('nan')):.4f} nats "
+              f"(p={r.get('p_value', 1.0):.4f})", flush=True)
+    elif ok:
+        print(f"  [done {dt:5.0f}s gpu{job['gpuid']}] {label} "
+              f"TE={r.get('te_nats', float('nan')):+.4f} "
+              f"p={r.get('p_value', 1.0):.4f}", flush=True)
+    else:
+        print(f"  !! [{label}] {err}", file=sys.stderr, flush=True)
+    return {"kind": kind, "source": job.get("source"), "target": job["target"],
+            "other_env": job.get("other_env"), "result": r, "ok": ok,
+            "runtime_s": dt}
+
+
+# ----------------------------------------------------------------------------
 # Per-case orchestrator
 # ----------------------------------------------------------------------------
 
@@ -352,144 +425,126 @@ def per_case_pipeline(
     n_post = len(next(iter(cached.values()))) if cached else 0
     print(f"  cached {len(cached)} channels @ {fs_out:.2f} Hz, N={n_post}", flush=True)
 
-    # AIS per response (used as effect-size denominator)
-    ais_table: dict[str, float] = {}
-    if do_ais:
-        for resp in settings.responses:
-            if resp not in cached:
-                continue
-            print(f"  AIS({resp}) starting...", flush=True)
-            t0 = time.time()
-            try:
-                r = run_ais(cached[resp], settings)
-                ais_table[resp] = r["ais_nats"]
-                print(f"  AIS({resp}) = {r['ais_nats']:.4f} nats "
-                      f"(p={r['p_value']:.4f}, {time.time()-t0:.0f}s)", flush=True)
-            except Exception as e:
-                import traceback
-                print(f"  !! AIS({resp}) raised {type(e).__name__}: {e}",
-                      file=sys.stderr, flush=True)
-                traceback.print_exc()
-                sys.stderr.flush()
-                ais_table[resp] = float("nan")
-
     rows: list[dict] = []
     case_id = outb_path.parent.parent.name  # sims/<case_id>/IEA-15-...-UMaineSemi/foo.outb
 
-    for src_name in settings.env_sources:
-        if src_name not in cached:
-            continue
-        for resp_name in settings.responses:
-            if resp_name not in cached:
+    # Coherence baseline is cheap scipy (no IDTxl, no GPU): compute inline.
+    # ais_nats is backfilled once the AIS jobs land below.
+    if do_coherence:
+        for src_name in settings.env_sources:
+            if src_name not in cached:
                 continue
-            src_arr = cached[src_name]
-            resp_arr = cached[resp_name]
-
-            # Bivariate KSG-TE
-            print(f"  bivariate_KSG  {src_name:>10} -> {resp_name:<10} starting...", flush=True)
-            t0 = time.time()
-            try:
-                r = run_bivariate_te(src_arr, resp_arr, settings)
-                te_frac = (r["te_nats"] / ais_table[resp_name]
-                           if (do_ais and ais_table.get(resp_name) not in (None, 0, float("nan")))
-                           else float("nan"))
-                rows.append({
-                    "case": case_id, "source": src_name, "target": resp_name,
-                    "method": "bivariate_te_ksg",
-                    **r,
-                    "ais_nats": ais_table.get(resp_name, float("nan")),
-                    "te_frac": te_frac,
-                    "runtime_s": time.time() - t0,
-                })
-                print(f"  bivariate_KSG  {src_name:>10} -> {resp_name:>10}  "
-                      f"TE={r['te_nats']:+.4f} p={r['p_value']:.4f}  "
-                      f"({time.time()-t0:.0f}s)", flush=True)
-            except Exception as e:
-                import traceback
-                print(f"  !! bivariate_te {src_name}->{resp_name} raised {type(e).__name__}: {e}",
-                      file=sys.stderr, flush=True)
-                traceback.print_exc()
-                sys.stderr.flush()
-
-            # Bivariate Gaussian-Granger baseline (same pipeline, swap estimator)
-            if do_granger:
-                t0 = time.time()
-                try:
-                    r = run_bivariate_te(src_arr, resp_arr, settings,
-                                         estimator="JidtGaussianCMI")
-                    rows.append({
-                        "case": case_id, "source": src_name, "target": resp_name,
-                        "method": "bivariate_granger",
-                        **r,
-                        "ais_nats": ais_table.get(resp_name, float("nan")),
-                        "te_frac": float("nan"),
-                        "runtime_s": time.time() - t0,
-                    })
-                    print(f"  bivariate_GAUS {src_name:>10} -> {resp_name:>10}  "
-                          f"I={r['te_nats']:+.4f} p={r['p_value']:.4f}  "
-                          f"({time.time()-t0:.0f}s)", flush=True)
-                except Exception as e:
-                    import traceback
-                    print(f"  !! granger {src_name}->{resp_name} raised {type(e).__name__}: {e}",
-                          file=sys.stderr, flush=True)
-                    traceback.print_exc()
-                    sys.stderr.flush()
-
-            # Conditional KSG-TE: TE(src -> resp | other_env)
-            if do_conditional:
-                other_env = next((s for s in settings.env_sources
-                                  if s != src_name and s in cached), None)
-                if other_env is not None:
-                    t0 = time.time()
-                    try:
-                        r = run_multivariate_te(
-                            src_arr, resp_arr, cached[other_env], settings,
-                        )
-                        te_frac = (r["te_nats"] / ais_table[resp_name]
-                                   if (do_ais and ais_table.get(resp_name)
-                                       not in (None, 0, float("nan")))
-                                   else float("nan"))
-                        rows.append({
-                            "case": case_id, "source": src_name, "target": resp_name,
-                            "method": f"conditional_te_ksg|{other_env}",
-                            **r,
-                            "ais_nats": ais_table.get(resp_name, float("nan")),
-                            "te_frac": te_frac,
-                            "runtime_s": time.time() - t0,
-                        })
-                        print(f"  cond_KSG       {src_name:>10} -> {resp_name:>10} "
-                              f"| {other_env:<9} TE={r['te_nats']:+.4f} "
-                              f"p={r['p_value']:.4f} ({time.time()-t0:.0f}s)", flush=True)
-                    except Exception as e:
-                        import traceback
-                        print(f"  !! cond_te {src_name}->{resp_name}|{other_env} raised {type(e).__name__}: {e}",
-                              file=sys.stderr, flush=True)
-                        traceback.print_exc()
-                        sys.stderr.flush()
-
-            # Coherence baseline
-            if do_coherence:
+            for resp_name in settings.responses:
+                if resp_name not in cached:
+                    continue
                 try:
                     coh = coherence_baseline(
-                        src_arr, resp_arr, fs_out,
+                        cached[src_name], cached[resp_name], fs_out,
                         settings.band_lo_hz, settings.band_hi_hz,
                         nperseg_target=settings.coherence_nperseg,
                     )
                     rows.append({
                         "case": case_id, "source": src_name, "target": resp_name,
                         "method": "coherence_scipy",
-                        "te_nats": coh["gamma2_peak"],         # γ² in te_nats slot for unified schema
+                        "te_nats": coh["gamma2_peak"],   # γ² in te_nats slot for unified schema
                         "p_value": float("nan"),
                         "significant": bool(coh["gamma2_peak"] > 0.3),  # rough threshold
-                        "ais_nats": ais_table.get(resp_name, float("nan")),
+                        "ais_nats": float("nan"),
                         "te_frac": float("nan"),
                         "gamma2_peak_hz": coh["gamma2_peak_hz"],
                         "runtime_s": 0.0,
                     })
                 except Exception as e:
-                    print(f"  !! coherence {src_name}->{resp_name} raised {type(e).__name__}: {e}",
-                          file=sys.stderr, flush=True)
+                    print(f"  !! coherence {src_name}->{resp_name} raised "
+                          f"{type(e).__name__}: {e}", file=sys.stderr, flush=True)
                     sys.stderr.flush()
+
+    # Build the heavy IDTxl jobs. Each is independent; the bivariate/conditional
+    # te_frac needs the target's AIS, but that's resolved at assembly after all
+    # jobs finish, so AIS and TE can run concurrently rather than AIS-then-TE.
+    gpu_ids = list(settings.gpu_ids) or [settings.gpuid]
+    jobs: list[dict] = []
+    if do_ais:
+        for resp in settings.responses:
+            if resp in cached:
+                jobs.append({"kind": "ais", "source": None, "target": resp,
+                             "arrays": {"target": cached[resp]}})
+    for src_name in settings.env_sources:
+        if src_name not in cached:
+            continue
+        for resp_name in settings.responses:
+            if resp_name not in cached:
+                continue
+            common = {"src": cached[src_name], "target": cached[resp_name]}
+            jobs.append({"kind": "bivariate_ksg", "source": src_name,
+                         "target": resp_name, "arrays": common})
+            if do_granger:
+                jobs.append({"kind": "granger", "source": src_name,
+                             "target": resp_name, "arrays": common})
+            if do_conditional:
+                other_env = next((s for s in settings.env_sources
+                                  if s != src_name and s in cached), None)
+                if other_env is not None:
+                    jobs.append({"kind": "conditional", "source": src_name,
+                                 "target": resp_name, "other_env": other_env,
+                                 "arrays": {**common, "cond": cached[other_env]}})
+    for i, job in enumerate(jobs):
+        job["gpuid"] = gpu_ids[i % len(gpu_ids)]
+
+    # Execute: serial when n_workers<=1 (original path), else a spawn-based pool.
+    n_workers = max(1, settings.n_workers)
+    print(f"  {len(jobs)} IDTxl jobs | {n_workers} worker(s) | gpus={gpu_ids}",
+          flush=True)
+    results: list[dict] = []
+    if n_workers == 1:
+        for job in jobs:
+            results.append(_run_heavy_job(job, settings))
+    else:
+        ctx = mp.get_context("spawn")
+        with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as ex:
+            futures = [ex.submit(_run_heavy_job, job, settings) for job in jobs]
+            for fut in as_completed(futures):
+                results.append(fut.result())
+
+    # Assemble: AIS table first (effect-size denominator), then the TE rows.
+    ais_table: dict[str, float] = {}
+    for res in results:
+        if res["kind"] == "ais":
+            ais_table[res["target"]] = (
+                res["result"].get("ais_nats", float("nan"))
+                if res["ok"] else float("nan"))
+    for row in rows:  # backfill ais_nats onto the coherence rows
+        row["ais_nats"] = ais_table.get(row["target"], float("nan"))
+
+    for res in results:
+        if res["kind"] == "ais" or not res["ok"]:
+            continue
+        r = res["result"]
+        src_name, resp_name = res["source"], res["target"]
+        ais_val = ais_table.get(resp_name, float("nan"))
+        if res["kind"] == "bivariate_ksg":
+            rows.append({
+                "case": case_id, "source": src_name, "target": resp_name,
+                "method": "bivariate_te_ksg", **r,
+                "ais_nats": ais_val,
+                "te_frac": _te_frac(r["te_nats"], ais_val, do_ais),
+                "runtime_s": res["runtime_s"],
+            })
+        elif res["kind"] == "granger":
+            rows.append({
+                "case": case_id, "source": src_name, "target": resp_name,
+                "method": "bivariate_granger", **r,
+                "ais_nats": ais_val, "te_frac": float("nan"),
+                "runtime_s": res["runtime_s"],
+            })
+        elif res["kind"] == "conditional":
+            rows.append({
+                "case": case_id, "source": src_name, "target": resp_name,
+                "method": f"conditional_te_ksg|{res['other_env']}", **r,
+                "ais_nats": ais_val,
+                "te_frac": _te_frac(r["te_nats"], ais_val, do_ais),
+                "runtime_s": res["runtime_s"],
+            })
 
     print(f"  case done in {time.time()-t_load0:.0f}s, {len(rows)} rows", flush=True)
     return pd.DataFrame(rows)
@@ -550,7 +605,16 @@ def main() -> int:
                              "(needs pyopencl + an OpenCL driver). Granger stays "
                              "on the analytic Gaussian estimator either way.")
     parser.add_argument("--gpuid", type=int, default=0,
-                        help="OpenCL device ID when --gpu is set (default 0).")
+                        help="OpenCL device ID when --gpu is set (default 0). "
+                             "Ignored if --gpus lists multiple devices.")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Parallel worker processes for the heavy AIS/TE "
+                             "jobs. 1 = serial (default). The jobs are "
+                             "independent, so this is the main wall-clock lever "
+                             "given the per-estimate GPU work is latency-bound.")
+    parser.add_argument("--gpus", type=str, default=None,
+                        help="Comma-separated OpenCL device IDs to round-robin "
+                             "KSG jobs across, e.g. '0,1'. Defaults to --gpuid.")
     parser.add_argument("--no-conditional", action="store_true")
     parser.add_argument("--no-granger", action="store_true")
     parser.add_argument("--no-coherence", action="store_true")
@@ -560,13 +624,18 @@ def main() -> int:
                              " n_perm=50, no conditional/granger.")
     args = parser.parse_args()
 
+    gpu_ids = (tuple(int(x) for x in args.gpus.split(",") if x.strip() != "")
+               if args.gpus else (args.gpuid,))
+
     settings = TESettings(
         decimate_target_hz=args.decimate_target_hz,
         transient_drop_s=args.transient_drop_s,
         max_lag=args.max_lag,
         n_perm=50 if args.smoke else args.n_perm,
         ksg_estimator="OpenCLKraskovCMI" if args.gpu else "JidtKraskovCMI",
-        gpuid=args.gpuid,
+        gpuid=gpu_ids[0],
+        n_workers=args.workers,
+        gpu_ids=gpu_ids,
     )
     if args.smoke:
         settings.env_sources = ("Wind1VelX",)
