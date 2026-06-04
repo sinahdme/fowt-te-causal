@@ -185,24 +185,32 @@ _OPENCL_PATCHED = False
 
 
 def _patch_opencl_scalar_return() -> None:
-    """Make IDTxl's OpenCL estimators honor the JIDT scalar contract.
+    """Reconcile IDTxl's OpenCL estimators with numpy 2.x.
 
-    OpenCLKraskovCMI/MI.estimate() returns a (n_chunks,) array; for n_chunks=1
-    that's a 1-element array, whereas the JIDT estimators return a Python
-    scalar. IDTxl assumes the scalar form — e.g. `links[i] = estimate(...)` in
-    network_analysis._calculate_single_link — and numpy 2.x refuses to assign a
-    1-element array into a scalar slot ("setting an array element with a
-    sequence"), so the final single-link TE crashes whenever a source lag is
-    selected. Coerce only the single averaged value (size==1); multi-chunk
-    surrogate batches (size==n_perm) and local-value/return_counts paths are
-    left untouched. No-op when pyopencl/the estimators aren't importable."""
+    OpenCLKraskovCMI/MI.estimate() returns a (n_chunks,) array. Two IDTxl call
+    sites consume the result incompatibly:
+      * network_analysis._calculate_single_link does `links[i] = estimate(...)`
+        and needs a SCALAR — numpy 2.x won't put a 1-element array into a scalar
+        slot ("setting an array element with a sequence").
+      * stats.max_statistic_*_bivariate call estimate_parallel(...) and iterate
+        the result, so they need an ARRAY — a coerced float gives "'float'
+        object is not iterable".
+    numpy 1.x's 1-element array satisfied both; numpy 2.x neither uniformly. So
+    coerce a single averaged value to float ONLY while inside
+    _calculate_single_link (gated by a per-estimator flag), leaving the
+    estimate_parallel/iterating paths as arrays. Multi-chunk surrogate batches
+    (size==n_perm) and local-value/return_counts paths are never coerced. No-op
+    when the OpenCL estimators / IDTxl aren't importable (CPU runs)."""
     global _OPENCL_PATCHED
     if _OPENCL_PATCHED:
         return
     try:
         from idtxl import estimators_opencl as ocl
+        from idtxl.network_analysis import NetworkAnalysis
     except Exception:
         return
+
+    # 1. estimate(): coerce size-1 -> float only when the scoping flag is set.
     for name in ("OpenCLKraskovCMI", "OpenCLKraskovMI"):
         cls = getattr(ocl, name, None)
         if cls is None or getattr(cls, "_te_scalar_patched", False):
@@ -211,7 +219,8 @@ def _patch_opencl_scalar_return() -> None:
 
         def estimate(self, *args, _orig=orig, **kwargs):
             out = _orig(self, *args, **kwargs)
-            if (isinstance(out, np.ndarray) and out.size == 1
+            if (getattr(self, "_te_coerce_single", False)
+                    and isinstance(out, np.ndarray) and out.size == 1
                     and not self.settings.get("local_values", False)
                     and not self.settings.get("return_counts", False)):
                 return float(out.reshape(-1)[0])
@@ -219,6 +228,27 @@ def _patch_opencl_scalar_return() -> None:
 
         cls.estimate = estimate
         cls._te_scalar_patched = True
+
+    # 2. _calculate_single_link(): enable coercion only for its scalar-slot loop
+    #    (links[i] = estimate(...)). The estimate_parallel paths that iterate the
+    #    result stay outside this scope and keep their arrays.
+    if not getattr(NetworkAnalysis, "_te_link_patched", False):
+        orig_link = NetworkAnalysis._calculate_single_link
+
+        def _calculate_single_link(self, *args, _orig=orig_link, **kwargs):
+            est = getattr(self, "_cmi_estimator", None)
+            prev = getattr(est, "_te_coerce_single", False) if est is not None else False
+            if est is not None:
+                est._te_coerce_single = True
+            try:
+                return _orig(self, *args, **kwargs)
+            finally:
+                if est is not None:
+                    est._te_coerce_single = prev
+
+        NetworkAnalysis._calculate_single_link = _calculate_single_link
+        NetworkAnalysis._te_link_patched = True
+
     _OPENCL_PATCHED = True
 
 
