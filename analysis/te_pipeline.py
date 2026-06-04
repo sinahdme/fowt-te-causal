@@ -74,6 +74,12 @@ class TESettings:
     n_perm: int = 200
     alpha: float = 0.05
     perm_type: str = "circular"         # 2026-05-15 reconciliation
+    # KSG CMI backend. "JidtKraskovCMI" = JVM CPU (default, no GPU needed);
+    # "OpenCLKraskovCMI" = GPU, batches the n_perm surrogate CMIs onto the
+    # device — the dominant cost in significance testing. Granger always
+    # uses JidtGaussianCMI regardless (analytic, GPU buys nothing).
+    ksg_estimator: str = "JidtKraskovCMI"
+    gpuid: int = 0
     # Coherence-baseline band
     band_lo_hz: float = 0.01
     band_hi_hz: float = 0.5
@@ -155,6 +161,20 @@ def _idtxl_base_settings(settings: TESettings, *, for_ais: bool = False) -> dict
     return base
 
 
+def _apply_estimator(s: dict, estimator: str, settings: TESettings) -> dict:
+    """Set the CMI estimator + its estimator-specific keys, in place.
+
+    The base settings stringify kraskov_k for JIDT (Java side wants a str),
+    but OpenCLKraskovCMI uses it as an int32 in the GPU kernel call and needs
+    a `gpuid`. Gaussian ignores k entirely. Keep this the single place that
+    knows the per-backend quirks."""
+    s["cmi_estimator"] = estimator
+    if estimator.startswith("OpenCL"):
+        s["kraskov_k"] = int(settings.kraskov_k)
+        s["gpuid"] = int(settings.gpuid)
+    return s
+
+
 def _extract_te_pval(target_results: dict) -> tuple[float, float, list]:
     te = target_results.get("te")
     pval = target_results.get("omnibus_pval")
@@ -165,15 +185,20 @@ def _extract_te_pval(target_results: dict) -> tuple[float, float, list]:
 
 
 def run_bivariate_te(source: np.ndarray, target: np.ndarray,
-                     settings: TESettings, estimator: str = "JidtKraskovCMI") -> dict:
-    """Bivariate TE(source → target). Returns dict with te, p_value, selected_vars."""
+                     settings: TESettings, estimator: str | None = None) -> dict:
+    """Bivariate TE(source → target). Returns dict with te, p_value, selected_vars.
+
+    estimator=None uses settings.ksg_estimator (CPU or OpenCL/GPU); Granger
+    callers pass JidtGaussianCMI explicitly."""
     from idtxl.bivariate_te import BivariateTE
     from idtxl.data import Data
 
+    estimator = estimator or settings.ksg_estimator
     data = Data(np.vstack([source, target]), dim_order="ps", normalise=True)
     # Set max_shift now that we know N (required for perm_type='circular')
-    s = {**_idtxl_base_settings(settings), "cmi_estimator": estimator,
-         "max_shift": max(1, len(target) // 4)}
+    s = _apply_estimator(
+        {**_idtxl_base_settings(settings), "max_shift": max(1, len(target) // 4)},
+        estimator, settings)
     analysis = BivariateTE()
     results = analysis.analyse_single_target(settings=s, data=data, target=1, sources=[0])
     tr = results.get_single_target(1, fdr=False)
@@ -189,7 +214,7 @@ def run_bivariate_te(source: np.ndarray, target: np.ndarray,
 def run_multivariate_te(source: np.ndarray, target: np.ndarray,
                         conditional: np.ndarray | None,
                         settings: TESettings,
-                        estimator: str = "JidtKraskovCMI") -> dict:
+                        estimator: str | None = None) -> dict:
     """Conditional TE(source → target | conditional). If conditional is None,
     falls back to MultivariateTE with just the one source (still does the
     full greedy parent search, distinct from BivariateTE)."""
@@ -205,9 +230,11 @@ def run_multivariate_te(source: np.ndarray, target: np.ndarray,
         sources_idx = [0, 2]   # source + conditioning channel both as candidates
         target_idx = 1
 
+    estimator = estimator or settings.ksg_estimator
     data = Data(arr, dim_order="ps", normalise=True)
-    s = {**_idtxl_base_settings(settings), "cmi_estimator": estimator,
-         "max_shift": max(1, target.shape[0] // 4)}
+    s = _apply_estimator(
+        {**_idtxl_base_settings(settings), "max_shift": max(1, target.shape[0] // 4)},
+        estimator, settings)
     analysis = MultivariateTE()
     results = analysis.analyse_single_target(
         settings=s, data=data, target=target_idx, sources=sources_idx,
@@ -232,11 +259,12 @@ def run_ais(target: np.ndarray, settings: TESettings) -> dict:
     from idtxl.data import Data
 
     data = Data(target.reshape(1, -1), dim_order="ps", normalise=True)
-    s = {
-        **_idtxl_base_settings(settings, for_ais=True),
-        "cmi_estimator": "JidtKraskovCMI",
-        "max_shift": max(1, len(target) // 4),
-    }
+    s = _apply_estimator(
+        {
+            **_idtxl_base_settings(settings, for_ais=True),
+            "max_shift": max(1, len(target) // 4),
+        },
+        settings.ksg_estimator, settings)
     analysis = ActiveInformationStorage()
     results = analysis.analyse_single_process(settings=s, data=data, process=0)
     tr = results.get_single_process(0, fdr=False)
@@ -517,6 +545,12 @@ def main() -> int:
                         help="Embedding window in samples (at decimated rate). "
                              "Default 150 = 30 s at 5 Hz, covers one slow-drift cycle.")
     parser.add_argument("--n-perm", type=int, default=200)
+    parser.add_argument("--gpu", action="store_true",
+                        help="Use the OpenCLKraskovCMI GPU estimator for KSG "
+                             "(needs pyopencl + an OpenCL driver). Granger stays "
+                             "on the analytic Gaussian estimator either way.")
+    parser.add_argument("--gpuid", type=int, default=0,
+                        help="OpenCL device ID when --gpu is set (default 0).")
     parser.add_argument("--no-conditional", action="store_true")
     parser.add_argument("--no-granger", action="store_true")
     parser.add_argument("--no-coherence", action="store_true")
@@ -531,6 +565,8 @@ def main() -> int:
         transient_drop_s=args.transient_drop_s,
         max_lag=args.max_lag,
         n_perm=50 if args.smoke else args.n_perm,
+        ksg_estimator="OpenCLKraskovCMI" if args.gpu else "JidtKraskovCMI",
+        gpuid=args.gpuid,
     )
     if args.smoke:
         settings.env_sources = ("Wind1VelX",)
