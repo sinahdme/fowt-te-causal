@@ -181,6 +181,47 @@ def _idtxl_base_settings(settings: TESettings, *, for_ais: bool = False) -> dict
     return base
 
 
+_OPENCL_PATCHED = False
+
+
+def _patch_opencl_scalar_return() -> None:
+    """Make IDTxl's OpenCL estimators honor the JIDT scalar contract.
+
+    OpenCLKraskovCMI/MI.estimate() returns a (n_chunks,) array; for n_chunks=1
+    that's a 1-element array, whereas the JIDT estimators return a Python
+    scalar. IDTxl assumes the scalar form — e.g. `links[i] = estimate(...)` in
+    network_analysis._calculate_single_link — and numpy 2.x refuses to assign a
+    1-element array into a scalar slot ("setting an array element with a
+    sequence"), so the final single-link TE crashes whenever a source lag is
+    selected. Coerce only the single averaged value (size==1); multi-chunk
+    surrogate batches (size==n_perm) and local-value/return_counts paths are
+    left untouched. No-op when pyopencl/the estimators aren't importable."""
+    global _OPENCL_PATCHED
+    if _OPENCL_PATCHED:
+        return
+    try:
+        from idtxl import estimators_opencl as ocl
+    except Exception:
+        return
+    for name in ("OpenCLKraskovCMI", "OpenCLKraskovMI"):
+        cls = getattr(ocl, name, None)
+        if cls is None or getattr(cls, "_te_scalar_patched", False):
+            continue
+        orig = cls.estimate
+
+        def estimate(self, *args, _orig=orig, **kwargs):
+            out = _orig(self, *args, **kwargs)
+            if (isinstance(out, np.ndarray) and out.size == 1
+                    and not self.settings.get("local_values", False)
+                    and not self.settings.get("return_counts", False)):
+                return float(out.reshape(-1)[0])
+            return out
+
+        cls.estimate = estimate
+        cls._te_scalar_patched = True
+    _OPENCL_PATCHED = True
+
+
 def _apply_estimator(s: dict, estimator: str, settings: TESettings) -> dict:
     """Set the CMI estimator + its estimator-specific keys, in place.
 
@@ -192,6 +233,7 @@ def _apply_estimator(s: dict, estimator: str, settings: TESettings) -> dict:
     if estimator.startswith("OpenCL"):
         s["kraskov_k"] = int(settings.kraskov_k)
         s["gpuid"] = int(settings.gpuid)
+        _patch_opencl_scalar_return()
     return s
 
 
