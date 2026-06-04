@@ -74,6 +74,13 @@ class TESettings:
     # 2026-05-20 after the slow-drift physics correction (see report §6.3).
     max_lag: int = 150                  # = 30 s window at 5 Hz
     min_lag: int = 1
+    # Embedding candidate spacing (IDTxl `tau`/`tau_sources`/`tau_target`).
+    # tau=1 considers every lag 1..max_lag (default, PLAN-canonical). tau>1
+    # thins the candidate grid — tau=5 keeps the same max_lag window but cuts
+    # 150 candidates to ~30, the main lever against the serial greedy search.
+    # Changes the embedding, hence the AIS/TE values: validate against the
+    # tau=1 baseline before trusting a sweep. Must satisfy 0 < tau <= max_lag.
+    tau: int = 1
     n_perm: int = 200
     alpha: float = 0.05
     perm_type: str = "circular"         # 2026-05-15 reconciliation
@@ -164,10 +171,13 @@ def _idtxl_base_settings(settings: TESettings, *, for_ais: bool = False) -> dict
     }
     if for_ais:
         base["max_lag"] = settings.max_lag
+        base["tau"] = settings.tau
     else:
         base["max_lag_sources"] = settings.max_lag
         base["min_lag_sources"] = settings.min_lag
         base["max_lag_target"] = settings.max_lag
+        base["tau_sources"] = settings.tau
+        base["tau_target"] = settings.tau
     return base
 
 
@@ -600,6 +610,12 @@ def main() -> int:
                         help="Embedding window in samples (at decimated rate). "
                              "Default 150 = 30 s at 5 Hz, covers one slow-drift cycle.")
     parser.add_argument("--n-perm", type=int, default=200)
+    parser.add_argument("--tau", type=int, default=1,
+                        help="Embedding candidate spacing (1 = every lag). "
+                             "tau=5 keeps the max-lag window but thins ~150 "
+                             "candidates to ~30 — the main per-task speedup. "
+                             "Changes AIS/TE values; validate vs tau=1 first. "
+                             "Must be 0 < tau <= max_lag.")
     parser.add_argument("--gpu", action="store_true",
                         help="Use the OpenCLKraskovCMI GPU estimator for KSG "
                              "(needs pyopencl + an OpenCL driver). Granger stays "
@@ -631,6 +647,7 @@ def main() -> int:
         decimate_target_hz=args.decimate_target_hz,
         transient_drop_s=args.transient_drop_s,
         max_lag=args.max_lag,
+        tau=args.tau,
         n_perm=50 if args.smoke else args.n_perm,
         ksg_estimator="OpenCLKraskovCMI" if args.gpu else "JidtKraskovCMI",
         gpuid=gpu_ids[0],
