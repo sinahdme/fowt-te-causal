@@ -24,8 +24,11 @@ import pandas as pd
 
 
 def _ais(df: pd.DataFrame) -> pd.DataFrame:
-    """Per-(case,target) AIS denominator (repeated across rows -> dedupe)."""
-    return (df[["case", "target", "ais_nats"]]
+    """Per-target AIS denominator (repeated across rows -> dedupe). `case` is
+    intentionally dropped: the two files being compared are single-case runs
+    whose case IDs differ (they come from different input paths), so we join on
+    target/edge, not case."""
+    return (df[["target", "ais_nats"]]
             .dropna(subset=["ais_nats"])
             .drop_duplicates())
 
@@ -49,7 +52,7 @@ def main() -> int:
     # ---- AIS denominators ----
     a = (_ais(b).rename(columns={"ais_nats": "ais_base"})
          .merge(_ais(c).rename(columns={"ais_nats": "ais_cmp"}),
-                on=["case", "target"], how="outer"))
+                on=["target"], how="outer"))
     with np.errstate(divide="ignore", invalid="ignore"):
         a["pct"] = 100 * (a["ais_cmp"] - a["ais_base"]) / a["ais_base"].abs()
     print(f"\n=== AIS denominator:  {blab}  vs  {clab} ===")
@@ -61,10 +64,10 @@ def main() -> int:
         print(f"{r['target']:<12}{r['ais_base']:>10.4f}{r['ais_cmp']:>10.4f}{pcts:>8}")
 
     # ---- TE edges ----
-    cols = ["case", "source", "target", "te_nats", "p_value", "significant"]
+    cols = ["source", "target", "te_nats", "p_value", "significant"]
     m = (b[b["method"] == args.method][cols]
          .merge(c[c["method"] == args.method][cols],
-                on=["case", "source", "target"],
+                on=["source", "target"],
                 suffixes=("_base", "_cmp"), how="outer"))
     m["dTE"] = m["te_nats_cmp"] - m["te_nats_base"]
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -104,9 +107,10 @@ def main() -> int:
         print(f"VERDICT: '{clab}' reproduces every baseline-significant edge "
               f"within tolerance -- tau is faithful; use it for production.")
     elif total_sig:
-        print(f"VERDICT: {total_sig - preserved} significant edge(s) shifted "
-              f">{int(args.tol*100)}% or flipped -- inspect before trusting; "
-              f"consider a smaller tau.")
+        print(f"VERDICT: {total_sig - preserved} of {total_sig} baseline-"
+              f"significant edge(s) shifted >{int(args.tol*100)}% or flipped "
+              f"between the two runs -- the edge set is NOT stable across the "
+              f"change; read the per-edge rows rather than trusting either alone.")
     else:
         print("VERDICT: no significant edges in the baseline to check.")
     return 0
