@@ -53,6 +53,27 @@ def band_fractions(x: np.ndarray, fs: float, low_hz: float,
     return low / total, coh / total, high / total, total
 
 
+def coh_notched(x: np.ndarray, fs: float, coh_lo: float, coh_hi: float,
+                notch_freqs, notch_bw: float, nperseg: int):
+    """Within the coherence band, split variance into rotor-line content
+    (within +/- notch_bw of any nP harmonic) and wave-only content (the rest).
+    Returns (coh_frac, rotor_frac, wave_frac) as fractions of TOTAL variance."""
+    from scipy.signal import welch
+    nperseg = min(nperseg, len(x))
+    f, pxx = welch(x, fs=fs, nperseg=nperseg)
+    df = f[1] - f[0]
+    total = float(np.sum(pxx) * df)
+    if total == 0:
+        return 0.0, 0.0, 0.0
+    in_coh = (f >= coh_lo) & (f <= coh_hi)
+    rotor_mask = np.zeros_like(f, dtype=bool)
+    for nf in notch_freqs:
+        rotor_mask |= np.abs(f - nf) <= notch_bw
+    coh = float(np.sum(pxx[in_coh]) * df)
+    rotor = float(np.sum(pxx[in_coh & rotor_mask]) * df)
+    return coh / total, rotor / total, (coh - rotor) / total
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -72,12 +93,35 @@ def main() -> int:
     ap.add_argument("--threshold", type=float, default=0.10,
                     help="Coherence-band fraction below which a load is "
                          "'untouched' by wind-wave coupling (default 0.10).")
+    ap.add_argument("--notch-1p", action="store_true",
+                    help="Split the coherence band into rotor-line (nP harmonics, "
+                         "wind/rotor-driven) vs WAVE-ONLY content. 1P is read from "
+                         "the mean RotSpeed in the file; verdict uses the wave-only %.")
+    ap.add_argument("--rotor-harmonics", default="1,3,6",
+                    help="nP harmonics to notch when --notch-1p (default 1,3,6).")
+    ap.add_argument("--notch-bw", type=float, default=0.01,
+                    help="Half-width (Hz) of each nP notch (default 0.01; widen "
+                         "if rotor speed varies, e.g. below rated).")
     args = ap.parse_args()
 
     settings = TESettings(decimate_target_hz=args.decimate_target_hz,
                           transient_drop_s=args.transient_drop_s)
     df = load_outb(args.input)
     dt_in = float(np.median(np.diff(df[find_time_column(df)].to_numpy())))
+
+    # 1P / nP harmonics from mean rotor speed, if notching requested.
+    notch_freqs: list[float] = []
+    p1 = None
+    if args.notch_1p:
+        try:
+            rot = df[find_channel(df, "RotSpeed")].to_numpy()  # rpm
+            p1 = float(np.mean(rot)) / 60.0  # Hz
+            harmonics = [int(h) for h in args.rotor_harmonics.split(",") if h.strip()]
+            notch_freqs = [n * p1 for n in harmonics
+                           if args.coh_lo <= n * p1 <= args.coh_hi]
+        except KeyError:
+            print("  (no RotSpeed channel -> cannot notch 1P; running un-notched)")
+            args.notch_1p = False
 
     rows = []
     fs_out = None
@@ -90,33 +134,52 @@ def main() -> int:
         fs_out = 1.0 / dt_out
         fl, fc, fh, var = band_fractions(clean, fs_out, args.low_hz,
                                          args.coh_lo, args.coh_hi, args.nperseg)
-        rows.append((name, fl, fc, fh, var))
+        rotor = wave = None
+        if args.notch_1p:
+            _, rotor, wave = coh_notched(clean, fs_out, args.coh_lo, args.coh_hi,
+                                         notch_freqs, args.notch_bw, args.nperseg)
+        rows.append((name, fl, fc, fh, var, rotor, wave))
 
     print(f"\n{args.input.name}  @ {fs_out:.2f} Hz")
     print(f"bands: low < {args.low_hz} Hz | coherence {args.coh_lo}-{args.coh_hi} Hz | "
-          f"high > {args.coh_hi} Hz\n")
-    hdr = f"{'channel':<11}{'low%':>8}{'COH%':>8}{'high%':>8}"
+          f"high > {args.coh_hi} Hz")
+    if args.notch_1p:
+        print(f"1P = {p1:.3f} Hz (mean RotSpeed); notching nP at "
+              f"{[round(x, 3) for x in notch_freqs]} +/- {args.notch_bw} Hz "
+              f"(COH% = rotor% + WAVE%)")
+        hdr = (f"{'channel':<11}{'low%':>8}{'COH%':>8}{'rotor%':>8}"
+               f"{'WAVE%':>8}{'high%':>8}")
+    else:
+        hdr = f"{'channel':<11}{'low%':>8}{'COH%':>8}{'high%':>8}"
+    print()
     print(hdr)
     print("-" * len(hdr))
-    for name, fl, fc, fh, _ in rows:
-        print(f"{name:<11}{100*fl:>8.1f}{100*fc:>8.1f}{100*fh:>8.1f}")
+    for name, fl, fc, fh, _, rotor, wave in rows:
+        if args.notch_1p:
+            print(f"{name:<11}{100*fl:>8.1f}{100*fc:>8.1f}{100*rotor:>8.1f}"
+                  f"{100*wave:>8.1f}{100*fh:>8.1f}")
+        else:
+            print(f"{name:<11}{100*fl:>8.1f}{100*fc:>8.1f}{100*fh:>8.1f}")
 
+    # Verdict uses the WAVE-ONLY fraction when notching, else the raw coherence band.
     design = [d.strip() for d in args.design_loads.split(",") if d.strip()]
-    flagged = [(n, fc) for (n, _, fc, _, _) in rows
-               if n in design and fc >= args.threshold]
-    print(f"\nDesign-driving loads with >= {int(args.threshold*100)}% variance in the "
-          f"coherence band:")
+    metric_name = "wave-only" if args.notch_1p else "coherence-band"
+    def metric(r):  # r = (name, fl, fc, fh, var, rotor, wave)
+        return r[6] if args.notch_1p else r[2]
+    flagged = [(r[0], metric(r)) for r in rows
+               if r[0] in design and metric(r) >= args.threshold]
+    print(f"\nDesign-driving loads with >= {int(args.threshold*100)}% {metric_name} variance:")
     if flagged:
-        for n, fc in sorted(flagged, key=lambda t: -t[1]):
-            print(f"  {n:<11} {100*fc:.1f}%  <- wind-wave coupling COULD affect this")
-        print("\nVERDICT: at least one design-driving load has meaningful coherence-band\n"
+        for n, m in sorted(flagged, key=lambda t: -t[1]):
+            print(f"  {n:<11} {100*m:.1f}%  <- wind-wave coupling COULD affect this")
+        print(f"\nVERDICT: at least one design-driving load has meaningful {metric_name}\n"
               "content -> the wind-wave thread is NOT a pre-determined null; a pilot is\n"
               "worth doing (focus on the flagged channel(s)).")
     else:
         print("  (none)")
-        print(f"\nVERDICT: every design-driving load has < {int(args.threshold*100)}% of its\n"
-              "variance in the coherence band -> wind-wave coupling cannot rewrite their\n"
-              "attribution. The thread is a PRE-DETERMINED NULL -> demote/drop it.")
+        print(f"\nVERDICT: every design-driving load has < {int(args.threshold*100)}% "
+              f"{metric_name}\nvariance -> wind-wave coupling cannot rewrite their "
+              "attribution. The thread is a\nPRE-DETERMINED NULL -> demote/drop it.")
     return 0
 
 
