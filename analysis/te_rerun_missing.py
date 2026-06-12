@@ -236,6 +236,11 @@ def main() -> int:
                          "Reran rows are tagged with this tau in the parquet.")
     ap.add_argument("--max-parallel", type=int, default=4,
                     help="how many rerun jobs to run at once (round-robined across --gpus)")
+    ap.add_argument("--force-targets", type=str, default="",
+                    help="comma-separated targets to recompute ENTIRELY at --tau, "
+                         "even if already done (e.g. PtfmPitch,PtfmHeave). Their "
+                         "salvaged rows are dropped so the target ends up uniform "
+                         "in tau — for the slow-drift channels that needed tau=5.")
     ap.add_argument("--timeout", type=int, default=10800, help="per-job wall-clock cap (s)")
     args = ap.parse_args()
 
@@ -257,7 +262,12 @@ def main() -> int:
     # 2. prepare arrays + figure out what is missing
     cached, fs_out = build_cache(args.outb, settings)
     present = set(cached)
-    missing = [j for j in expected_jobs(settings, present) if j not in done]
+    force = {t.strip() for t in args.force_targets.split(",") if t.strip()}
+    if force:
+        print(f"[force] recomputing all edges for {sorted(force)} at tau={settings.tau}",
+              flush=True)
+    missing = [j for j in expected_jobs(settings, present)
+               if (j not in done) or (j[2] in force)]
     print(f"[missing] {len(missing)} job(s) to rerun:", flush=True)
     for kind, src, tgt in missing:
         print(f"    {kind:14s} {src or '-':>10} -> {tgt}", flush=True)
@@ -277,9 +287,11 @@ def main() -> int:
     # 4. assemble final long-form table -------------------------------------
     rows = []
 
-    # 4a. salvaged TE rows
+    # 4a. salvaged TE rows (drop force-target rows — they are recomputed at --tau)
     for r in te_records:
         kind, src, tgt = r["kind"], r["source"], r["target"]
+        if tgt in force:
+            continue
         ais = ais_table.get(tgt, float("nan"))
         if kind == "bivariate_ksg":
             method = "bivariate_te_ksg"
