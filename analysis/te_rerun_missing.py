@@ -60,33 +60,39 @@ _RE_AIS = re.compile(
 # ---------------------------------------------------------------------------
 # 1. parse the salvage log
 # ---------------------------------------------------------------------------
-def parse_log(log_path: Path):
-    """Return (done_set, te_records, ais_table).
+def parse_logs(log_paths):
+    """Union the [done jobs across one or more logs. Returns (done_set,
+    te_records, ais_table).
 
-    done_set    : set of (kind, source|None, target) already finished
-    te_records  : list of dicts for bivariate_ksg / granger / conditional
-    ais_table   : {target: ais_nats}
+    NaN TE lines (TE=+nan) and `!! TIMEOUT` lines never match the regexes, so a
+    failed/terminated job stays 'missing' and gets rerun — exactly what we want
+    when harvesting a partial rerun log alongside the original run.
     """
     done, te_records, ais_table = set(), [], {}
-    for line in log_path.read_text(errors="replace").splitlines():
-        if "[done" not in line:
+    for log_path in log_paths:
+        lp = Path(log_path)
+        if not lp.exists():
+            print(f"  (log {lp} not found — skipped)", flush=True)
             continue
-        m = _RE_AIS.search(line)
-        if m:
-            tgt, ais, p = m.group(1), float(m.group(2)), float(m.group(3))
-            done.add(("ais", None, tgt))
-            ais_table.setdefault(tgt, ais)          # first wins; ignores the dup
-            continue
-        m = _RE_TE.search(line)
-        if m:
-            kind, src, tgt, te, p = (m.group(1), m.group(2), m.group(3),
-                                     float(m.group(4)), float(m.group(5)))
-            key = (kind, src, tgt)
-            if key in done:                          # skip duplicate log lines
+        for line in lp.read_text(errors="replace").splitlines():
+            if "[done" not in line:
                 continue
-            done.add(key)
-            te_records.append({"kind": kind, "source": src, "target": tgt,
-                               "te_nats": te, "p_value": p})
+            m = _RE_AIS.search(line)
+            if m:
+                tgt, ais = m.group(1), float(m.group(2))
+                done.add(("ais", None, tgt))
+                ais_table.setdefault(tgt, ais)       # first valid wins; ignores dups
+                continue
+            m = _RE_TE.search(line)
+            if m:
+                kind, src, tgt = m.group(1), m.group(2), m.group(3)
+                key = (kind, src, tgt)
+                if key in done:                       # skip duplicate log lines
+                    continue
+                done.add(key)
+                te_records.append({"kind": kind, "source": src, "target": tgt,
+                                   "te_nats": float(m.group(4)),
+                                   "p_value": float(m.group(5))})
     return done, te_records, ais_table
 
 
@@ -122,23 +128,53 @@ def _child(job, settings, q):
     q.put(_run_heavy_job(job, settings))
 
 
-def run_with_timeout(job, settings, timeout_s):
-    """Run one heavy job in a spawned child; terminate if it exceeds timeout_s."""
+def _fail_row(job, t0, flag):
+    return {"kind": job["kind"], "source": job.get("source"),
+            "target": job["target"], "other_env": job.get("other_env"),
+            "ok": False, "result": {}, "runtime_s": time.time() - t0, flag: True}
+
+
+def run_jobs_watchdog(jobs, settings, timeout_s, gpu_ids, max_parallel):
+    """Run jobs concurrently (up to max_parallel at once), each in its own
+    spawned child pinned to a round-robin GPU. Any child that exceeds
+    timeout_s is terminated and flagged — a re-hang can't stall the others."""
     ctx = mp.get_context("spawn")
-    q = ctx.Queue()
-    p = ctx.Process(target=_child, args=(job, settings, q))
-    t0 = time.time()
-    p.start()
-    p.join(timeout_s)
-    if p.is_alive():
-        p.terminate(); p.join()
-        print(f"  !! TIMEOUT after {timeout_s}s: {job['kind']} "
-              f"{job.get('source')}->{job['target']} (terminated)", flush=True)
-        return {"kind": job["kind"], "source": job.get("source"),
-                "target": job["target"], "other_env": job.get("other_env"),
-                "ok": False, "result": {}, "runtime_s": time.time() - t0,
-                "timeout": True}
-    return q.get()
+    pending = list(enumerate(jobs))
+    running, results = [], []
+
+    def launch(idx, job):
+        job = dict(job)
+        job["gpuid"] = gpu_ids[idx % len(gpu_ids)]
+        q = ctx.Queue()
+        p = ctx.Process(target=_child, args=(job, settings, q))
+        p.start()
+        print(f"[launch] {job['kind']:13s} {(job.get('source') or '-'):>10} -> "
+              f"{job['target']:<10} gpu{job['gpuid']} pid={p.pid}", flush=True)
+        return {"job": job, "proc": p, "queue": q, "t0": time.time()}
+
+    while pending or running:
+        while pending and len(running) < max_parallel:
+            running.append(launch(*pending.pop(0)))
+        time.sleep(5)
+        still = []
+        for d in running:
+            p, job = d["proc"], d["job"]
+            if not p.is_alive():
+                try:
+                    results.append(d["queue"].get(timeout=10))
+                except Exception:
+                    print(f"  !! CRASH (no result): {job['kind']} "
+                          f"{job.get('source')}->{job['target']}", flush=True)
+                    results.append(_fail_row(job, d["t0"], "crashed"))
+            elif time.time() - d["t0"] > timeout_s:
+                p.terminate(); p.join()
+                print(f"  !! TIMEOUT after {timeout_s}s: {job['kind']} "
+                      f"{job.get('source')}->{job['target']} (terminated)", flush=True)
+                results.append(_fail_row(job, d["t0"], "timeout"))
+            else:
+                still.append(d)
+        running = still
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -184,14 +220,22 @@ def make_job(kind, src, tgt, cached, settings, gpuid):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--outb", type=Path, default=Path("/home/lams/Downloads/dlca_v08ms_s00.outb"))
-    ap.add_argument("--log", type=Path, default=Path("/tmp/te_v08_full.log"))
+    ap.add_argument("--log", type=Path, nargs="+",
+                    default=[Path("/tmp/te_v08_full.log")],
+                    help="one or more logs to harvest [done lines from (later "
+                         "reruns can append /tmp/rerun.log here)")
     ap.add_argument("--out", type=Path, default=Path("/tmp/te_v08_full.parquet"))
     ap.add_argument("--gpu", action="store_true", help="OpenCL KSG (default if neither flag given)")
     ap.add_argument("--cpu", action="store_true", help="force JidtKraskovCMI (no OpenCL hang)")
     ap.add_argument("--gpus", type=str, default="0,1")
     ap.add_argument("--max-lag", type=int, default=150)
     ap.add_argument("--n-perm", type=int, default=200)
-    ap.add_argument("--tau", type=int, default=1)
+    ap.add_argument("--tau", type=int, default=1,
+                    help="embedding candidate spacing for the RERUN jobs; tau=5 "
+                         "thins ~150 lags to ~30 (untangles the slow-drift channels). "
+                         "Reran rows are tagged with this tau in the parquet.")
+    ap.add_argument("--max-parallel", type=int, default=4,
+                    help="how many rerun jobs to run at once (round-robined across --gpus)")
     ap.add_argument("--timeout", type=int, default=10800, help="per-job wall-clock cap (s)")
     args = ap.parse_args()
 
@@ -205,9 +249,9 @@ def main() -> int:
     )
     case_id = args.outb.stem
 
-    # 1. salvage
-    done, te_records, ais_table = parse_log(args.log)
-    print(f"[salvage] {len(done)} unique jobs in log "
+    # 1. salvage (union across every log given)
+    done, te_records, ais_table = parse_logs(args.log)
+    print(f"[salvage] {len(done)} unique jobs across {len(args.log)} log(s) "
           f"({len(te_records)} TE rows, {len(ais_table)} AIS)", flush=True)
 
     # 2. prepare arrays + figure out what is missing
@@ -218,17 +262,17 @@ def main() -> int:
     for kind, src, tgt in missing:
         print(f"    {kind:14s} {src or '-':>10} -> {tgt}", flush=True)
 
-    # 3. rerun missing jobs, one at a time, with the watchdog
-    rerun_results = []
-    for i, (kind, src, tgt) in enumerate(missing):
-        gpuid = gpu_ids[i % len(gpu_ids)]
-        job = make_job(kind, src, tgt, cached, settings, gpuid)
-        print(f"[rerun {i+1}/{len(missing)}] {kind} {src or '-'}->{tgt} "
-              f"on gpu{gpuid} ({settings.ksg_estimator})", flush=True)
-        res = run_with_timeout(job, settings, args.timeout)
-        rerun_results.append(res)
+    # 3. rerun missing jobs concurrently, each watchdog'd
+    missing_jobs = [make_job(kind, src, tgt, cached, settings, 0)
+                    for kind, src, tgt in missing]
+    print(f"[rerun] {len(missing_jobs)} job(s), up to {args.max_parallel} at once, "
+          f"tau={settings.tau}, {settings.ksg_estimator}, timeout={args.timeout}s",
+          flush=True)
+    rerun_results = run_jobs_watchdog(missing_jobs, settings, args.timeout,
+                                      gpu_ids, args.max_parallel)
+    for res in rerun_results:
         if res.get("kind") == "ais" and res.get("ok"):
-            ais_table[tgt] = res["result"].get("ais_nats", float("nan"))
+            ais_table[res["target"]] = res["result"].get("ais_nats", float("nan"))
 
     # 4. assemble final long-form table -------------------------------------
     rows = []
@@ -252,7 +296,8 @@ def main() -> int:
                      "method": method, "te_nats": r["te_nats"],
                      "p_value": r["p_value"],
                      "significant": bool(r["p_value"] < settings.alpha and r["te_nats"] > 0),
-                     "ais_nats": ais, "te_frac": frac, "source_origin": "salvaged"})
+                     "ais_nats": ais, "te_frac": frac,
+                     "tau": 1, "source_origin": "salvaged"})
 
     # 4b. reran TE rows
     for res in rerun_results:
@@ -269,7 +314,8 @@ def main() -> int:
             frac = _te_frac(rr["te_nats"], ais, True)
         rows.append({"case": case_id, "source": src, "target": tgt,
                      "method": method, **rr, "ais_nats": ais, "te_frac": frac,
-                     "runtime_s": res.get("runtime_s"), "source_origin": "reran"})
+                     "runtime_s": res.get("runtime_s"),
+                     "tau": settings.tau, "source_origin": "reran"})
 
     # 4c. coherence baseline (cheap scipy — recompute fresh for every pair)
     for src in settings.env_sources:
@@ -289,7 +335,7 @@ def main() -> int:
                              "ais_nats": ais_table.get(tgt, float("nan")),
                              "te_frac": float("nan"),
                              "gamma2_peak_hz": coh["gamma2_peak_hz"],
-                             "source_origin": "reran"})
+                             "tau": 1, "source_origin": "reran"})
             except Exception as e:
                 print(f"  !! coherence {src}->{tgt}: {e}", flush=True)
 
