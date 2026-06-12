@@ -25,7 +25,7 @@ if [ "${#FILES[@]}" -eq 0 ]; then echo "[campaign] nothing to run — fix CASE_D
 python -u analysis/te_pipeline.py "${FILES[@]}" \
   -o "$OUT" \
   --graph-out reports/te_campaign_graph.pkl \
-  --gpu --gpus 0,1 --workers 6 \
+  --gpu --gpus 0,1 --workers 4 \
   --slow-drift-tau 5 \
   --job-timeout 9000
 
