@@ -542,6 +542,7 @@ def per_case_pipeline(
     outb_path: Path,
     settings: TESettings,
     *,
+    case_id: str | None = None,
     do_conditional: bool = True,
     do_granger: bool = True,
     do_coherence: bool = True,
@@ -582,7 +583,10 @@ def per_case_pipeline(
     print(f"  cached {len(cached)} channels @ {fs_out:.2f} Hz, N={n_post}", flush=True)
 
     rows: list[dict] = []
-    case_id = outb_path.parent.parent.name  # sims/<case_id>/IEA-15-...-UMaineSemi/foo.outb
+    # Default to the .outb filename stem (distinct per case, e.g. dlca_v08ms_s00),
+    # which is robust when many cases live in one directory; callers can override.
+    if case_id is None:
+        case_id = outb_path.stem
 
     # Coherence baseline is cheap scipy (no IDTxl, no GPU): compute inline.
     # ais_nats is backfilled once the AIS jobs land below.
@@ -829,11 +833,20 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
     dfs: list[pd.DataFrame] = []
+    seen_ids: dict[str, int] = {}
     for i, inp in enumerate(args.inputs, 1):
         print(f"\n=== [{i}/{len(args.inputs)}] {inp} ===", flush=True)
+        # Unique case_id per input (stem; suffix on collision) so a multi-case
+        # parquet keeps cases distinct for cross-case aggregation in build_graph.
+        cid = inp.stem
+        if cid in seen_ids:
+            seen_ids[cid] += 1
+            cid = f"{cid}_{seen_ids[cid]}"
+        else:
+            seen_ids[cid] = 1
         try:
             df = per_case_pipeline(
-                inp, settings,
+                inp, settings, case_id=cid,
                 do_conditional=not args.no_conditional and not args.smoke,
                 do_granger=not args.no_granger and not args.smoke,
                 do_coherence=not args.no_coherence,
