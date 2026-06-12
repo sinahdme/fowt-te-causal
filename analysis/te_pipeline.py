@@ -108,6 +108,20 @@ class TESettings:
     # Optional: limit pairs to enable smoke testing
     env_sources: tuple = DEFAULT_ENV_SOURCES
     responses: tuple = DEFAULT_RESPONSES
+    # Per-target tau override for the slow-drift platform channels. At tau=1 the
+    # greedy multivariate search over max_lag=150 candidates on PtfmPitch/PtfmHeave
+    # hangs the OpenCL KSG kernel (deadlocking the pool) or goes singular in the
+    # Gaussian estimator (TE=nan). slow_drift_tau=5 thins ~150 lags to ~30, which
+    # those channels need; 0 disables the override (all targets use `tau`).
+    # See concepts/slow-drift-tau or memory project_slowdrift_tau5_fix.
+    slow_drift_targets: tuple = ("PtfmPitch", "PtfmHeave")
+    slow_drift_tau: int = 0
+    # Per-job wall-clock cap (s) for the worker pool. A single hung OpenCL kernel
+    # must not deadlock the whole sweep again: when >0, jobs run in a watchdog'd
+    # spawn pool and any job exceeding this is terminated and flagged ok=False
+    # (its row is simply dropped). 0 keeps the original ProcessPoolExecutor path.
+    # 9000 s ≈ 2.5 h sits well above the ~1.7 h legit conditional max.
+    job_timeout_s: float = 9000.0
 
 
 # ----------------------------------------------------------------------------
@@ -422,6 +436,10 @@ def _run_heavy_job(job: dict, settings: "TESettings") -> dict:
     whole sweep — mirrors the per-task try/except of the serial version.
     """
     s = replace(settings, gpuid=job["gpuid"])
+    # Slow-drift platform channels need a thinned candidate grid (tau=5) or the
+    # greedy search hangs / goes singular. Applied per target so the rest stay tau=1.
+    if settings.slow_drift_tau and job.get("target") in settings.slow_drift_targets:
+        s = replace(s, tau=settings.slow_drift_tau)
     kind = job["kind"]
     arr = job["arrays"]
     t0 = time.time()
@@ -457,7 +475,63 @@ def _run_heavy_job(job: dict, settings: "TESettings") -> dict:
         print(f"  !! [{label}] {err}", file=sys.stderr, flush=True)
     return {"kind": kind, "source": job.get("source"), "target": job["target"],
             "other_env": job.get("other_env"), "result": r, "ok": ok,
-            "runtime_s": dt}
+            "runtime_s": dt, "tau_used": s.tau}
+
+
+def _pool_child(job: dict, settings: "TESettings", q) -> None:
+    """Spawn-pool entry point: run one job and put its result on the queue."""
+    q.put(_run_heavy_job(job, settings))
+
+
+def _execute_watchdog(jobs: list, settings: "TESettings",
+                      n_workers: int, timeout_s: float) -> list:
+    """Run jobs up to n_workers at a time, each in its own spawned child pinned
+    to its pre-assigned gpuid. Any child exceeding timeout_s is terminated and
+    flagged ok=False — so one hung OpenCL kernel can't deadlock the whole sweep.
+    Returns the same list-of-result-dicts shape as the ProcessPoolExecutor path."""
+    ctx = mp.get_context("spawn")
+    pending, running, results = list(jobs), [], []
+
+    def launch(job):
+        q = ctx.Queue()
+        p = ctx.Process(target=_pool_child, args=(job, settings, q))
+        p.start()
+        return {"job": job, "proc": p, "queue": q, "t0": time.time()}
+
+    while pending or running:
+        while pending and len(running) < n_workers:
+            running.append(launch(pending.pop(0)))
+        time.sleep(5)
+        still = []
+        for d in running:
+            p, job = d["proc"], d["job"]
+            if not p.is_alive():
+                try:
+                    results.append(d["queue"].get(timeout=10))
+                except Exception:
+                    print(f"  !! [{job['kind']} {job.get('source')}->{job['target']}] "
+                          f"crashed with no result", file=sys.stderr, flush=True)
+                    results.append({"kind": job["kind"], "source": job.get("source"),
+                                    "target": job["target"],
+                                    "other_env": job.get("other_env"),
+                                    "result": {}, "ok": False,
+                                    "runtime_s": time.time() - d["t0"],
+                                    "tau_used": settings.tau})
+            elif time.time() - d["t0"] > timeout_s:
+                p.terminate(); p.join()
+                print(f"  !! TIMEOUT {timeout_s:.0f}s: {job['kind']} "
+                      f"{job.get('source')}->{job['target']} (terminated)",
+                      file=sys.stderr, flush=True)
+                results.append({"kind": job["kind"], "source": job.get("source"),
+                                "target": job["target"],
+                                "other_env": job.get("other_env"),
+                                "result": {}, "ok": False,
+                                "runtime_s": time.time() - d["t0"],
+                                "tau_used": settings.tau})
+            else:
+                still.append(d)
+        running = still
+    return results
 
 
 # ----------------------------------------------------------------------------
@@ -578,9 +652,13 @@ def per_case_pipeline(
     print(f"  {len(jobs)} IDTxl jobs | {n_workers} worker(s) | gpus={gpu_ids}",
           flush=True)
     results: list[dict] = []
-    if n_workers == 1:
+    if n_workers == 1 and settings.job_timeout_s <= 0:
         for job in jobs:
             results.append(_run_heavy_job(job, settings))
+    elif settings.job_timeout_s > 0:
+        # Watchdog pool: a hung OpenCL kernel is terminated, not fatal.
+        print(f"  (per-job timeout {settings.job_timeout_s:.0f}s)", flush=True)
+        results = _execute_watchdog(jobs, settings, n_workers, settings.job_timeout_s)
     else:
         ctx = mp.get_context("spawn")
         with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as ex:
@@ -604,20 +682,21 @@ def per_case_pipeline(
         r = res["result"]
         src_name, resp_name = res["source"], res["target"]
         ais_val = ais_table.get(resp_name, float("nan"))
+        tau_used = res.get("tau_used", settings.tau)
         if res["kind"] == "bivariate_ksg":
             rows.append({
                 "case": case_id, "source": src_name, "target": resp_name,
                 "method": "bivariate_te_ksg", **r,
                 "ais_nats": ais_val,
                 "te_frac": _te_frac(r["te_nats"], ais_val, do_ais),
-                "runtime_s": res["runtime_s"],
+                "runtime_s": res["runtime_s"], "tau": tau_used,
             })
         elif res["kind"] == "granger":
             rows.append({
                 "case": case_id, "source": src_name, "target": resp_name,
                 "method": "bivariate_granger", **r,
                 "ais_nats": ais_val, "te_frac": float("nan"),
-                "runtime_s": res["runtime_s"],
+                "runtime_s": res["runtime_s"], "tau": tau_used,
             })
         elif res["kind"] == "conditional":
             rows.append({
@@ -625,7 +704,7 @@ def per_case_pipeline(
                 "method": f"conditional_te_ksg|{res['other_env']}", **r,
                 "ais_nats": ais_val,
                 "te_frac": _te_frac(r["te_nats"], ais_val, do_ais),
-                "runtime_s": res["runtime_s"],
+                "runtime_s": res["runtime_s"], "tau": tau_used,
             })
 
     print(f"  case done in {time.time()-t_load0:.0f}s, {len(rows)} rows", flush=True)
@@ -703,6 +782,19 @@ def main() -> int:
     parser.add_argument("--gpus", type=str, default=None,
                         help="Comma-separated OpenCL device IDs to round-robin "
                              "KSG jobs across, e.g. '0,1'. Defaults to --gpuid.")
+    parser.add_argument("--slow-drift-tau", type=int, default=0,
+                        help="Per-target tau override for the slow-drift platform "
+                             "channels (--slow-drift-targets). 0 = off. Use 5: at "
+                             "tau=1 those channels hang the OpenCL KSG kernel or go "
+                             "singular (TE=nan); tau=5 thins ~150 lags to ~30 so they "
+                             "complete. Reran rows carry the per-target tau in output.")
+    parser.add_argument("--slow-drift-targets", type=str, default="PtfmPitch,PtfmHeave",
+                        help="Comma-separated targets that get --slow-drift-tau.")
+    parser.add_argument("--job-timeout", type=float, default=9000.0,
+                        help="Per-job wall-clock cap (s). >0 runs jobs in a watchdog "
+                             "pool that terminates any hung job (so one stuck OpenCL "
+                             "kernel can't deadlock the sweep). 0 = original pool. "
+                             "Default 9000 (~2.5 h) sits above the legit conditional max.")
     parser.add_argument("--no-conditional", action="store_true")
     parser.add_argument("--no-granger", action="store_true")
     parser.add_argument("--no-coherence", action="store_true")
@@ -725,6 +817,10 @@ def main() -> int:
         gpuid=gpu_ids[0],
         n_workers=args.workers,
         gpu_ids=gpu_ids,
+        slow_drift_tau=args.slow_drift_tau,
+        slow_drift_targets=tuple(
+            t.strip() for t in args.slow_drift_targets.split(",") if t.strip()),
+        job_timeout_s=args.job_timeout,
     )
     if args.smoke:
         settings.env_sources = ("Wind1VelX",)
