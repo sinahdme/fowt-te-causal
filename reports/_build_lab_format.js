@@ -1,6 +1,6 @@
 // ============================================================================
 // LAMS / KSNU lab-format rebuild of the Directional-Causality deck.
-// 31 slides, Korean body + English section/figure headings, Malgun Gothic,
+// 32 slides, English body + English section/figure headings, Malgun Gothic,
 // navy #0B2F6D, KSNU + LAMS logos. Mirrors te-conference-talk-v2 content.
 // ============================================================================
 const pptxgen = require("pptxgenjs");
@@ -27,7 +27,7 @@ function chrome(s, sec, en){
   s.background={color:WHITE};
   s.addText(sec,{x:ML,y:0.26,w:0.95,h:0.6,fontFace:F,fontSize:30,bold:true,color:NAVY,valign:"middle",margin:0});
   s.addShape(LINE,{x:ML+0.04,y:0.86,w:0.58,h:0,line:{color:NAVY,width:2.5}});
-  s.addText(en,{x:ML+1.0,y:0.26,w:7.6,h:0.6,fontFace:F,fontSize:23,bold:true,color:INK,valign:"middle",margin:0});
+  s.addText(en,{x:ML+1.0,y:0.26,w:8.4,h:0.6,fontFace:F,fontSize:23,bold:true,color:INK,valign:"middle",margin:0});
   // logos top-right: LAMS then KSNU
   const lh=0.50, kh=0.50, lw=lh*LAMS_AR, kw=kh*KSNU_AR;
   s.addImage({path:LAB+"ksnu.png", x:RIGHT-kw, y:0.30, w:kw, h:kh});
@@ -67,15 +67,13 @@ function fig(s,x,y,w,ar,img,cap){
 function vline(s,x,y,h){ s.addShape(LINE,{x,y,w:0,h,line:{color:LINEG,width:1}}); }
 
 // ---- navy divider / hero ---------------------------------------------------
-function divider(num, en, ko){
+function divider(num, en, sub){
   const s=pres.addSlide(); PAGE+=1;
   s.background={color:NAVY};
   s.addText(num,{x:ML+0.3,y:1.7,w:5,h:1.5,fontFace:F,fontSize:96,bold:true,color:WHITE,margin:0});
   s.addShape(RECT,{x:ML+0.4,y:3.3,w:1.4,h:0.05,fill:{color:"E6A23C"},line:{type:"none"}});
   s.addText(en,{x:ML+0.4,y:3.5,w:11,h:0.9,fontFace:F,fontSize:38,bold:true,color:WHITE,margin:0});
-  if(ko) s.addText(ko,{x:ML+0.42,y:4.5,w:11,h:0.7,fontFace:F,fontSize:18,color:"C8D3E8",margin:0});
-  // small logos bottom-right
-  const kh=0.46,kw=kh*KSNU_AR,lh=0.46,lw=lh*LAMS_AR;
+  if(sub) s.addText(sub,{x:ML+0.42,y:4.5,w:11.5,h:0.7,fontFace:F,fontSize:18,color:"C8D3E8",margin:0});
   s.addText(String(PAGE),{x:RIGHT-0.8,y:7.06,w:0.72,h:0.3,fontFace:F,fontSize:11,color:"9FB0CF",align:"right",margin:0});
   return s;
 }
@@ -85,17 +83,17 @@ function divider(num, en, ko){
 // ============================================================================
 (function(){
   const s=pres.addSlide(); s.background={color:NAVY};
-  s.addText("한국풍력에너지학회 2026 춘계학술대회",{x:ML+0.2,y:0.95,w:11,h:0.4,fontFace:F,fontSize:15,italic:true,bold:true,color:"C8D3E8",margin:0});
-  s.addText("부유식 해상풍력터빈 하중–응답 변수 간\n방향성 인과관계",{x:ML+0.2,y:1.55,w:12.2,h:1.4,fontFace:F,fontSize:33,bold:true,color:WHITE,lineSpacingMultiple:1.08,valign:"top",margin:0});
-  s.addText("시간영역 전달 엔트로피(Transfer Entropy) 기반 분석",{x:ML+0.2,y:2.92,w:12,h:0.7,fontFace:F,fontSize:23,color:"9FB0CF",margin:0});
+  s.addText("KWEA 2026 SPRING CONFERENCE",{x:ML+0.2,y:0.95,w:11,h:0.4,fontFace:F,fontSize:14,italic:true,bold:true,color:"C8D3E8",charSpacing:2,margin:0});
+  s.addText("Directional Causality Between Load and\nResponse Variables of a FOWT",{x:ML+0.2,y:1.55,w:12.2,h:1.4,fontFace:F,fontSize:33,bold:true,color:WHITE,lineSpacingMultiple:1.08,valign:"top",margin:0});
+  s.addText("via Time-Domain Transfer Entropy",{x:ML+0.2,y:2.92,w:12,h:0.7,fontFace:F,fontSize:23,color:"9FB0CF",margin:0});
   s.addText([{text:"2026. 06. 22",options:{bold:true,color:WHITE}},{text:"   |   IEA-15MW · UMaine VolturnUS-S · OpenFAST + IDTxl",options:{color:"9FB0CF"}}],
     {x:ML+0.2,y:3.85,w:12,h:0.4,fontFace:F,fontSize:14.5,margin:0});
   s.addShape(LINE,{x:ML+0.2,y:4.45,w:CW-0.4,h:0,line:{color:"3A5488",width:1}});
   s.addText([
-    {text:"국립군산대학교 자율운항해양시스템연구실(LAMS) · 조선해양공학과\n",options:{bold:true,color:WHITE,breakLine:true,fontSize:14}},
+    {text:"Laboratory of Autonomous Maritime Systems (LAMS) · Dept. of Naval Architecture & Ocean Engineering, Kunsan National University\n",options:{bold:true,color:WHITE,breakLine:true,fontSize:13}},
     {text:"Sina Hadadi",options:{bold:true,color:WHITE}},
-    {text:"   ·   지도교수  노재규",options:{color:"C8D3E8"}}
-  ],{x:ML+0.2,y:4.65,w:11,h:1.0,fontFace:F,fontSize:13.5,lineSpacingMultiple:1.3,valign:"top",margin:0});
+    {text:"   ·   Advisor — Prof. Jackyou Noh",options:{color:"C8D3E8"}}
+  ],{x:ML+0.2,y:4.65,w:11.5,h:1.2,fontFace:F,fontSize:13,lineSpacingMultiple:1.35,valign:"top",margin:0});
   // white logo band at bottom
   s.addShape(RECT,{x:0,y:6.55,w:W,h:0.95,fill:{color:WHITE},line:{type:"none"}});
   const kh=0.55,kw=kh*KSNU_AR,lh=0.55,lw=lh*LAMS_AR;
@@ -109,40 +107,40 @@ function divider(num, en, ko){
 
 // S2 — RL context (reward)
 (function(){
-  const s=pres.addSlide(); chrome(s,"01","Background — RL 맥락");
-  bracket(s,ML,1.25,"설계 최적화를 강화학습으로");
+  const s=pres.addSlide(); chrome(s,"01","Background — RL context");
+  bracket(s,ML,1.25,"Design optimization as reinforcement learning");
   const by=2.15, bw=3.7, bh=1.95, agX=ML, enX=RIGHT-bw;
   s.addShape(RR,{x:agX,y:by,w:bw,h:bh,fill:{color:BANDBG},line:{color:NAVY,width:1.25},rectRadius:0.06});
-  s.addText("에이전트 (Agent)",{x:agX+0.25,y:by+0.18,w:bw-0.5,h:0.3,fontFace:F,fontSize:13,bold:true,color:NAVY,margin:0});
+  s.addText("AGENT",{x:agX+0.25,y:by+0.18,w:bw-0.5,h:0.3,fontFace:F,fontSize:13,bold:true,color:NAVY,charSpacing:1,margin:0});
   bullets(s,agX+0.25,by+0.62,bw-0.5,[
-    [{t:"Actor",b:true},{t:" — 정책 π(a|s)"}],
-    [{t:"Critic",b:true},{t:" — 가치함수 V(s)"}],
-    [{t:"actor–critic · TD-오차 갱신",c:MUTED}]
+    [{t:"Actor",b:true},{t:" — policy π(a|s)"}],
+    [{t:"Critic",b:true},{t:" — value V(s)"}],
+    [{t:"actor–critic · TD-error updates",c:MUTED}]
   ],12.5);
   s.addShape(RR,{x:enX,y:by,w:bw,h:bh,fill:{color:BANDBG},line:{color:NAVY,width:1.25},rectRadius:0.06});
-  s.addText("환경 (Environment)",{x:enX+0.25,y:by+0.18,w:bw-0.5,h:0.3,fontFace:F,fontSize:13,bold:true,color:NAVY,margin:0});
+  s.addText("ENVIRONMENT",{x:enX+0.25,y:by+0.18,w:bw-0.5,h:0.3,fontFace:F,fontSize:13,bold:true,color:NAVY,charSpacing:1,margin:0});
   bullets(s,enX+0.25,by+0.62,bw-0.5,[
-    [{t:"RAFT 연성 시뮬레이터",b:true}],
+    [{t:"RAFT coupled simulator",b:true}],
     [{t:"aero · hydro · servo · moor",c:MUTED}],
-    [{t:"각 설계안을 평가",c:MUTED}]
+    [{t:"evaluates each design",c:MUTED}]
   ],12.5);
   s.addText([{text:"action  ",options:{color:INK}},{text:"aₜ",options:{bold:true}}],{x:agX+bw,y:by+0.25,w:enX-(agX+bw),h:0.3,align:"center",fontFace:F,fontSize:12,margin:0});
   s.addShape(LINE,{x:agX+bw+0.15,y:by+0.7,w:enX-(agX+bw)-0.3,h:0,line:{color:INK,width:1.5,endArrowType:"triangle"}});
   s.addShape(LINE,{x:agX+bw+0.15,y:by+bh-0.55,w:enX-(agX+bw)-0.3,h:0,line:{color:RED,width:2,beginArrowType:"triangle"}});
   s.addText([{text:"state sₜ₊₁    ",options:{color:MUTED}},{text:"reward rₜ₊₁",options:{bold:true,color:RED}}],{x:agX+bw,y:by+bh-0.45,w:enX-(agX+bw),h:0.3,align:"center",fontFace:F,fontSize:12,margin:0});
   s.addShape(LINE,{x:ML,y:4.55,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.7,CW,"보상(reward) rₜ₊₁ — 에이전트가 최대화하는 단 하나의 신호");
+  subhead(s,ML,4.7,CW,"THE REWARD  ·  rₜ₊₁ — the one signal the agent maximizes");
   para(s,ML,5.15,CW,[
-    {t:"보상은 설계 목표(질량 ↓, 공진 회피, 응답 피크 ↓)를 "},
-    {t:"인코딩",b:true,c:RED},
-    {t:"하며, 그 가중치가 어떤 목표가 우선되는지를 결정한다 — 바로 다음 장에서 다루는 문제."}
+    {t:"The reward "},
+    {t:"encodes the design objectives",b:true,c:RED},
+    {t:" (mass ↓, resonance avoidance, peak-response ↓), and its weights decide which objective wins — exactly what we examine next."}
   ],14.5,1.2);
 })();
 
 // S3 — weights motivation
 (function(){
-  const s=pres.addSlide(); chrome(s,"01","Background — 문제 정의");
-  bracket(s,ML,1.25,"왜 이 가중치인가? 수작업에서 데이터 기반으로");
+  const s=pres.addSlide(); chrome(s,"01","Background — the problem");
+  bracket(s,ML,1.25,"Why these weights? From hand-set to data-driven");
   s.addShape(RECT,{x:ML,y:1.95,w:CW,h:0.95,fill:{color:BANDBG},line:{color:LINEG,width:1}});
   s.addText([
     {text:"Reward = ",options:{color:INK}},
@@ -151,64 +149,64 @@ function divider(num, en, ko){
     {text:"X₃",options:{bold:true,color:RED}},{text:"·ΔPitch_peak + ",options:{}},
     {text:"X₄",options:{bold:true,color:RED}},{text:"·ΔHeave_peak",options:{}}
   ],{x:ML,y:1.95,w:CW,h:0.95,fontFace:F,fontSize:20,align:"center",valign:"middle",margin:0});
-  s.addText("가중치 X₁…X₄ 는 현재 RL 하부구조물 설계 최적화에서 수작업으로 설정된다 (비용·출력·제약 우선순위) — 데이터에 근거하지 않음.",
+  s.addText("Weights X₁…X₄ are set by hand in our RL substructure design optimization (cost, power, constraint priority) — not from data.",
     {x:ML,y:3.0,w:CW,h:0.4,fontFace:F,fontSize:11.5,italic:true,color:MUTED,align:"center",margin:0});
   const cy=3.7, lw=5.6, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,cy,2.7);
-  subhead(s,ML,cy,lw,"THE GAP — 무엇이 빠졌나");
+  subhead(s,ML,cy,lw,"THE GAP");
   para(s,ML,cy+0.42,lw,[
-    {t:"가중치는 변수 중요도를 "},{t:"수작업으로",b:true},
-    {t:" 매긴다. 어떤 응답이 가장 중요한지, 각 응답이 환경에 의해 얼마나 강하게 구동되는지에 대한 객관적 근거가 없다."}
+    {t:"Weights rank variable importance "},{t:"by hand",b:true},
+    {t:". No objective basis for which responses matter most, or how strongly each is driven by the environment."}
   ],14.5,2.0);
-  subhead(s,rx,cy,rw,"데이터 기반 근거");
+  subhead(s,rx,cy,rw,"A DATA-DRIVEN BASIS");
   bullets(s,rx,cy+0.42,rw,[
-    [{t:"전달 엔트로피(TE)",b:true,c:NAVY},{t:" — 어떤 환경 구동원이 각 응답을 인과적으로 구동하는가"}],
-    [{t:"Sobol 민감도",b:true,c:NAVY},{t:" — 어떤 설계 변수가 각 응답을 움직이는가"}],
-    [{t:"두 가지를 결합",b:true,c:NAVY},{t:" — 가중치의 데이터 기반 근거"}]
+    [{t:"Transfer entropy (TE)",b:true,c:NAVY},{t:" — which environmental drivers causally drive each response"}],
+    [{t:"Sobol sensitivity",b:true,c:NAVY},{t:" — which design parameters move each response"}],
+    [{t:"Together",b:true,c:NAVY},{t:" — a data-driven basis for the weights"}]
   ],13.5);
 })();
 
 // S4 — association to causation
 (function(){
-  const s=pres.addSlide(); chrome(s,"01","Background — 연관에서 인과로");
+  const s=pres.addSlide(); chrome(s,"01","Background — association to causation");
   bracket(s,ML,1.25,"From association to directed causation");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"상관 / 코히어런스 (Correlation)");
+  subhead(s,ML,y,lw,"Correlation / coherence");
   para(s,ML,y+0.45,lw,[
-    {t:"대칭적·무방향 — 연관성만 정량화. γ²(f) 는 바람과 하중이 한 주파수에서 파워를 공유함을 알려줄 뿐, "},
-    {t:"어느 쪽이 구동하는지는 말하지 못한다.",b:true}
+    {t:"Symmetric and undirected — quantifies association. γ²(f) tells you wind and a load share power at a frequency, "},
+    {t:"not which drives which.",b:true}
   ],14,2.0);
-  subhead(s,rx,y,rw,"전달 엔트로피 (Transfer Entropy)");
+  subhead(s,rx,y,rw,"Transfer entropy");
   para(s,rx,y+0.45,rw,[
-    {t:"방향성·비선형·모델 무가정. 소스의 과거가 타깃의 미래에 대해 추가로 주는 정보를 측정한다 — "},
-    {t:"타깃 자신의 과거를 넘어서.",b:true}
+    {t:"Directed, nonlinear, model-free. Measures information a source's past adds about a target's future, "},
+    {t:"beyond the target's own past.",b:true}
   ],14,2.0);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"THE QUESTION — 핵심 질문");
+  subhead(s,ML,5.0,CW,"THE QUESTION");
   para(s,ML,5.45,CW,[
-    {t:"어떤 환경 구동원(바람 또는 파랑)이 각 구조 응답을 인과적으로 구동하며, 선형 기법이 놓치는 연성 경로는 무엇인가?"}
+    {t:"Which environmental driver — wind or wave — causally drives each structural response, and which coupling pathways do linear methods miss?"}
   ],14.5,1.0);
 })();
 
 // S5 — correlation is not causation
 (function(){
-  const s=pres.addSlide(); chrome(s,"01","Background — 상관 ≠ 인과");
+  const s=pres.addSlide(); chrome(s,"01","Background — correlation ≠ causation");
   bracket(s,ML,1.25,"Correlation is not causation");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"함정 (The trap)");
+  subhead(s,ML,y,lw,"The trap");
   para(s,ML,y+0.45,lw,[
-    {t:"아이스크림 판매와 익사 사고는 함께 증가한다 — 둘 다 여름 더위가 원인. 강한 상관, 인과는 0. corr(A,B)=corr(B,A) 에는 방향(화살표)이 없다."}
+    {t:"Ice-cream sales and drownings rise together — both driven by summer heat. Strong correlation, zero causation. corr(A,B) = corr(B,A) carries no arrow."}
   ],14,2.0);
-  subhead(s,rx,y,rw,"방향이 요구하는 것");
+  subhead(s,rx,y,rw,"What direction needs");
   para(s,rx,y+0.45,rw,[
-    {t:"진짜 원인은 결과보다 시간적으로 앞서야 하고, 타깃 자신의 이력과 공통 구동원을 고려한 뒤에도 그 연결이 살아남아야 한다."}
+    {t:"A real cause must precede its effect in time, and the link must survive once the target's own history and shared drivers are accounted for."}
   ],14,2.0);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"연성 시스템에서");
+  subhead(s,ML,5.0,CW,"IN A COUPLED SYSTEM");
   para(s,ML,5.45,CW,[
-    {t:"난류나 부유식 풍력터빈에서는 수십 개 채널이 함께 움직인다. 무엇이 무엇을 구동하는지 눈으로 가늠하기란 불가능 — 방향성·모델 무가정 척도가 필요하다."}
+    {t:"In turbulence or a floating turbine, dozens of channels move together. Eyeballing what drives what is hopeless — we need a directed, model-free measure."}
   ],14.5,1.0);
 })();
 
@@ -218,73 +216,73 @@ function divider(num, en, ko){
 
 // S6 — information theory blocks
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 정보이론 기초");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — building blocks");
   bracket(s,ML,1.25,"Entropy and information");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"섀넌 엔트로피 (Shannon entropy)");
+  subhead(s,ML,y,lw,"Shannon entropy");
   s.addText("H(X) = −Σ p(x) log p(x)",{x:ML,y:y+0.42,w:lw,h:0.4,fontFace:F,fontSize:14,bold:true,color:BLUE,margin:0});
-  para(s,ML,y+0.9,lw,[{t:"신호에 담긴 평균 불확실성(‘놀라움’). 결과가 확실하면 0, 모든 결과가 동등하면 최대."}],13.5,1.4);
-  subhead(s,rx,y,rw,"상호정보량 (Mutual information)");
+  para(s,ML,y+0.9,lw,[{t:"Average uncertainty — the “surprise” in a signal. Zero when the outcome is certain, maximal when all outcomes are equally likely."}],13.5,1.4);
+  subhead(s,rx,y,rw,"Mutual information");
   s.addText("I(X;Y) = H(X) + H(Y) − H(X,Y)",{x:rx,y:y+0.42,w:rw,h:0.4,fontFace:F,fontSize:14,bold:true,color:BLUE,margin:0});
-  para(s,rx,y+0.9,rw,[{t:"X 와 Y 가 공유하는 정보 — 하나를 알면 다른 하나의 불확실성이 얼마나 줄어드는가."}],13.5,1.4);
+  para(s,rx,y+0.9,rw,[{t:"The information shared between X and Y — how much knowing one reduces uncertainty about the other."}],13.5,1.4);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"THE CATCH — 한계");
+  subhead(s,ML,5.0,CW,"THE CATCH");
   para(s,ML,5.45,CW,[
-    {t:"상호정보량은 대칭이다: I(X;Y)=I(Y;X). 어느 변수가 어느 쪽을 구동하는지 말할 수 없다 — 바로 전달 엔트로피가 메우는 간극."}
+    {t:"Mutual information is symmetric: I(X;Y) = I(Y;X). It cannot say which variable drives which — the gap transfer entropy is built to close."}
   ],14.5,1.0);
 })();
 
 // S7 — TE defined
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 정의");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — defined");
   bracket(s,ML,1.25,"Transfer entropy, defined");
   s.addShape(RECT,{x:ML,y:1.95,w:CW,h:0.8,fill:{color:BANDBG},line:{color:LINEG,width:1}});
   s.addText("TE(X→Y) = H(Y_f | Y_p) − H(Y_f | Y_p, X_p)",{x:ML,y:1.95,w:CW,h:0.8,fontFace:F,fontSize:19,bold:true,color:BLUE,align:"center",valign:"middle",margin:0});
   const y=3.0, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,1.7);
-  subhead(s,ML,y,lw,"정의");
-  para(s,ML,y+0.42,lw,[{t:"Y_f = 타깃의 미래 · Y_p = 타깃의 과거 · X_p = 소스의 과거. 소스의 과거가 타깃 자신의 이력을 넘어 다음 스텝 예측을 얼마나 날카롭게 하는가."}],13.5,1.4);
-  subhead(s,rx,y,rw,"조건부의 묘수");
-  para(s,rx,y+0.42,rw,[{t:"Y 자신의 과거로 조건화하면 자기예측·공유 이력이 제거되고, X 에서 온 ‘진짜 새 정보’만 남는다. 그래서 방향성을 갖는다: TE(X→Y) ≠ TE(Y→X)."}],13.5,1.4);
+  subhead(s,ML,y,lw,"The definition");
+  para(s,ML,y+0.42,lw,[{t:"Y_f = target's future · Y_p = target's past · X_p = source's past. How much the source's past sharpens the prediction of the target's next step, beyond its own history."}],13.5,1.4);
+  subhead(s,rx,y,rw,"The conditioning trick");
+  para(s,rx,y+0.42,rw,[{t:"Conditioning on Y's own past removes self-prediction and shared history — only genuinely new information from X survives. That makes TE directed: TE(X→Y) ≠ TE(Y→X)."}],13.5,1.4);
   s.addShape(LINE,{x:ML,y:5.1,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.25,CW,"핵심 성질");
+  subhead(s,ML,5.25,CW,"KEY PROPERTIES");
   para(s,ML,5.65,CW,[
-    {t:"TE ≥ 0 이며 TE = 0 이면 전달 없음. 설계상 비대칭이며, 선형-가우시안 신호에서는 Granger 인과성과 정확히 일치(Barnett et al. 2009). 정의: Schreiber (2000)."}
+    {t:"TE ≥ 0, and TE = 0 means no transfer. Asymmetric by design, and for linear-Gaussian signals it reduces exactly to Granger causality (Barnett et al. 2009). Definition: Schreiber (2000)."}
   ],13.5,0.9);
 })();
 
 // S8 — estimation KSG
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 추정");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — estimation");
   bracket(s,ML,1.25,"Estimating TE without binning");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"구간 나눔 대신 최근접 이웃");
-  para(s,ML,y+0.45,lw,[{t:"TE 는 조건부 상호정보량이다. Kraskov–Stögbauer–Grassberger(KSG) 추정기는 결합 공간에서 k 개 최근접 이웃(k=4)을 센다 — 히스토그램도, 고를 구간 수도 없다."}],14,2.0);
-  subhead(s,rx,y,rw,"우리 데이터에 적합한 이유");
-  para(s,rx,y+0.45,rw,[{t:"연속 신호에 적응적 해상도; 가우시안 기법이 놓치는 비선형 의존을 포착. 비트가 아닌 나츠(nats, 자연로그) 단위로 보고 — 같은 양. Kraskov et al. (2004)."}],14,2.0);
+  subhead(s,ML,y,lw,"Nearest neighbours, not bins");
+  para(s,ML,y+0.45,lw,[{t:"TE is a conditional mutual information. The Kraskov–Stögbauer–Grassberger (KSG) estimator counts k nearest neighbours (k = 4) in the joint space — no histogram, no bin count to choose."}],14,2.0);
+  subhead(s,rx,y,rw,"Why it suits our data");
+  para(s,rx,y+0.45,rw,[{t:"Adaptive resolution on continuous signals; captures nonlinear dependence Gaussian methods miss. Reported in nats (natural log), not bits — the same quantity. Kraskov et al. (2004)."}],14,2.0);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"파이프라인에서");
+  subhead(s,ML,5.0,CW,"IN THE PIPELINE");
   para(s,ML,5.45,CW,[
-    {t:"KSG(k=4) + 비균일 임베딩(max_lag = 150 ≈ 1 슬로우드리프트 주기)을 IDTxl(Wollstadt et al. 2019)로 GPU 가속해 실행."}
+    {t:"We run KSG (k = 4) with a non-uniform embedding (max_lag = 150 ≈ one slow-drift cycle), GPU-accelerated through IDTxl (Wollstadt et al. 2019)."}
   ],14.5,1.0);
 })();
 
 // S9 — embedding tau
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 임베딩");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — embedding");
   bracket(s,ML,1.25,"Time delay τ and the embedding window");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"지연 벡터 (delay vectors)");
-  para(s,ML,y+0.45,lw,[{t:"TE 는 최근 과거를 지연 벡터로 표현: Y_past = [y(t−τ), y(t−2τ), …, y(t−max_lag)]. τ 는 시차 간격을, max_lag 는 얼마나 멀리 보는지를 정한다."}],14,2.0);
-  subhead(s,rx,y,rw,"우리 설정");
-  para(s,rx,y+0.45,rw,[{t:"max_lag = 150 샘플 ≈ 5 Hz 에서 30 초 — 플랫폼 슬로우드리프트 한 주기. τ=1 은 모든 시차 유지 후 그리디 탐색; τ=5 는 ~150 후보를 ~30 으로 솎는다."}],14,2.0);
+  subhead(s,ML,y,lw,"Delay vectors");
+  para(s,ML,y+0.45,lw,[{t:"TE represents the recent past as a delay vector: Y_past = [y(t−τ), y(t−2τ), …, y(t−max_lag)]. τ sets the spacing between lags; max_lag sets how far back the test looks."}],14,2.0);
+  subhead(s,rx,y,rw,"Our settings");
+  para(s,rx,y+0.45,rw,[{t:"max_lag = 150 samples ≈ 30 s at 5 Hz — one platform slow-drift cycle. τ=1 keeps every lag and a greedy search picks the few that matter; τ=5 thins ~150 candidates to ~30."}],14,2.0);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"둘 다 중요한 이유");
+  subhead(s,ML,5.0,CW,"WHY BOTH MATTER");
   para(s,ML,5.45,CW,[
-    {t:"창이 너무 짧으면 슬로우드리프트를 놓치고, 시차 격자가 너무 촘촘하면 그리디 탐색이 폭발한다. τ 와 max_lag 가 인과 검정이 볼 수 있는 시차를 함께 결정한다."}
+    {t:"Too short a window misses slow-drift; too fine a lag grid makes the greedy search explode. Together τ and max_lag decide which lags the causal test can even see."}
   ],14.5,1.0);
 })();
 
@@ -294,77 +292,77 @@ function divider(num, en, ko){
   bracket(s,ML,1.25,"τ is not a free knob");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"솔깃한 지름길");
-  para(s,ML,y+0.45,lw,[{t:"흔한 휴리스틱은 자기-상호정보량의 첫 최소(AIS 최적 지연)에서 τ 를 정한다. 자기예측가능성(AIS)은 잘 보존한다."}],14,2.0);
-  subhead(s,rx,y,rw,"…그러나 TE 를 깨뜨린다");
+  subhead(s,ML,y,lw,"A tempting shortcut");
+  para(s,ML,y+0.45,lw,[{t:"A common heuristic sets τ from the first minimum of a signal's self-mutual-information (the AIS-optimal delay). It preserves self-predictability (AIS) well."}],14,2.0);
+  subhead(s,rx,y,rw,"…that breaks TE");
   para(s,rx,y+0.45,rw,[
-    {t:"하지만 self-MI τ=10 은 지배적 Wave→PtfmPitch 엣지를 "},
-    {t:"0 으로 만들었다",b:true,c:RED},
-    {t:". 방향성 연성은 특정 시차에 살아 있어 자기예측 휴리스틱이 놓친다 — AIS 에 최적이 TE 에 최적은 아니다."}
+    {t:"But a self-MI τ = 10 "},
+    {t:"zeroed",b:true,c:RED},
+    {t:" the strongest Wave→PtfmPitch edge. Directed couplings live at specific lags that self-prediction heuristics miss — optimal for AIS is not optimal for transfer."}
   ],14,2.0);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"τ 의 두 역할");
+  subhead(s,ML,5.0,CW,"TWO ROLES FOR τ");
   para(s,ML,5.45,CW,[
-    {t:"τ 는 모델링 선택(검정이 보는 시차)이자 계산 레버 — 슬로우드리프트 플랫폼 채널은 τ=5 에서만 끝난다. τ>1 은 모두 τ=1 기준선과 검증한다."}
+    {t:"τ is both a modelling choice (which lags the test sees) and a compute lever — the slow-drift platform channels only finish at τ = 5. We validate any τ > 1 against the τ = 1 baseline."}
   ],14.5,1.0);
 })();
 
 // S11 — significance
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 유의성");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — significance");
   bracket(s,ML,1.25,"Is the transfer real? Surrogate testing");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"귀무가설 (null hypothesis)");
-  para(s,ML,y+0.45,lw,[{t:"KSG TE 는 정확히 0 이 되지 않는다 — 유한표본 잡음이 작은 양수를 남긴다. 그래서 묻는다: 연성이 없다면 우연보다 큰가?"}],14,2.0);
-  subhead(s,rx,y,rw,"순환 이동 대리표본 (circular-shift)");
-  para(s,rx,y+0.45,rw,[{t:"소스를 시간축으로 회전(n=200)해 타깃과의 타이밍은 깨고 스펙트럼은 유지. p = 실제 TE 를 이긴 대리표본 비율; p<0.05 엣지만 유지."}],14,2.0);
+  subhead(s,ML,y,lw,"The null hypothesis");
+  para(s,ML,y+0.45,lw,[{t:"KSG TE is never exactly zero — finite-sample noise leaves a small positive value. So we ask: is the measured TE larger than chance, if there were no coupling?"}],14,2.0);
+  subhead(s,rx,y,rw,"Circular-shift surrogates");
+  para(s,rx,y+0.45,rw,[{t:"Rotate the source in time (n = 200), destroying its timing with the target while keeping its spectrum. p = fraction of surrogates beating the real TE; keep edges with p < 0.05."}],14,2.0);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"왜 순환 이동인가");
+  subhead(s,ML,5.0,CW,"WHY CIRCULAR");
   para(s,ML,5.45,CW,[
-    {t:"순환 이동은 소스의 스펙트럼·진폭을 그대로 두고 X→Y 타이밍만 제거한다 — 거짓 양성을 피하는 엄격하고 정직한 귀무."}
+    {t:"A circular shift keeps the source's own spectrum and amplitude intact and removes only the X→Y timing — a strict, honest null that avoids false positives."}
   ],14.5,1.0);
 })();
 
 // S12 — toy example
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 직관");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — intuition");
   bracket(s,ML,1.25,"A toy example: who drives whom?");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.55);
-  subhead(s,ML,y,lw,"설정 (Setup)");
+  subhead(s,ML,y,lw,"Setup");
   s.addText("X[i] = 0.5·X[i−1] + noise\nY[i] = 0.5·X[i−1] + noise",{x:ML,y:y+0.42,w:lw,h:0.7,fontFace:F,fontSize:13.5,bold:true,color:BLUE,lineSpacingMultiple:1.2,margin:0});
-  para(s,ML,y+1.25,lw,[{t:"X 는 자율, Y 는 X 의 과거에 반응. 눈으로는 둘 다 무작위 잡음처럼 보인다."}],13.5,0.9);
-  subhead(s,rx,y,rw,"TE 가 복원하는 것");
+  para(s,ML,y+1.25,lw,[{t:"X is autonomous; Y responds to X's past. Both look like random noise to the eye."}],13.5,0.9);
+  subhead(s,rx,y,rw,"What TE recovers");
   s.addText("TE(X→Y) ≫ TE(Y→X)",{x:rx,y:y+0.42,w:rw,h:0.4,fontFace:F,fontSize:15,bold:true,color:RED,margin:0});
-  para(s,rx,y+0.95,rw,[{t:"이 비대칭이 X 를 구동원으로 정확히 지목한다 — 대칭인 상관으로는 결코 드러낼 수 없는 것."}],13.5,1.2);
+  para(s,rx,y+0.95,rw,[{t:"The asymmetry correctly flags X as the driver — something a symmetric correlation could never reveal."}],13.5,1.2);
   s.addShape(LINE,{x:ML,y:4.85,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,5.0,CW,"교훈");
+  subhead(s,ML,5.0,CW,"THE TAKEAWAY");
   para(s,ML,5.45,CW,[
-    {t:"방향은 원신호가 아니라 조건화에서 나온다 — 바람·파랑·구조 채널에 대해 우리가 실행하는 바로 그 검정."}
+    {t:"Direction emerges from the conditioning, not from the raw signals — exactly the test we run on wind, wave and structural channels."}
   ],14.5,1.0);
 })();
 
 // S13 — three ways
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 비교");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — comparison");
   bracket(s,ML,1.25,"Three ways to measure dependence");
   const y=2.05, gap=0.5, cw=(CW-2*gap)/3;
   const cols=[
-   ["상관 (Correlation)","선형 연관의 세기. corr(X,Y)=corr(Y,X) — 대칭.","방향 ✗   비선형 ✗"],
-   ["Granger 인과성","X 의 과거가 Y 의 선형 예측을 개선하는가? 방향성 있으나 선형(VAR) 가정. Granger 1969 · Nobel 2003.","방향 ✓   비선형 ✗"],
-   ["전달 엔트로피","X 의 과거가 Y 의 미래 불확실성을 줄이는가? 모델 무가정. Schreiber 2000.","방향 ✓   비선형 ✓"]];
+   ["Correlation","Strength of linear association. corr(X,Y) = corr(Y,X) — symmetric.","Directional ✗   Nonlinear ✗"],
+   ["Granger causality","Does X's past improve a linear forecast of Y? Directed, but assumes a linear (VAR) model. Granger 1969 · Nobel 2003.","Directional ✓   Nonlinear ✗"],
+   ["Transfer entropy","Does X's past reduce uncertainty about Y's future? Model-free, no distributional assumption. Schreiber 2000.","Directional ✓   Nonlinear ✓"]];
   cols.forEach((c,i)=>{
     const x=ML+i*(cw+gap);
     if(i>0) vline(s,x-gap/2,y,2.3);
     subhead(s,x,y,cw,c[0]);
     para(s,x,y+0.42,cw,[{t:c[1]}],12.5,1.6);
-    s.addText(c[2],{x,y:y+2.05,w:cw,h:0.3,fontFace:F,fontSize:12,bold:true,color:(i==2?NAVY:MUTED),margin:0});
+    s.addText(c[2],{x,y:y+2.05,w:cw,h:0.3,fontFace:F,fontSize:11,bold:true,color:(i==2?NAVY:MUTED),margin:0});
   });
   s.addShape(LINE,{x:ML,y:4.7,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.85,CW,"핵심");
+  subhead(s,ML,4.85,CW,"KEY INSIGHT");
   para(s,ML,5.3,CW,[
-    {t:"전달 엔트로피만이 방향성과 비선형을 동시에 갖는다. 선형-가우시안 과정에서는 Granger 와 정확히 일치(Barnett et al. 2009) — 동역학이 비선형·비가우시안일 때 제 값을 한다."}
+    {t:"Transfer entropy is the only one that is both directed and nonlinear. For linear-Gaussian processes it reduces exactly to Granger causality (Barnett et al. 2009) — so it earns its keep where the dynamics are nonlinear or non-Gaussian."}
   ],14,1.2);
 })();
 
@@ -374,108 +372,108 @@ function divider(num, en, ko){
   bracket(s,ML,1.25,"Transfer entropy and Granger causality");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.4);
-  subhead(s,ML,y,lw,"Granger 인과성");
-  para(s,ML,y+0.45,lw,[{t:"선형 자기회귀(VAR) 모델. 빠르고 잘 이해되어 있으나 선형·가우시안을 가정 — 비선형 연성을 놓친다."}],14,1.8);
-  subhead(s,rx,y,rw,"전달 엔트로피");
-  para(s,rx,y+0.45,rw,[{t:"모델 무가정, 분포 가정 없음, 모든 비선형성 포착. 더 비싸고(k-NN 추정) 데이터를 더 요구."}],14,1.8);
+  subhead(s,ML,y,lw,"Granger causality");
+  para(s,ML,y+0.45,lw,[{t:"Linear autoregressive (VAR) model. Fast and well-understood, but assumes linearity and (often) Gaussian statistics — misses nonlinear coupling."}],14,1.8);
+  subhead(s,rx,y,rw,"Transfer entropy");
+  para(s,rx,y+0.45,rw,[{t:"Model-free, no distributional assumption, captures any nonlinearity. Costlier (k-NN estimation) and hungrier for data."}],14,1.8);
   s.addShape(LINE,{x:ML,y:4.7,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.85,CW,"둘이 일치할 때");
+  subhead(s,ML,4.85,CW,"WHEN THEY AGREE");
   para(s,ML,5.3,CW,[
-    {t:"선형-가우시안 과정에서 둘은 정확히 동등(Barnett et al. 2009). TE 는 동역학이 비선형·비가우시안일 때만 제 값을 한다 — 그래서 둘 다 실행한다."}
+    {t:"For linear-Gaussian processes the two are exactly equivalent (Barnett et al. 2009). TE earns its keep only where the dynamics are nonlinear or non-Gaussian — which is why we run both."}
   ],14,1.2);
 })();
 
 // S15 — when to use TE
 (function(){
-  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — 적용 영역");
+  const s=pres.addSlide(); chrome(s,"02","Transfer Entropy — when it pays off");
   bracket(s,ML,1.25,"When does transfer entropy pay off?");
   const y=2.05, gap=0.5, cw=(CW-2*gap)/3;
   const cols=[
-   ["선형 / 가우시안","TE = Granger 와 정확히 동일(Barnett 2009). 추가 가치 없음 — 더 단순한 방법 사용.",MUTED],
-   ["비선형 / 비가우시안","선형 기법이 볼 수 없는 방향 구조를 포착. 가장 빛나는 영역.",NAVY],
-   ["초고차원","결합 모드가 많으면 k-NN 추정이 저하 — 차원의 저주, 데이터 기근.",MUTED]];
+   ["Linear / Gaussian","TE = Granger causality exactly (Barnett 2009). No added value — use the simpler method.",MUTED],
+   ["Nonlinear / non-Gaussian","Captures directed structure linear methods cannot see. This is its sweet spot.",NAVY],
+   ["Very high-dimensional","Many coupled modes degrade the k-NN estimate — curse of dimensionality, data starvation.",MUTED]];
   cols.forEach((c,i)=>{
     const x=ML+i*(cw+gap);
     if(i>0) vline(s,x-gap/2,y,2.0);
     subhead(s,x,y,cw,c[0]);
-    para(s,x,y+0.42,cw,[{t:c[1],c:(i==1?INK:INK),b:(i==1)}],13,1.8);
+    para(s,x,y+0.42,cw,[{t:c[1],b:(i==1)}],13,1.8);
   });
   s.addShape(LINE,{x:ML,y:4.6,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.75,CW,"핵심");
+  subhead(s,ML,4.75,CW,"KEY INSIGHT");
   para(s,ML,5.2,CW,[
-    {t:"불규칙 파랑과 비선형 ROSCO 제어기를 가진 부유식 터빈은 정확히 중간 영역 — 비선형·비가우시안 — 에 놓이며, 전달 엔트로피가 가장 큰 가치를 더한다."}
+    {t:"A floating turbine in irregular waves with a nonlinear ROSCO controller sits squarely in the middle regime — nonlinear and non-Gaussian — where transfer entropy adds the most."}
   ],14,1.2);
 })();
 
 // ============================================================================
 // 03 METHOD & DATA
 // ============================================================================
-divider("03","Method & Data","연성 wind–wave–structure–mooring 시스템과 시뮬레이션 캠페인");
+divider("03","Method & Data","A coupled wind–wave–structure–mooring system and the simulation campaign");
 
 // S17 — system & data
 (function(){
-  const s=pres.addSlide(); chrome(s,"03","Method & Data — 시스템");
+  const s=pres.addSlide(); chrome(s,"03","Method & Data — system");
   bracket(s,ML,1.25,"IEA-15MW FOWT, simulated in OpenFAST");
   const fy=1.95, figW=5.5, ar=1.632;
-  const fh=fig(s,ML,fy,figW,ar,FIG+"openfast.png","OpenFAST — 연성 aero-hydro-servo-elastic 모듈");
+  fig(s,ML,fy,figW,ar,FIG+"openfast.png","OpenFAST — coupled aero-hydro-servo-elastic modules");
   const rx=ML+figW+0.9, rw=RIGHT-(ML+figW+0.9); let ry=2.0;
-  [["플랫폼","IEA-15-240-RWT + UMaine VolturnUS-S 반잠수식; 연성 aero-hydro-servo-elastic OpenFAST 모델."],
-   ["신호","3600 s 시뮬레이션 · 600 s 과도 제거 · 5 Hz 로 데시메이션."],
-   ["채널","소스 2 (Wind1VelX, Wave1Elev) → 응답 9 (RootMyc1, RootMxc1, TwrBsMyt, PtfmHeave/Surge/Pitch, FAIRTEN1/2/3)."]
+  [["PLATFORM","IEA-15-240-RWT on the UMaine VolturnUS-S semisubmersible; coupled aero-hydro-servo-elastic OpenFAST model."],
+   ["SIGNALS","3600 s simulation · drop 600 s transient · decimate to 5 Hz."],
+   ["CHANNELS","2 sources (Wind1VelX, Wave1Elev) → 9 responses (RootMyc1, RootMxc1, TwrBsMyt, PtfmHeave/Surge/Pitch, FAIRTEN1/2/3)."]
   ].forEach(([h,b],i)=>{ if(i>0)s.addShape(LINE,{x:rx,y:ry-0.12,w:rw,h:0,line:{color:LINEG,width:1}}); subhead(s,rx,ry,rw,h); para(s,rx,ry+0.36,rw,[{t:b}],13,1.2); ry+=1.55; });
 })();
 
 // S18 — DLC matrix
 (function(){
-  const s=pres.addSlide(); chrome(s,"03","Method & Data — 설계하중조건");
+  const s=pres.addSlide(); chrome(s,"03","Method & Data — design load cases");
   bracket(s,ML,1.25,"The simulation campaign");
   const figW=7.4, ar=1.852, ix=(W-figW)/2;
-  fig(s,ix,1.95,figW,ar,FIG+"dlc-matrix.png","DLC-A / DLC-B / DLC-1.6, 운전점 스윕 (8/11/15/20 m/s, 6 시드) — 총 54 케이스");
+  fig(s,ix,1.95,figW,ar,FIG+"dlc-matrix.png","DLC-A / DLC-B / DLC-1.6 across the operating-point sweep (8/11/15/20 m/s, 6 seeds) — 54 cases");
 })();
 
 // S19 — env conditions
 (function(){
-  const s=pres.addSlide(); chrome(s,"03","Method & Data — 환경 조건");
+  const s=pres.addSlide(); chrome(s,"03","Method & Data — environment");
   bracket(s,ML,1.25,"Wind and wave inputs");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.4);
-  subhead(s,ML,y,lw,"바람 — TurbSim");
-  para(s,ML,y+0.45,lw,[{t:"IEC Kaimal(IECKAI) 스펙트럼, 정규난류모델(NTM), class B, 멱법칙 전단, 허브높이 기준. URef = 8 / 11 / 15 / 20 m/s."}],14,1.9);
-  subhead(s,rx,y,rw,"파랑 — JONSWAP");
-  para(s,rx,y+0.45,rw,[{t:"불규칙 JONSWAP 해상(SeaState). Hs/Tp 는 바람과 함께 변화: (3.5 m, 9 s) → (8.0 m, 13 s). DLC-1.6 극한해상: Hs = 8.3 m, Tp = 12.95 s."}],14,1.9);
+  subhead(s,ML,y,lw,"Wind — TurbSim");
+  para(s,ML,y+0.45,lw,[{t:"IEC Kaimal (IECKAI) spectrum, Normal Turbulence Model, class B, power-law shear, referenced at hub height. URef = 8 / 11 / 15 / 20 m/s."}],14,1.9);
+  subhead(s,rx,y,rw,"Waves — JONSWAP");
+  para(s,rx,y+0.45,rw,[{t:"Irregular JONSWAP sea (SeaState). Hs/Tp scale with wind: (3.5 m, 9 s) → (8.0 m, 13 s). DLC-1.6 severe sea: Hs = 8.3 m, Tp = 12.95 s."}],14,1.9);
   s.addShape(LINE,{x:ML,y:4.7,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.85,CW,"랜덤 시드에 관하여");
+  subhead(s,ML,4.85,CW,"ON THE RANDOM SEEDS");
   para(s,ML,5.3,CW,[
-    {t:"DLC-A/1.6 는 바람 시드를 파랑 생성에 재사용, DLC-B 는 독립 시드. OpenFAST 에서 바람(TurbSim)·파랑(HydroDyn)은 별도 생성되므로 시드는 재현성을 고정할 뿐 wind–wave 상관을 만들지 않는다."}
+    {t:"DLC-A/1.6 reuse the wind seed for the wave generator; DLC-B draws an independent one. In OpenFAST, wind (TurbSim) and waves (HydroDyn) are generated separately, so the seed fixes reproducibility — not wind–wave correlation."}
   ],14,1.2);
 })();
 
 // S20 — preprocessing
 (function(){
-  const s=pres.addSlide(); chrome(s,"03","Method & Data — 전처리");
+  const s=pres.addSlide(); chrome(s,"03","Method & Data — preprocessing");
   bracket(s,ML,1.25,"Why 5 Hz is enough");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,2.5);
-  subhead(s,ML,y,lw,"환경 · 플랫폼 (저주파)");
-  para(s,ML,y+0.45,lw,[{t:"슬로우드리프트 0.01–0.1 Hz · 파랑 1차 0.05–0.3 Hz(JONSWAP 피크 0.077) · 고유모드 pitch 0.0345 / heave 0.05 / surge 0.01 Hz · 바람 저주파 에디 0.01–1 Hz"}],12.5,2.0);
-  subhead(s,rx,y,rw,"로터 · 구조 (고주파)");
-  para(s,rx,y+0.45,rw,[{t:"1P / 3P 로터 ~0.15 / 0.45 Hz · 타워 전후 1차 모드 ~0.5 Hz · 블레이드 플랩 모드 ~0.6 Hz"}],12.5,2.0);
+  subhead(s,ML,y,lw,"Environment · platform (low freq.)");
+  para(s,ML,y+0.45,lw,[{t:"Slow-drift 0.01–0.1 Hz · wave 1st-order 0.05–0.3 Hz (JONSWAP peak 0.077) · eigenmodes pitch 0.0345 / heave 0.05 / surge 0.01 Hz · wind low-freq. eddies 0.01–1 Hz"}],12.5,2.0);
+  subhead(s,rx,y,rw,"Rotor · structure (high freq.)");
+  para(s,rx,y+0.45,rw,[{t:"1P / 3P rotor ~0.15 / 0.45 Hz · tower fore-aft 1st mode ~0.5 Hz · blade-flap mode ~0.6 Hz"}],12.5,2.0);
   s.addShape(LINE,{x:ML,y:4.8,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.95,CW,"결론");
+  subhead(s,ML,4.95,CW,"BOTTOM LINE");
   para(s,ML,5.4,CW,[
-    {t:"40 Hz → 5 Hz 로 8× 다운샘플. Nyquist = 2.5 Hz 가 최고 대역(~0.6 Hz)보다 충분히 높아 모든 인과 신호를 보존하면서 KSG 스윕은 ~8× 감소."}
+    {t:"Down-sample 40 Hz → 5 Hz (×8). Nyquist = 2.5 Hz sits well above the highest band (~0.6 Hz), so every causal signal is preserved while the KSG sweep drops ~8×."}
   ],14,1.1);
 })();
 
 // S21 — method directed transfer
 (function(){
-  const s=pres.addSlide(); chrome(s,"03","Method & Data — 파이프라인");
+  const s=pres.addSlide(); chrome(s,"03","Method & Data — pipeline");
   bracket(s,ML,1.25,"Directed transfer, with linear baselines");
   const steps=[
-   ["1","KSG 전달 엔트로피","Kraskov 추정기(k=4), 비균일 임베딩, max_lag = 150 (30 s — 슬로우드리프트 1 주기)."],
-   ["2","유의성 · 효과크기","순환이동 대리표본 ×200, p<0.05(max-stat). 정규화: te_frac = TE / (H(Y) − AIS(Y))."],
-   ["3","선형 기준선(동일 파이프라인)","Gaussian / Granger(추정기 교체) + 크기제곱 코히어런스 γ²(f)."],
-   ["4","계산","2× A100 OpenCL; GPU vs CPU 검증(AIS RootMyc1 1.50 vs 1.49)."]];
+   ["1","KSG transfer entropy","Kraskov estimator (k = 4), non-uniform embedding, max_lag = 150 (30 s — one slow-drift cycle)."],
+   ["2","Significance · effect size","Circular-shift surrogates ×200, p < 0.05 (max-stat). Normalized: te_frac = TE / (H(Y) − AIS(Y))."],
+   ["3","Linear baselines, same pipeline","Gaussian / Granger (estimator swap) + magnitude-squared coherence γ²(f)."],
+   ["4","Compute","OpenCL on 2× A100; GPU validated vs CPU (AIS RootMyc1 1.50 vs 1.49)."]];
   let y=1.95;
   steps.forEach(([n,h,b])=>{
     s.addText(n,{x:ML,y:y-0.02,w:0.5,h:0.55,fontFace:F,fontSize:26,bold:true,color:NAVY,valign:"top",margin:0});
@@ -488,64 +486,64 @@ divider("03","Method & Data","연성 wind–wave–structure–mooring 시스템
 
 // S22 — what TE measures
 (function(){
-  const s=pres.addSlide(); chrome(s,"03","Method & Data — TE 의 의미");
+  const s=pres.addSlide(); chrome(s,"03","Method & Data — what TE measures");
   bracket(s,ML,1.25,"What transfer entropy measures");
   const figW=6.4, ar=2.043, ix=(W-figW)/2;
   fig(s,ix,1.9,figW,ar,FIG+"concept.png");
   s.addShape(LINE,{x:ML,y:5.35,w:CW,h:0,line:{color:LINEG,width:1}});
   para(s,ML,5.55,CW,[
-    {t:"한 줄로 — ",b:true,c:NAVY},
-    {t:"소스의 과거가 타깃 자신의 이력을 넘어 타깃 예측을 날카롭게 하면, 정보가 소스 → 타깃으로 흐른다. 방향성(X→Y ≠ Y→X)·비선형 — 상관과 코히어런스가 볼 수 없는 것."}
+    {t:"In one line — ",b:true,c:NAVY},
+    {t:"if the source's past sharpens the prediction of the target beyond the target's own history, information flows source → target. Directed (X→Y ≠ Y→X) and nonlinear — what correlation and coherence cannot see."}
   ],14,1.2);
 })();
 
 // ============================================================================
 // 04 RESULTS & CONCLUSION
 // ============================================================================
-divider("04","Results & Conclusion","파랑이 지배하는 인과 구조와 바람의 역설");
+divider("04","Results & Conclusion","A wave-dominated causal structure, and the wind paradox");
 
 // S24 — wave-dominated network
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Results — 인과 네트워크");
+  const s=pres.addSlide(); chrome(s,"04","Results — causal network");
   bracket(s,ML,1.25,"A wave-dominated causal graph");
   const figW=6.0, ar=1.517;
-  fig(s,ML,1.95,figW,ar,FIG+"te-network.png","TE 인과 네트워크 · bivariate KSG, 가중치 = 전 54 케이스 평균 te_frac");
+  fig(s,ML,1.95,figW,ar,FIG+"te-network.png","TE causal network · bivariate KSG, weight = mean te_frac across all 54 cases");
   const rx=ML+figW+0.75, rw=RIGHT-(ML+figW+0.75); let ry=2.1;
-  subhead(s,rx,ry,rw,"READING — 읽는 법"); ry+=0.42;
-  para(s,rx,ry,rw,[{t:"파랑 표고가 모든 유의 응답(pitch·heave·surge·타워베이스·계류)을 구동. ",b:true},{t:"바람은 구조로의 유의한 방향 전달이 없다.",}],13,1.5); ry+=1.55;
+  subhead(s,rx,ry,rw,"READING"); ry+=0.42;
+  para(s,rx,ry,rw,[{t:"Wave elevation drives every significant response (pitch · heave · surge · tower base · mooring). ",b:true},{t:"Wind shows no significant directed transfer to the structure.",}],13,1.5); ry+=1.55;
   s.addShape(LINE,{x:rx,y:ry,w:rw,h:0,line:{color:LINEG,width:1}}); ry+=0.12;
   s.addText("7 / 7",{x:rx,y:ry,w:rw,h:0.6,fontFace:F,fontSize:34,bold:true,color:NAVY,valign:"middle",margin:0}); ry+=0.62;
-  s.addText("유의 엣지 — 모두 파랑에서 시작",{x:rx,y:ry,w:rw,h:0.3,fontFace:F,fontSize:11,color:MUTED,margin:0}); ry+=0.5;
+  s.addText("significant edges — every one from wave",{x:rx,y:ry,w:rw,h:0.3,fontFace:F,fontSize:11,color:MUTED,margin:0}); ry+=0.5;
   s.addText("0",{x:rx,y:ry,w:rw,h:0.6,fontFace:F,fontSize:34,bold:true,color:RED,valign:"middle",margin:0}); ry+=0.62;
-  s.addText("유의한 wind → structure 엣지",{x:rx,y:ry,w:rw,h:0.3,fontFace:F,fontSize:11,color:MUTED,margin:0});
+  s.addText("significant wind → structure edges",{x:rx,y:ry,w:rw,h:0.3,fontFace:F,fontSize:11,color:MUTED,margin:0});
 })();
 
 // S25 — significant edges bars
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Results — 유의 엣지");
+  const s=pres.addSlide(); chrome(s,"04","Results — significant edges");
   bracket(s,ML,1.25,"The significant edges — 7 of 18");
   const figW=6.7, ar=2.165;
-  fig(s,ML,2.2,figW,ar,FIG+"conf-windwave-bars.png","유의 방향 전달(nats) — 파랑만, 54 케이스 평균");
+  fig(s,ML,2.2,figW,ar,FIG+"conf-windwave-bars.png","Significant directed transfer (nats) — wave only, mean across 54 cases");
   const rx=ML+figW+0.7, rw=RIGHT-(ML+figW+0.7); let ry=2.3;
   subhead(s,rx,ry,rw,"WAVE DRIVES THE STRUCTURE"); ry+=0.42;
   para(s,rx,ry,rw,[
-    {t:"가장 강한 5개 엣지(pitch, heave, 전방 계류선, surge)가 0.11–0.12 nats 에 모여 있다. "},
-    {t:"유의한 wind → structure 엣지는 캠페인 전체에서 없다.",b:true}
+    {t:"The five strongest edges (pitch, heave, the forward fairleads and surge) cluster at 0.11–0.12 nats. "},
+    {t:"No wind → structure edge is significant anywhere in the campaign.",b:true}
   ],13,2.0); ry+=2.1;
   s.addShape(LINE,{x:rx,y:ry,w:rw,h:0,line:{color:LINEG,width:1}}); ry+=0.12;
   s.addText("0 / 18",{x:rx,y:ry,w:rw,h:0.6,fontFace:F,fontSize:30,bold:true,color:NAVY,valign:"middle",margin:0}); ry+=0.6;
-  s.addText("유의한 wind 엣지 — 파랑이 7개 모두 구동",{x:rx,y:ry,w:rw,h:0.4,fontFace:F,fontSize:11,color:MUTED,margin:0});
+  s.addText("significant wind edges — wave drives all seven",{x:rx,y:ry,w:rw,h:0.4,fontFace:F,fontSize:11,color:MUTED,margin:0});
 })();
 
 // S26 — triangulation
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Results — 삼각검증");
+  const s=pres.addSlide(); chrome(s,"04","Results — triangulation");
   bracket(s,ML,1.25,"TE vs. coherence vs. Granger");
   const y=2.05, gap=0.5, cw=(CW-2*gap)/3;
   const cols=[
-   ["코히어런스 γ²(f)","무방향 스펙트럼 상한. 공유 파워, 방향 없음.",MUTED],
-   ["Gaussian / Granger","방향성 있으나 선형. 상관된 wind–wave 에서 과검출.",MUTED],
-   ["전달 엔트로피","방향성 AND 비선형. 다른 기법이 놓치는 연성 포착.",NAVY]];
+   ["Coherence γ²(f)","Undirected spectral ceiling. Shared power, no direction.",MUTED],
+   ["Gaussian / Granger","Directional but linear. Over-detects under correlated wind–wave.",MUTED],
+   ["Transfer entropy","Directed AND nonlinear. Catches couplings the others miss.",NAVY]];
   cols.forEach((c,i)=>{
     const x=ML+i*(cw+gap);
     if(i>0) vline(s,x-gap/2,y,2.0);
@@ -553,55 +551,55 @@ divider("04","Results & Conclusion","파랑이 지배하는 인과 구조와 바
     para(s,x,y+0.42,cw,[{t:c[1],b:(i==2)}],13,1.8);
   });
   s.addShape(LINE,{x:ML,y:4.6,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.75,CW,"삼각형 읽기");
+  subhead(s,ML,4.75,CW,"READING THE TRIANGLE");
   para(s,ML,5.2,CW,[
-    {t:"TE 는 유의하나 선형 기준선은 아닌 곳 = TE 만 잡는 비선형 방향 연성(예: 파랑 2차 차주파수의 pitch 강제력). 셋이 일치하는 곳 = 임베딩이 검증됨."}
+    {t:"Where TE is significant but the linear baselines are not = nonlinear directed coupling unique to TE (e.g. the wave 2nd-order difference-frequency forcing of pitch). Where all three agree, the embedding is validated."}
   ],14,1.2);
 })();
 
 // S27 — wind paradox
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Results — 바람의 역설");
+  const s=pres.addSlide(); chrome(s,"04","Results — the wind paradox");
   bracket(s,ML,1.25,"The wind paradox");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,1.6);
-  subhead(s,ML,y,lw,"THE PUZZLE — 수수께끼");
-  para(s,ML,y+0.42,lw,[{t:"Wind → structure ≈ 0, 8–20 m/s 전 구간",b:true},{t:" — 정작 터빈을 구동하는 건 바람인데. 반직관적이며 모든 운전점에서 성립."}],14,1.4);
-  subhead(s,rx,y,rw,"NOT AN ARTIFACT — 인공물 아님");
-  para(s,rx,y+0.42,rw,[{t:"바람은 ~11.6 s 에 탈상관 — 30 s 임베딩 창 안. 바람 신호는 샘플링되지만 구조로 정보를 전달하지 않을 뿐."}],14,1.6);
+  subhead(s,ML,y,lw,"THE PUZZLE");
+  para(s,ML,y+0.42,lw,[{t:"Wind → structure ≈ 0 across 8–20 m/s",b:true},{t:" — yet wind is what drives the turbine. Counter-intuitive, and it holds at every operating point."}],14,1.4);
+  subhead(s,rx,y,rw,"NOT AN ARTIFACT");
+  para(s,rx,y+0.42,rw,[{t:"Wind decorrelates at ~11.6 s — well inside the 30 s embedding window. The wind signal is sampled; it simply isn't transferring information to the structure."}],14,1.6);
   s.addShape(LINE,{x:ML,y:4.4,w:CW,h:0,line:{color:LINEG,width:1}});
-  subhead(s,ML,4.55,CW,"HYPOTHESIS — 제어기 ‘방화벽’");
+  subhead(s,ML,4.55,CW,"HYPOTHESIS — A CONTROLLER “FIREWALL”");
   para(s,ML,5.0,CW,[
-    {t:"블레이드 피치 제어기(ROSCO)가 로터 추력을 매우 단단히 조절해, 바람 변동이 플랫폼에 도달하기 전에 거부된다. 제어기가 인과적 방화벽으로 작용 — 바람은 로터를 가진화하지 구조를 가진화하지 않는다."}
+    {t:"The blade-pitch controller (ROSCO) regulates rotor thrust so tightly that wind fluctuations are rejected before they reach the platform. The controller acts as a causal firewall — wind energizes the rotor, not the structure."}
   ],14,1.4);
 })();
 
 // S28 — firewall ablation
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Results — 방화벽 검정");
+  const s=pres.addSlide(); chrome(s,"04","Results — firewall ablation");
   bracket(s,ML,1.25,"Testing the firewall — controller-off ablation");
   const figW=7.0, ar=2.323;
-  fig(s,ML,2.15,figW,ar,FIG+"conf-ablation.png","블레이드 피치 제어를 동결(개루프)하고 동일 케이스 재실행");
+  fig(s,ML,2.15,figW,ar,FIG+"conf-ablation.png","Re-ran the same case with blade-pitch control frozen (open-loop)");
   const rx=ML+figW+0.7, rw=RIGHT-(ML+figW+0.7); let ry=2.3;
-  subhead(s,rx,ry,rw,"VERDICT — 판정"); ry+=0.42;
-  para(s,rx,ry,rw,[{t:"시사적이나 결론적이지 않음. ",b:true,c:RED},{t:"wind→heave 엣지가 나타나지만, 개루프 과회전이 AIS 를 부풀려 bivariate TE 에서 바람을 가린다."}],13,2.0); ry+=2.0;
+  subhead(s,rx,ry,rw,"VERDICT"); ry+=0.42;
+  para(s,rx,ry,rw,[{t:"Suggestive but inconclusive. ",b:true,c:RED},{t:"The wind→heave edge appears, but open-loop overspeed inflates AIS and masks wind in bivariate TE."}],13,2.0); ry+=2.0;
   s.addShape(LINE,{x:rx,y:ry,w:rw,h:0,line:{color:LINEG,width:1}}); ry+=0.16;
   s.addText("NEXT",{x:rx,y:ry,w:rw,h:0.5,fontFace:F,fontSize:24,bold:true,color:NAVY,valign:"middle",margin:0}); ry+=0.55;
-  s.addText("조건부 TE  TE(wind→Y | wave)  +  과회전 없는 ablation",{x:rx,y:ry,w:rw,h:0.6,fontFace:F,fontSize:11,color:MUTED,margin:0});
+  s.addText("conditional TE  TE(wind→Y | wave)  +  a non-overspeeding ablation",{x:rx,y:ry,w:rw,h:0.6,fontFace:F,fontSize:11,color:MUTED,margin:0});
 })();
 
 // S29 — methods lessons
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Results — 방법론 교훈");
+  const s=pres.addSlide(); chrome(s,"04","Results — methods lessons");
   bracket(s,ML,1.25,"What made it work — and what nearly broke it");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,3.0);
-  subhead(s,ML,y,lw,"GPU 가 스윕을 가능케 했다");
+  subhead(s,ML,y,lw,"GPU MADE THE SWEEP TRACTABLE");
   s.addText("~35 h",{x:ML,y:y+0.35,w:lw,h:0.85,fontFace:F,fontSize:44,bold:true,color:NAVY,valign:"middle",margin:0});
-  para(s,ML,y+1.3,lw,[{t:"단일 A100 배치 실행 케이스당. OpenCL KSG 추정기(CPU 대비 검증)가 전체 DLC 스윕을 현실화한다."}],13.5,1.2);
-  subhead(s,rx,y,rw,"주의 — 임베딩 지연이 중요하다");
+  para(s,ML,y+1.3,lw,[{t:"per case on a single A100-batched run. The OpenCL KSG estimator (validated vs CPU) is what brings the full DLC sweep into reach."}],13.5,1.2);
+  subhead(s,rx,y,rw,"CAUTION — EMBEDDING DELAY MATTERS");
   s.addText("0.12 → 0",{x:rx,y:y+0.35,w:rw,h:0.85,fontFace:F,fontSize:40,bold:true,color:RED,valign:"middle",margin:0});
-  para(s,rx,y+1.3,rw,[{t:"self-MI 의 데이터 기반 τ 는 AIS 는 보존했으나 TE 엣지를 붕괴(τ=10 이 지배적 Wave→PtfmPitch 를 0 으로). 방향성 연성은 특정 시차에 산다 — AIS 휴리스틱은 TE 로 전이되지 않는다."}],13.5,1.5);
+  para(s,rx,y+1.3,rw,[{t:"A data-driven τ from self-MI preserved AIS but collapsed the TE edges (τ = 10 zeroed the strongest Wave→PtfmPitch). Directed couplings live at specific lags — AIS heuristics don't transfer to TE."}],13.5,1.5);
 })();
 
 // S30 — hybrid TE + Sobol
@@ -611,37 +609,37 @@ divider("04","Results & Conclusion","파랑이 지배하는 인과 구조와 바
   const cw=5.5, car=1.570, ch=cw/car, cy=1.95;
   fig(s,ML,cy,cw,car,FIG+"combined.png","COMBINED GRAPH — TE + Sobol");
   const rx=ML+cw+0.9, rw=RIGHT-(ML+cw+0.9);
-  fig(s,rx,cy,rw-0.3,2.209,FIG+"sobol.png","Sobol Sₜ — 설계 민감도");
+  fig(s,rx,cy,rw-0.3,2.209,FIG+"sobol.png","Sobol Sₜ — design sensitivity");
   para(s,rx,cy+ (rw-0.3)/2.209 +0.7,rw,[
-    {t:"계류 길이(L_u)·강성(EA)",b:true},{t:" 가 fairlead 장력과 여러 운동을 지배. "},
-    {t:"기둥 형상(D_OCol, R_MO)",b:true},{t:" 이 surge·sway·heave 를 구동."}
+    {t:"Mooring length (L_u) and stiffness (EA)",b:true},{t:" dominate fairlead tensions and several motions. "},
+    {t:"Column geometry (D_OCol, R_MO)",b:true},{t:" drives surge, sway and heave."}
   ],12,1.0);
   s.addShape(LINE,{x:ML,y:6.05,w:CW,h:0,line:{color:LINEG,width:1}});
   para(s,ML,6.2,CW,[
-    {t:"한 그래프에 두 개의 방향 중요도 지도 — "},
-    {t:"환경 구동 동역학은 TE, 설계 민감도는 Sobol",b:true,c:NAVY},
-    {t:" — 최적화 가중치의 데이터 기반 근거(다음 단계 제안)."}
+    {t:"Two directed importance maps in one graph — "},
+    {t:"TE for environment-driven dynamics, Sobol for design sensitivity",b:true,c:NAVY},
+    {t:" — a data-driven basis for the optimization weights (proposed next step)."}
   ],13,0.8);
 })();
 
 // S31 — limitations & future
 (function(){
-  const s=pres.addSlide(); chrome(s,"04","Conclusion — 한계와 향후");
+  const s=pres.addSlide(); chrome(s,"04","Conclusion — limitations & future");
   bracket(s,ML,1.25,"Where this goes next");
   const y=2.05, lw=5.5, rx=ML+6.2, rw=CW-6.2;
   vline(s,ML+5.85,y,3.4);
-  subhead(s,ML,y,lw,"LIMITATIONS — 한계");
+  subhead(s,ML,y,lw,"LIMITATIONS");
   bullets(s,ML,y+0.45,lw,[
-    "단일 플랫폼(UMaine VolturnUS-S), 시뮬레이션 한정 — 현장 검증 없음.",
-    "max_lag = 150(30 s)은 PtfmSurge(탈상관 ~24.6 s)에 짧을 수 있음.",
-    "방화벽 메커니즘(제어기)은 예비적·교란됨 — 바람 탈동조는 보였으나 원인은 미확정."
+    "Single platform (UMaine VolturnUS-S), simulation-only — no field validation.",
+    "max_lag = 150 (30 s) may be short for PtfmSurge (decorrelates ~24.6 s).",
+    "Firewall mechanism (controller) is preliminary and confounded — the wind decoupling is shown, its cause is not."
   ],13);
-  subhead(s,rx,y,rw,"NEXT STEPS — 향후");
+  subhead(s,rx,y,rw,"NEXT STEPS");
   bullets(s,rx,y+0.45,rw,[
-    "조건부 TE — TE(wind→Y | wave) — 로 bivariate 추정을 넘어 방화벽 검정.",
-    "과회전 없는 controller-off ablation 으로 메커니즘 규명.",
-    "하이브리드 그래프: Sobol 설계변수 민감도 추가.",
-    [{t:"순위화된 TE 구동→하중 경로",b:true},{t:" 를 구조/피로 하중 가중에 투입해 설계 최적화로."}]
+    "Conditional TE — TE(wind→Y | wave) — to test the firewall beyond the bivariate estimate.",
+    "A non-overspeeding controller-off ablation to settle the mechanism.",
+    "Hybrid graph: add Sobol design-parameter sensitivity.",
+    [{t:"Feed the ranked TE driver→load pathways",b:true},{t:" into structural/fatigue load weighting for design optimization."}]
   ],13);
 })();
 
@@ -651,16 +649,16 @@ divider("04","Results & Conclusion","파랑이 지배하는 인과 구조와 바
   s.background={color:NAVY};
   s.addText("Conclusion",{x:ML+0.2,y:0.7,w:8,h:0.5,fontFace:F,fontSize:16,bold:true,color:"9FB0CF",margin:0});
   s.addText([
-    {text:"전달 엔트로피는 부유식 풍력터빈 응답에서 ",options:{color:WHITE}},
-    {text:"파랑이 지배하는 인과 구조",options:{color:"7FB0FF",bold:true}},
-    {text:"를 드러내며, 이는 선형 기법이 부분적으로만 포착한다.",options:{color:WHITE}}
+    {text:"Transfer entropy reveals a ",options:{color:WHITE}},
+    {text:"wave-dominated causal structure",options:{color:"7FB0FF",bold:true}},
+    {text:" in FOWT response that linear methods only partially capture.",options:{color:WHITE}}
   ],{x:ML+0.2,y:1.45,w:12,h:1.6,fontFace:F,fontSize:28,bold:true,lineSpacingMultiple:1.15,valign:"top",margin:0});
   s.addShape(LINE,{x:ML+0.2,y:3.4,w:CW-0.4,h:0,line:{color:"3A5488",width:1}});
   const items=[
-    "파랑이 pitch·heave·surge·타워베이스·계류를 구동; 54 케이스 캠페인 전체에서 유의한 wind → structure 엣지는 없다.",
-    "바람 탈동조는 견고하고 비자명하며 8–20 m/s 전 구간에서 성립 — 다만 제어기가 원인인지는 열린·검증 가능한 질문.",
-    "조건부 TE 와 과회전 없는 ablation 이 이를 규명하는 길.",
-    "다음: 이 순위를 Sobol 설계 민감도와 짝지어 설계 최적화의 데이터 기반 가중치를 설정."
+    "Wave drives platform pitch, heave, surge, tower base and mooring; no significant wind → structure edge across the 54-case campaign.",
+    "The wind decoupling is robust and non-obvious — holding across 8–20 m/s — yet whether the controller causes it is an open, testable question.",
+    "Conditional TE and a non-overspeeding ablation are the path to settle it.",
+    "Next: pair this ranking with Sobol design sensitivities to set data-driven weights for design optimization."
   ];
   const arr=[];
   items.forEach(t=>{ arr.push({text:"—  ",options:{color:"E6A23C",bold:true}}); arr.push({text:t,options:{color:"DDE5F2",breakLine:true}}); });
