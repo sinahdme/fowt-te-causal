@@ -108,13 +108,17 @@ class TESettings:
     # Optional: limit pairs to enable smoke testing
     env_sources: tuple = DEFAULT_ENV_SOURCES
     responses: tuple = DEFAULT_RESPONSES
-    # Per-target tau override for the slow-drift platform channels. At tau=1 the
-    # greedy multivariate search over max_lag=150 candidates on PtfmPitch/PtfmHeave
-    # hangs the OpenCL KSG kernel (deadlocking the pool) or goes singular in the
-    # Gaussian estimator (TE=nan). slow_drift_tau=5 thins ~150 lags to ~30, which
-    # those channels need; 0 disables the override (all targets use `tau`).
+    # Per-target tau override for the channels whose greedy KSG search over
+    # max_lag=150 candidates at tau=1 won't finish: it hangs the OpenCL kernel
+    # (deadlocking the pool) or goes singular in the Gaussian estimator (TE=nan).
+    # slow_drift_tau=5 thins ~150 lags to ~30 so they complete; 0 disables the
+    # override (all targets use `tau`). PtfmPitch/PtfmHeave are the original
+    # slow-drift offenders; PtfmSurge and RootMxc1 were added 2026-06-15 after the
+    # DLC-1.6 campaign showed them timing out at the 9000 s cap in EVERY case
+    # (RootMxc1) or most cases (PtfmSurge) — see /tmp/campaign.log TIMEOUT lines.
+    # Despite the name, RootMxc1 is not slow-drift; it just needs the thinned grid.
     # See concepts/slow-drift-tau or memory project_slowdrift_tau5_fix.
-    slow_drift_targets: tuple = ("PtfmPitch", "PtfmHeave")
+    slow_drift_targets: tuple = ("PtfmPitch", "PtfmHeave", "PtfmSurge", "RootMxc1")
     slow_drift_tau: int = 0
     # Per-job wall-clock cap (s) for the worker pool. A single hung OpenCL kernel
     # must not deadlock the whole sweep again: when >0, jobs run in a watchdog'd
@@ -281,13 +285,37 @@ def _apply_estimator(s: dict, estimator: str, settings: TESettings) -> dict:
     return s
 
 
-def _extract_te_pval(target_results: dict) -> tuple[float, float, list]:
+def _extract_te_pval(target_results: dict,
+                     source_process: int = 0) -> tuple[float, float, list]:
+    """TE that `source_process` contributes to the target, its p-value, and the
+    selected source variables.
+
+    IDTxl's `te` (statistic_single_link) holds ONE value per source process that
+    survived the greedy selection, ordered by ascending process index — NOT a
+    fixed [source, conditional] layout (see _calculate_single_link in
+    idtxl.network_analysis: `sources = np.unique([s[0] for s in source_vars])`,
+    and `links[i]` is the TE from `sources[i]` conditioned, under
+    conditioning='full', on the target's past AND the other selected sources).
+
+    A blind `te[0]` therefore returns whatever process happens to be first in the
+    surviving set. In the conditional path (candidate sources [0, 2]) that means
+    when the real source (process 0) is NOT selected, `te[0]` is the CONDITIONING
+    channel's TE — silently mislabelled as the source's. We instead map `te` back
+    to `source_process` via the same sorted-unique ordering and return (0.0, 1.0)
+    when the source was not selected: if the greedy search kept no source-0
+    variable, source 0 transfers nothing beyond the target's past + conditioning
+    channel, so its conditional TE is 0 and it is not significant. For a bivariate
+    run (single candidate, process 0) this is identical to the old behaviour."""
     te = target_results.get("te")
     pval = target_results.get("omnibus_pval")
-    selected = target_results.get("selected_vars_sources") or []
-    te_val = float(te[0]) if (te is not None and len(te) > 0) else 0.0
+    selected = list(target_results.get("selected_vars_sources") or [])
+    sources = sorted({v[0] for v in selected})
+    if te is None or len(te) == 0 or source_process not in sources:
+        return 0.0, 1.0, selected
+    idx = sources.index(source_process)
+    te_val = float(te[idx]) if idx < len(te) else 0.0
     p_val = float(pval) if pval is not None else 1.0
-    return te_val, p_val, list(selected)
+    return te_val, p_val, selected
 
 
 def run_bivariate_te(source: np.ndarray, target: np.ndarray,
@@ -346,7 +374,11 @@ def run_multivariate_te(source: np.ndarray, target: np.ndarray,
         settings=s, data=data, target=target_idx, sources=sources_idx,
     )
     tr = results.get_single_target(target_idx, fdr=False)
-    te_val, p_val, selected = _extract_te_pval(tr)
+    # The reported source is ALWAYS process 0 here (arr = [source, target, cond?]),
+    # so extract process 0's conditional contribution — not a blind te[0], which
+    # would return the conditioning channel when the source drops out of the
+    # greedy selection. See _extract_te_pval.
+    te_val, p_val, selected = _extract_te_pval(tr, source_process=0)
     # Split selected vars by source process for diagnostics
     n_from_source = sum(1 for v in selected if v[0] == 0)
     n_from_cond = sum(1 for v in selected if v[0] == 2)
@@ -792,8 +824,11 @@ def main() -> int:
                              "tau=1 those channels hang the OpenCL KSG kernel or go "
                              "singular (TE=nan); tau=5 thins ~150 lags to ~30 so they "
                              "complete. Reran rows carry the per-target tau in output.")
-    parser.add_argument("--slow-drift-targets", type=str, default="PtfmPitch,PtfmHeave",
-                        help="Comma-separated targets that get --slow-drift-tau.")
+    parser.add_argument("--slow-drift-targets", type=str,
+                        default="PtfmPitch,PtfmHeave,PtfmSurge,RootMxc1",
+                        help="Comma-separated targets that get --slow-drift-tau. "
+                             "Default covers the 4 channels that time out at tau=1 "
+                             "(PtfmPitch/Heave/Surge slow-drift + RootMxc1).")
     parser.add_argument("--job-timeout", type=float, default=9000.0,
                         help="Per-job wall-clock cap (s). >0 runs jobs in a watchdog "
                              "pool that terminates any hung job (so one stuck OpenCL "
