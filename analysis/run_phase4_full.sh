@@ -39,7 +39,19 @@ N="${1:-36}"
 
 cd "$(dirname "$0")/.."
 
-mapfile -t ALL_OUTB < <(ls sims/*/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi.outb 2>/dev/null | sort)
+# Every case ships the SAME filename (sims/<case>/IEA-15-.../IEA-15-...outb), so
+# te_pipeline's stem-based case_id would collapse all 54 cases to one id and
+# merge_parquet_parts.py would drop_duplicates them down to ~2. Stage each .outb
+# as a FOLDER-named symlink first (exactly like run_campaign.sh) so the stem
+# becomes the real case id (dlca_v11ms_s00, ...).
+STAGE="/tmp/te_full_inputs"
+rm -rf "$STAGE"; mkdir -p "$STAGE"
+shopt -s nullglob
+for outb in sims/*/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi.outb; do
+    case_name="$(basename "$(dirname "$(dirname "$outb")")")"
+    ln -sf "$(realpath "$outb")" "$STAGE/$case_name.outb"
+done
+mapfile -t ALL_OUTB < <(ls "$STAGE"/*.outb 2>/dev/null | sort)
 TOTAL=${#ALL_OUTB[@]}
 
 if [ "$TOTAL" -lt 1 ]; then
@@ -57,7 +69,11 @@ mkdir -p reports analysis
 
 # Full settings: only override the three knobs the first pass lowered.
 # Conditional + Granger + AIS + coherence stay ON (no --no-* flags).
-COMMON_ARGS=( --n-perm 200 --max-lag 150 --decimate-target-hz 5.0 )
+# --slow-drift-tau 5 matches run_campaign.sh / te_rerun_missing.py: at tau=1 the
+# 4 slow-drift targets go singular in the Gaussian (Granger) estimator => TE=nan
+# (see TESettings docstring, te_pipeline.py:111-120), which would NaN the Granger
+# baseline this rerun exists to produce (Gap 1).
+COMMON_ARGS=( --n-perm 200 --max-lag 150 --decimate-target-hz 5.0 --slow-drift-tau 5 )
 
 PIDS=()
 for w in $(seq 0 $((N - 1))); do
