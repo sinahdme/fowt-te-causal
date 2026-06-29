@@ -71,7 +71,14 @@ def main() -> int:
                     help="Comma-separated response channels to test "
                          "(default PtfmHeave,PtfmPitch — the suppressed H2/H6 edges).")
     ap.add_argument("--max-lags", default="30,60,100,150",
-                    help="Comma-separated max_lag values to sweep (default 30,60,100,150).")
+                    help="Comma-separated lag values to sweep. With --max-lag-target "
+                         "unset these are symmetric max_lag (original mode); with it "
+                         "set they are the SOURCE-candidate windows.")
+    ap.add_argument("--max-lag-target", type=int, default=0,
+                    help="If >0, fix the TARGET embedding here and sweep --max-lags as "
+                         "max_lag_sources — the asymmetric re-validation (e.g. "
+                         "--max-lag-target 150 --max-lags 20,30,45). 0 = symmetric "
+                         "sweep (original behaviour).")
     ap.add_argument("--tau", type=int, default=5,
                     help="Embedding candidate spacing (default 5 — matches the "
                          "slow-drift handling heave/pitch got in the probe). Try "
@@ -91,7 +98,13 @@ def main() -> int:
     max_lags = [int(x) for x in args.max_lags.split(",") if x.strip()]
     for ml in max_lags:
         if not (0 < args.tau <= ml):
-            ap.error(f"tau={args.tau} must satisfy 0 < tau <= max_lag (got max_lag={ml})")
+            ap.error(f"tau={args.tau} must satisfy 0 < tau <= swept lag (got {ml})")
+    if args.max_lag_target:
+        if args.tau > args.max_lag_target:
+            ap.error(f"tau={args.tau} exceeds --max-lag-target {args.max_lag_target}")
+        if max(max_lags) > args.max_lag_target:
+            ap.error(f"--max-lags source values must be <= --max-lag-target "
+                     f"{args.max_lag_target}")
 
     base = TESettings(
         decimate_target_hz=args.decimate_target_hz,
@@ -127,7 +140,13 @@ def main() -> int:
     rows: list[dict] = []
     for target in targets:
         for ml in max_lags:
-            s = replace(base, max_lag=ml)
+            if args.max_lag_target:
+                # Asymmetric: fix target embedding, sweep the source window.
+                s = replace(base, max_lag=args.max_lag_target, max_lag_sources=ml)
+                ml_target, ml_sources = args.max_lag_target, ml
+            else:
+                s = replace(base, max_lag=ml)  # symmetric (max_lag_sources=0 ties)
+                ml_target, ml_sources = ml, ml
             for label, estimator in methods:
                 t0 = time.time()
                 try:
@@ -141,7 +160,8 @@ def main() -> int:
                 dt_job = time.time() - t0
                 row = {
                     "source": args.source, "target": target, "method": label,
-                    "max_lag": ml, "tau": args.tau,
+                    "max_lag": ml, "max_lag_target": ml_target,
+                    "max_lag_sources": ml_sources, "tau": args.tau,
                     "te_nats": r.get("te_nats", float("nan")),
                     "p_value": r.get("p_value", float("nan")),
                     "significant": r.get("significant", False),
@@ -162,8 +182,8 @@ def main() -> int:
 
     out = pd.DataFrame(rows)
     print("\n=== max_lag sweep ===")
-    cols = ["target", "method", "max_lag", "tau", "te_nats", "p_value",
-            "significant", "n_selected_sources", "runtime_s"]
+    cols = ["target", "method", "max_lag_target", "max_lag_sources", "tau",
+            "te_nats", "p_value", "significant", "n_selected_sources", "runtime_s"]
     with pd.option_context("display.width", 120, "display.max_columns", None):
         print(out[cols].to_string(index=False))
     print(f"\nWrote {args.output}  ({len(out)} rows)")

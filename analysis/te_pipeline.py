@@ -72,8 +72,20 @@ class TESettings:
     # the pitch natural frequency, period ~29 s = 145 samples at 5 Hz.
     # max_lag=150 captures one full slow-drift cycle. Raised from 30 on
     # 2026-05-20 after the slow-drift physics correction (see report §6.3).
-    max_lag: int = 150                  # = 30 s window at 5 Hz
+    max_lag: int = 150                  # = 30 s window at 5 Hz (TARGET embedding)
     min_lag: int = 1
+    # Source-candidate window, decoupled from the target window above. max_lag
+    # (target) must span the slow self-dynamics (pitch ~29 s = 150 samples at
+    # 5 Hz), but the source coupling (e.g. Wave->PtfmHeave) sits at SHORT lags
+    # (~5 s). IDTxl's greedy source-inclusion uses a max-statistic over ALL source
+    # candidates whose threshold tightens as the pool grows: with >=12 candidates
+    # it rejected the genuine moderate Wave->Heave coupling that a ~6-candidate
+    # (max_lag_sources=30, tau=5) search recovers — TE went 0.066 @30 -> 0 @60+
+    # while Granger held 0.21->0.35 (diag_maxlag_sweep, 2026-06-29). 0 = tie to
+    # max_lag (old symmetric behaviour); set ~30 to keep the long target embedding
+    # yet a sensitive, cheap source search. Only affects max_lag_sources; the
+    # target embedding and AIS stay at max_lag.
+    max_lag_sources: int = 0
     # Embedding candidate spacing (IDTxl `tau`/`tau_sources`/`tau_target`).
     # tau=1 considers every lag 1..max_lag (default, PLAN-canonical). tau>1
     # thins the candidate grid — tau=5 keeps the same max_lag window but cuts
@@ -191,7 +203,7 @@ def _idtxl_base_settings(settings: TESettings, *, for_ais: bool = False) -> dict
         base["max_lag"] = settings.max_lag
         base["tau"] = settings.tau
     else:
-        base["max_lag_sources"] = settings.max_lag
+        base["max_lag_sources"] = settings.max_lag_sources or settings.max_lag
         base["min_lag_sources"] = settings.min_lag
         base["max_lag_target"] = settings.max_lag
         base["tau_sources"] = settings.tau
@@ -794,8 +806,16 @@ def main() -> int:
     parser.add_argument("--decimate-target-hz", type=float, default=5.0)
     parser.add_argument("--transient-drop-s", type=float, default=600.0)
     parser.add_argument("--max-lag", type=int, default=150,
-                        help="Embedding window in samples (at decimated rate). "
+                        help="TARGET embedding window in samples (at decimated rate). "
                              "Default 150 = 30 s at 5 Hz, covers one slow-drift cycle.")
+    parser.add_argument("--max-lag-sources", type=int, default=0,
+                        help="SOURCE-candidate window in samples. 0 = tie to "
+                             "--max-lag (symmetric, old behaviour). Set ~30 to keep "
+                             "the long target embedding for slow-drift self-dynamics "
+                             "while giving the source search few enough candidates to "
+                             "detect short-lag couplings (e.g. wave->heave, which "
+                             "vanishes at the symmetric 150). Must be 0, or "
+                             "0 < v <= max_lag.")
     parser.add_argument("--n-perm", type=int, default=200)
     parser.add_argument("--tau", type=int, default=1,
                         help="Embedding candidate spacing (1 = every lag). "
@@ -843,6 +863,10 @@ def main() -> int:
                              " n_perm=50, no conditional/granger.")
     args = parser.parse_args()
 
+    if args.max_lag_sources and not (0 < args.max_lag_sources <= args.max_lag):
+        parser.error(f"--max-lag-sources must be 0 or 0 < v <= --max-lag "
+                     f"({args.max_lag}); got {args.max_lag_sources}")
+
     gpu_ids = (tuple(int(x) for x in args.gpus.split(",") if x.strip() != "")
                if args.gpus else (args.gpuid,))
 
@@ -850,6 +874,7 @@ def main() -> int:
         decimate_target_hz=args.decimate_target_hz,
         transient_drop_s=args.transient_drop_s,
         max_lag=args.max_lag,
+        max_lag_sources=args.max_lag_sources,
         tau=args.tau,
         n_perm=50 if args.smoke else args.n_perm,
         ksg_estimator="OpenCLKraskovCMI" if args.gpu else "JidtKraskovCMI",
