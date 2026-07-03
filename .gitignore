@@ -83,3 +83,14 @@ Untitled[ -]*.base
 # Daily-note files at vault root: YYYY-MM-DD.md. Add specific ones here
 # rather than a wildcard, so intentional dated notes elsewhere still track.
 /2026-05-13.md
+
+# ───────────────────────── Root-level scratch binaries ────────────────────────
+# .outb copied to repo root for quick local analysis (512 MB total as of
+# 2026-07-03) — one `git add -A` away from a >100 MB push rejection. The
+# canonical copies live under sims/ (already ignored) on the servers.
+/*.outb
+# Screen recording + extracted frames (raw/TEComplete.mp4, raw/_frames/).
+raw/*.mp4
+raw/_frames/
+# pptxgenjs install for the deck build scripts — reinstall via npm.
+reports/node_modules/
