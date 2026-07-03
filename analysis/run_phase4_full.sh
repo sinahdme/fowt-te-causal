@@ -62,7 +62,7 @@ fi
 echo "Total cases: $TOTAL"
 echo "Workers:     $N"
 echo "Per worker:  ~$((TOTAL / N))-$((TOTAL / N + 1)) cases"
-echo "Settings:    FULL (conditional + Granger + AIS + coherence, max_lag=150, 5 Hz, n_perm=200)"
+echo "Settings:    FULL (conditional + Granger + AIS + coherence, max_lag=150, max_lag_sources=20, 5 Hz, n_perm=200)"
 echo ""
 
 mkdir -p reports analysis
@@ -73,7 +73,13 @@ mkdir -p reports analysis
 # 4 slow-drift targets go singular in the Gaussian (Granger) estimator => TE=nan
 # (see TESettings docstring, te_pipeline.py:111-120), which would NaN the Granger
 # baseline this rerun exists to produce (Gap 1).
-COMMON_ARGS=( --n-perm 200 --max-lag 150 --decimate-target-hz 5.0 --slow-drift-tau 5 )
+# --max-lag-sources 20: symmetric max_lag=150 nulls real couplings — the greedy
+# max-stat tightens with candidate-pool size and rejected Wave->PtfmHeave
+# (te_pipeline.py TESettings, commit 986f867). Re-validation on dlca_v11ms_s00
+# (reports/diag_revalidate.parquet, 2026-07-03): w=20 and w=45 both recover
+# TE=0.067 (p=0.005, lag 6 = 1.2 s); w=30 stochastically nulled. 20 = smallest
+# candidate pool => most sensitive + cheapest; target embedding stays 150.
+COMMON_ARGS=( --n-perm 200 --max-lag 150 --max-lag-sources 20 --decimate-target-hz 5.0 --slow-drift-tau 5 )
 
 PIDS=()
 for w in $(seq 0 $((N - 1))); do
