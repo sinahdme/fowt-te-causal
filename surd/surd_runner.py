@@ -107,6 +107,26 @@ def norm_terms(I_R: dict, I_S: dict, MI: dict, names: list[str]) -> dict:
     return out
 
 
+def load_channels(outb: Path, hz: float, with_rate: bool = False):
+    """Load one case and return (case_id, {channel: preprocessed array}).
+    TE-parity preprocessing; the derived RATE channel is differentiated at
+    the source rate before decimation."""
+    df = load_outb(outb)
+    tcol = find_time_column(df)
+    dt_in = float(np.diff(df[tcol].to_numpy()[:100]).mean())
+    case = outb.parent.parent.name if outb.parent.name.startswith(
+        "IEA-15") else outb.stem
+    chans = [TARGET] + DRIVERS + CONTROLLER
+    X = {ch: preprocess(df[find_channel(df, ch)].to_numpy(), dt_in,
+                        seed=i, target_hz=hz)
+         for i, ch in enumerate(chans)}
+    if with_rate:
+        raw = df[find_channel(df, TARGET)].to_numpy()
+        X[RATE] = preprocess(np.gradient(raw, dt_in), dt_in, seed=99,
+                             target_hz=hz)
+    return case, X, dt_in
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("outb", type=Path)
@@ -139,22 +159,10 @@ def main() -> int:
 
     t0 = time.time()
     print(f"[{case}] loading {args.outb.name} ...", flush=True)
-    df = load_outb(args.outb)
-    tcol = find_time_column(df)
-    dt_in = float(np.diff(df[tcol].to_numpy()[:100]).mean())
-
-    chans = [TARGET] + DRIVERS + CONTROLLER
-    X = {}
-    for i, ch in enumerate(chans):
-        X[ch] = preprocess(df[find_channel(df, ch)].to_numpy(), dt_in,
-                           seed=i, target_hz=args.hz)
-    if args.pitch_rate:
-        # Differentiate at the source rate (clean derivative), then apply the
-        # identical preprocess so it lands on the same grid as everything else.
-        raw = df[find_channel(df, TARGET)].to_numpy()
-        X[RATE] = preprocess(np.gradient(raw, dt_in), dt_in, seed=99,
-                             target_hz=args.hz)
+    case, X, dt_in = load_channels(args.outb, args.hz,
+                                   with_rate=args.pitch_rate)
     n = len(X[TARGET])
+    chans = list(X)  # incl. RATE when --pitch-rate: upstream groups see it too
 
     state = [TARGET] + ([RATE] if args.pitch_rate else [])
     reduced_names = state + DRIVERS
