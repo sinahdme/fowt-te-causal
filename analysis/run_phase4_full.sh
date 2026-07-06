@@ -5,45 +5,47 @@
 #   first pass : --no-conditional --no-granger --max-lag 60 --decimate 2.0 --n-perm 50
 #   this run   : conditional + Granger + AIS + coherence ON,
 #                --max-lag 150 (= 30 s slow-drift window at 5 Hz),
+#                --max-lag-sources 20 (asymmetric fix, commit 986f867),
 #                --decimate-target-hz 5.0, --n-perm 200
-#
-# These are the te_pipeline.py canonical defaults (see TESettings), so we pass
-# only the ones we want to be explicit about. Conditional/Granger are ON simply
-# by NOT passing --no-conditional / --no-granger.
 #
 # Closes: Gap 1 (Granger baseline), Gap 2 (conditional TE → H3, rigorous H5b),
 # and re-tests the H1 / H6 nulls at the physics-correct max_lag=150.
 #
-# Output: per-worker reports/te_table_full_p<W>.parquet, merged by
-# merge_parquet_parts.py --prefix te_table_full_p --out te_table_full.parquet.
+# This is LAMS (GPU) work. A previous revision sharded 36 CPU-only python
+# processes (written for the 65-core box, no --gpu). That run wedged for 2 days
+# with zero rows: each JIDT-CPU job child hosts a JVM whose signal handlers can
+# swallow the watchdog's SIGTERM, so p.join() in _execute_watchdog blocked
+# forever and every worker went silent. It also ran a DIFFERENT KSG estimator
+# (JidtKraskovCMI) from the one the max_lag_sources=20 re-validation was done
+# on (OpenCLKraskovCMI) — an estimator inconsistency the paper can't carry.
+#
+# This revision follows run_campaign.sh (the launcher that completed the
+# first-pass + tau5 runs): ONE te_pipeline process, OpenCL KSG on both A100s,
+# a live watchdog, and a checkpoint parquet rewritten after EVERY case — a
+# crash/hang loses at most the case in flight, and there is no merge step.
+#
+# Usage (on lams):
+#   nohup ./analysis/run_phase4_full.sh > analysis/run-full-gpu.log 2>&1 &
+#   # optional arg = intra-case worker count (default 4; KSG jobs are
+#   # GPU-latency-bound, more workers buys little):
+#   nohup ./analysis/run_phase4_full.sh 4 > analysis/run-full-gpu.log 2>&1 &
+#
+# Track progress:
+#   grep -E 'OK \(|=== \[|case done|TIMEOUT|checkpoint' analysis/run-full-gpu.log | tail
+#
+# Output: reports/te_table_full.parquet (checkpointed per case, final on exit).
 # The first-pass reports/te_table.parquet is left untouched for reproducibility.
-#
-# This is SERVER work (65-core box). The cost is ~20-50x the first pass per
-# case; expect hours. Run the timing probe below on ONE case first.
-#
-# Usage:
-#   # 0. timing probe — one case, full settings, foreground, time it:
-#   time python analysis/te_pipeline.py \
-#       sims/dlca_v11ms_s00/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi.outb \
-#       -o /tmp/te_probe.parquet --max-lag 150 --decimate-target-hz 5.0 --n-perm 200
-#
-#   # 1. full sharded run (default 36 workers; tune to free cores):
-#   ./analysis/run_phase4_full.sh 36
-#
-#   # 2. when all 54 done, merge:
-#   python analysis/merge_parquet_parts.py --prefix te_table_full_p --out te_table_full.parquet
 
 set -euo pipefail
 
-N="${1:-36}"
+WORKERS="${1:-4}"
 
 cd "$(dirname "$0")/.."
 
 # Every case ships the SAME filename (sims/<case>/IEA-15-.../IEA-15-...outb), so
-# te_pipeline's stem-based case_id would collapse all 54 cases to one id and
-# merge_parquet_parts.py would drop_duplicates them down to ~2. Stage each .outb
-# as a FOLDER-named symlink first (exactly like run_campaign.sh) so the stem
-# becomes the real case id (dlca_v11ms_s00, ...).
+# te_pipeline's stem-based case_id would collapse all 54 cases to one id. Stage
+# each .outb as a FOLDER-named symlink first (exactly like run_campaign.sh) so
+# the stem becomes the real case id (dlca_v11ms_s00, ...).
 STAGE="/tmp/te_full_inputs"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 shopt -s nullglob
@@ -60,57 +62,29 @@ if [ "$TOTAL" -lt 1 ]; then
 fi
 
 echo "Total cases: $TOTAL"
-echo "Workers:     $N"
-echo "Per worker:  ~$((TOTAL / N))-$((TOTAL / N + 1)) cases"
-echo "Settings:    FULL (conditional + Granger + AIS + coherence, max_lag=150, max_lag_sources=20, 5 Hz, n_perm=200)"
+echo "Workers:     $WORKERS (intra-case, GPU round-robin over 0,1)"
+echo "Settings:    FULL (conditional + Granger + AIS + coherence, max_lag=150, max_lag_sources=20, 5 Hz, n_perm=200, slow_drift_tau=5)"
 echo ""
 
 mkdir -p reports analysis
 
-# Full settings: only override the three knobs the first pass lowered.
-# Conditional + Granger + AIS + coherence stay ON (no --no-* flags).
-# --slow-drift-tau 5 matches run_campaign.sh / te_rerun_missing.py: at tau=1 the
-# 4 slow-drift targets go singular in the Gaussian (Granger) estimator => TE=nan
-# (see TESettings docstring, te_pipeline.py:111-120), which would NaN the Granger
-# baseline this rerun exists to produce (Gap 1).
+# --slow-drift-tau 5: at tau=1 the 4 slow-drift targets go singular in the
+#   Gaussian (Granger) estimator => TE=nan (TESettings docstring).
 # --max-lag-sources 20: symmetric max_lag=150 nulls real couplings — the greedy
-# max-stat tightens with candidate-pool size and rejected Wave->PtfmHeave
-# (te_pipeline.py TESettings, commit 986f867). Re-validation on dlca_v11ms_s00
-# (reports/diag_revalidate.parquet, 2026-07-03): w=20 and w=45 both recover
-# TE=0.067 (p=0.005, lag 6 = 1.2 s); w=30 stochastically nulled. 20 = smallest
-# candidate pool => most sensitive + cheapest; target embedding stays 150.
-COMMON_ARGS=( --n-perm 200 --max-lag 150 --max-lag-sources 20 --decimate-target-hz 5.0 --slow-drift-tau 5 )
-
-PIDS=()
-for w in $(seq 0 $((N - 1))); do
-    # Round-robin: worker w gets indices w, w+N, w+2N, ... (DLCs stay mixed).
-    FILES=()
-    i=$w
-    while [ $i -lt $TOTAL ]; do
-        FILES+=("${ALL_OUTB[$i]}")
-        i=$((i + N))
-    done
-
-    if [ ${#FILES[@]} -eq 0 ]; then
-        continue
-    fi
-
-    OUT="reports/te_table_full_p${w}.parquet"
-    LOG="analysis/run-full-p${w}.log"
-
-    nohup python analysis/te_pipeline.py "${FILES[@]}" -o "$OUT" "${COMMON_ARGS[@]}" \
-        > "$LOG" 2>&1 &
-    PID=$!
-    disown $PID || true
-    PIDS+=("$PID")
-    printf "Worker %2d: %d cases  →  %s  (PID %d)\n" "$w" "${#FILES[@]}" "$OUT" "$PID"
-done
+#   max-stat tightens with candidate-pool size and rejected Wave->PtfmHeave
+#   (commit 986f867). Re-validation on dlca_v11ms_s00
+#   (reports/diag_revalidate.parquet, 2026-07-03, OpenCL estimator): w=20 and
+#   w=45 both recover TE=0.067 (p=0.005, lag 6 = 1.2 s); w=30 stochastically
+#   nulled. 20 = smallest pool => most sensitive + cheapest; target stays 150.
+# --job-timeout 9000: watchdog terminates a hung OpenCL kernel instead of
+#   deadlocking the sweep (same setting run_campaign.sh completed with).
+python -u analysis/te_pipeline.py "${ALL_OUTB[@]}" \
+    -o reports/te_table_full.parquet \
+    --graph-out reports/te_full_graph.pkl \
+    --gpu --gpus 0,1 --workers "$WORKERS" \
+    --n-perm 200 --max-lag 150 --max-lag-sources 20 \
+    --decimate-target-hz 5.0 --slow-drift-tau 5 \
+    --job-timeout 9000
 
 echo ""
-echo "Launched $N workers."
-echo ""
-echo "── Total completed cases across all workers:"
-echo "  grep -h 'OK (' analysis/run-full-p*.log | wc -l"
-echo ""
-echo "── When all $TOTAL cases done, merge the parts:"
-echo "  python analysis/merge_parquet_parts.py --prefix te_table_full_p --out te_table_full.parquet"
+echo "DONE: reports/te_table_full.parquet"
