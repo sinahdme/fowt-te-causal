@@ -312,15 +312,18 @@ For each (source, target) pair (e.g., `Wind1VelX → PtfmPitch`):
 6. **Effect-size normalisation**:
 
    $$
-   \text{TE}_\text{frac} = \frac{\text{TE}(X \to Y)}{H(Y_t) - \text{AIS}(Y)}
+   \text{TE}_\text{frac} = \frac{\text{TE}(X \to Y)}{\text{AIS}(Y)}
    $$
 
    where `AIS(Y) = I(Y_t ; Y_{t-1}^{(k)})` is the **Active Information
-   Storage** (Lizier 2012). Interpretation: *fraction of externally-driven
-   predictability of `Y_t` that comes from `X`*. Computed from
-   [[entities/idtxl]] `ActiveInformationStorage` analyser using the same
-   `k_target` embedding. Sharper than dividing by `H(Y_t)` alone because
-   it removes the part `Y` predicts about itself — see
+   Storage** (Lizier 2012). Interpretation: *source-provided information
+   relative to the target's self-predictability* (not bounded by 1).
+   Computed from [[entities/idtxl]] `ActiveInformationStorage` analyser
+   using the same `k_target` embedding. An earlier draft specified
+   `TE/(H(Y)−AIS)` ("fraction of externally-driven predictability"), but
+   for continuous channels `H(Y)` is a differential entropy (can be ≤ 0),
+   so that ratio is not a well-defined fraction under the KSG estimator;
+   the implemented and reported quantity is `TE/AIS` — see
    [[papers/wollstadt-2019]] §"Surprise 2".
 
 Outputs per case:
@@ -606,7 +609,7 @@ run_bivariate_te()     # IDTxl BivariateTE, JidtKraskovCMI
 run_mvte()             # IDTxl MultivariateTE, JidtKraskovCMI (conditional)
 run_granger()          # IDTxl MultivariateTE, JidtGaussianCMI = baseline
 run_ais()              # IDTxl ActiveInformationStorage (effect-size denominator)
-build_graph()          # NetworkX, edge weight = TE / (H(Y) − AIS(Y))
+build_graph()          # NetworkX, edge weight = TE / AIS(Y)
 ```
 
 ## Tooling install list

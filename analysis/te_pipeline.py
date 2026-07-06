@@ -652,7 +652,11 @@ def per_case_pipeline(
                         "method": "coherence_scipy",
                         "te_nats": coh["gamma2_peak"],   # γ² in te_nats slot for unified schema
                         "p_value": float("nan"),
-                        "significant": bool(coh["gamma2_peak"] > 0.3),  # rough threshold
+                        # NOT a statistical test: hard-coded amplitude threshold.
+                        # Nearly all wave-band coherence peaks clear 0.3, so
+                        # "significant" is ~always True for coherence rows —
+                        # report gamma2_peak itself, never this flag.
+                        "significant": bool(coh["gamma2_peak"] > 0.3),
                         "ais_nats": float("nan"),
                         "te_frac": float("nan"),
                         "gamma2_peak_hz": coh["gamma2_peak_hz"],
@@ -766,7 +770,8 @@ def per_case_pipeline(
 def build_graph(df_results: pd.DataFrame, method: str = "bivariate_te_ksg",
                 p_threshold: float = 0.05):
     """NetworkX DiGraph aggregating across cases. Edge weight = mean te_frac
-    (TE/(H(Y)-AIS(Y)) — fraction of externally-driven predictability).
+    (TE/AIS(Y) — source-provided information relative to the target's
+    self-predictability; not bounded by 1; see _te_frac).
     Only edges significant in > 50% of cases are kept."""
     import networkx as nx
 

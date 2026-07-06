@@ -83,6 +83,13 @@ $$
 is a more meaningful effect size than dividing by `H(Y_t)` alone (which
 PLAN currently proposes). Worth adding to Phase 4.
 
+> **Update (2026-07-06):** the pipeline ultimately implements `TE/AIS(Y)`,
+> not `TE/(H(Y)−AIS(Y))` as proposed above — for continuous channels under
+> KSG, `H(Y)` is a differential entropy (can be ≤ 0), so the "fraction"
+> interpretation is not well-defined. All reported `te_frac` values are
+> TE/AIS: source information relative to the target's self-predictability,
+> not bounded by 1. See `_te_frac` in `analysis/te_pipeline.py`.
+
 ### Surprise 3: PID for the follow-up paper
 
 Partial Information Decomposition (Williams 2010, Bertschinger 2014,

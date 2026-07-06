@@ -18,7 +18,7 @@ Transfer-entropy causal discovery of environment→structure coupling in a float
 ### 4. Method
 - **KSG transfer entropy** (Kraskov k=4), non-uniform embedding, max_lag=150 (30 s, covers slow-drift).
 - **Circular-shift surrogates** ×200, p<0.05, max-stat correction.
-- **AIS-normalised effect size** te_frac = TE/(H(Y)−AIS(Y)).
+- **AIS-normalised effect size** te_frac = TE/AIS(Y).
 - **Two linear baselines, same pipeline**: Gaussian/Granger (estimator swap) + coherence (scipy).
 - Compute: OpenCL on 2× A100; GPU validated vs CPU (AIS RootMyc1 = 1.50 GPU vs 1.49 CPU).
 - Graph rule: keep edges significant in >50% of the 54 cases; edge weight = mean across cases.
