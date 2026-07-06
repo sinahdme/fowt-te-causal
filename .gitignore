@@ -94,3 +94,7 @@ raw/*.mp4
 raw/_frames/
 # pptxgenjs install for the deck build scripts — reinstall via npm.
 reports/node_modules/
+
+# SURD reference implementation (55.9 MB with bundled example data) - re-clone
+# per surd/VENDOR.md (pinned commit recorded there).
+surd/vendor/
