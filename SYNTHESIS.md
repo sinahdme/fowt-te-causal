@@ -223,8 +223,8 @@ each new Claude session was forgetting what the last one discussed.
 ### Files changed
 - `pages/log.md` — backfilled 2026-06-04→07-09, committed **`8fe9488`**.
 - `SYNTHESIS.md` (this file) — created.
-- `CLAUDE.md` — created (maintenance rules). Committed together (hash: see
-  git log for "wiki: add SYNTHESIS.md conversation record + CLAUDE.md").
+- `CLAUDE.md` — created (maintenance rules). Committed together with this
+  file as **`5b886b8`** (hash recorded in a small follow-up commit).
 - Memory (outside repo): `feedback_update_wiki_log.md` (new),
   `feedback_synthesis_log.md` (new), `project_phase4_full_campaign.md`
   (11-day ETA added), `MEMORY.md` (index lines).
