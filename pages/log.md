@@ -1060,3 +1060,20 @@ Backfilled from git (`65486fb`, `4186414`).
   (`reports/_build_te_conference.js`, `_build_te_talk_v2.py`, `_conf2/`…
   `_conf9/`), new figures (Sobol, TE network, delay profiles, pipeline
   diagram), and paper-draft edits newer than v0.5.
+
+## [2026-07-09] structure | SYNTHESIS.md conversation record + CLAUDE.md session rules
+
+- User reported the lams Phase 4 GPU campaign will take **~11 days**; vault
+  work fills the window.
+- Added **`SYNTHESIS.md`** at vault root (`5b886b8`): durable record of the
+  *conversations* — dialogue Q&A both directions, plans, decisions, file
+  changes with commit hashes — per session, backfilled 2026-05-12 → today.
+  §0 "Current state" block at the top is rewritten each session and answers
+  "what were we doing?".
+- Added **`CLAUDE.md`** at vault root: standing instruction loaded every
+  session — read SYNTHESIS.md §0 at start; before ending, append the session
+  entry, rewrite §0, and update this log. Also carries the working
+  agreements (surface assumptions, cite primary sources, no wall-clock
+  phrasing, `test_ar1_te.py` gate before campaigns).
+- Division of labor: this log = task-level record; SYNTHESIS.md =
+  conversation/decision record.
