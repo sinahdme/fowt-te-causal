@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-06-01
+updated: 2026-07-09
 tags: [meta, log, publication]
 ---
 
@@ -943,3 +943,120 @@ campaign** — now a required step in §3d.
 Campaign launch (Phase 5 N=256 + Phase 2 dlc16/dlca/dlcb @ TMax=3600,
 then `run_phase4_full.sh`) proceeds once `test_ar1_te.py` is green on the
 new box.
+
+## [2026-06-04] structure | GPU/OpenCL TE estimator + process-pool parallelism
+
+Backfilled 2026-07-09 from git (`da8d18a`…`d1481ff`).
+
+- Added OpenCL/GPU KSG estimator option to `te_pipeline.py`, plus a process
+  pool with multi-GPU round-robin (`--gpu/--gpus/--workers`).
+- Added `--tau` embedding-subsampling flag.
+- Patched IDTxl's OpenCL estimator scalar-return crash on numpy 2.x; scoped
+  the coercion to `_calculate_single_link` only.
+- Earlier (2026-06-02, `ca99535`): closed the Phase 4 skip-trap and fixed the
+  `test_ar1_te.py` max_shift crash.
+
+## [2026-06-06] structure | Tau validation tooling + controller-off ablation driver
+
+Backfilled from git (`993ea4f`, `57359aa`, `d1fa08a`).
+
+- `pick_tau.py` — data-driven embedding delay selection.
+- `compare_tau.py` — validate a thinned-tau run against a baseline
+  (merge-key bug fixed 2026-06-09: join on (source, target), not case).
+- Controller-off ablation driver + conditional-TE GPU probe.
+
+## [2026-06-10] structure | Conference abstract + wind–wave attribution diagnostics
+
+Backfilled from git (2026-06-09/10 commits).
+
+- Bilingual (EN/KO) conference abstract + keywords; talk outline with real
+  numbers and the honest firewall framing; paper novelty statement (strong +
+  fallback, sweep-contingent).
+- `wind_wave_indep.py` — wind/wave (in)dependence diagnostic.
+- `load_band_attribution.py` — frequency-band variance gate for the
+  wind–wave thread, with `--notch-1p` (wave-only vs rotor-line split).
+
+## [2026-06-12] structure | Campaign hardening for unattended batch runs
+
+Backfilled from git (`b797444`, `d3acede`…`06459d4`).
+
+- `te_rerun_missing.py` — salvage + watchdog'd rerun for hung jobs, later
+  `--force-targets` for uniform-tau slow-drift recompute.
+- Per-job watchdog + **per-target tau** for slow-drift channels
+  (PtfmPitch/PtfmHeave hang or NaN at tau=1; rerun at tau=5).
+- Stem-based `case_id`, `run_campaign.sh` for unattended batches,
+  workers pinned to 4 (proven reliable), `.outb` staging via folder-named
+  symlinks.
+
+## [2026-06-17] structure | Conference deck reconciled to full-campaign data
+
+Backfilled from git (`1776f52`, `cc07e39`, `bcc3312`).
+
+- Results figures reconciled to the full-campaign TE data.
+- Added LAMS/KSNU lab-format build (32 slides); body text later switched
+  Korean → English.
+
+## [2026-06-29] structure | KSG max_lag=150 falsely nulls Wave→Heave — fixed
+
+Backfilled from git + `SESSION-LOG-2026-06-29.md` (full session record there).
+
+- The 1-case full-settings probe (max_lag=150, 5 Hz, n_perm=200, GPU, 9.1 h)
+  showed `TE(Wave→PtfmHeave)=0` while Granger saw 0.35 — would have wrecked
+  the H2/H6 story. Diagnostic sweep proved a **greedy-selection artifact**:
+  KSG TE = 0.066 at max_lag=30, collapses to 0 at max_lag≥60.
+- Fix: decoupled `max_lag_sources` (short, sensitive source search) from the
+  target embedding `max_lag` (long, for slow drift) — `986f867`.
+- Also fixed a `case_id` collision in `run_phase4_full.sh` and added
+  `--slow-drift-tau 5`. (2026-06-24, `4984844`: conditional-TE source
+  extraction fix + full-table check.)
+
+## [2026-07-03] structure | Fix re-validated; --max-lag-sources 20 wired in
+
+Backfilled from git (`e8d3622`, `18ed2bf`).
+
+- Re-validation on lams passed; `--max-lag-sources 20` wired into
+  `run_phase4_full.sh`.
+- Repo hygiene: ignore root scratch binaries; track SURD plan, session log,
+  scorecard; executable bits on the `.sh` launchers.
+
+## [2026-07-06] structure | SURD Phases 0–2 complete + Phase 4 full campaign relaunched on GPU
+
+Backfilled from git (`2ba1706`…`126aa5f`, `0e550e0`).
+
+- **SURD subproject** ran Phase 0 → Phase 2 in one push:
+  - Phase 0 validation gate PASSED (mediator case reproduced).
+  - Phase 1 thin slice: leak-drop metric failed its bias control; refined
+    with a pitch-rate state — GATE OPEN.
+  - Phase 2: firewall-focused campaign runner, 55-case `surd_table.parquet`
+    + cross-case analysis + comparison figures. Headline numbers:
+    **2.8× firewall dose-response** at/above-rated vs below-rated;
+    open-loop twin −59% with U:BldPitch1→0; **94% of TE-null cases** show
+    the mediated path.
+- **Phase 4 full campaign**: CPU-shard run had wedged (JVM swallowed the
+  watchdog SIGTERM); relaunched with a **single-process GPU launcher** on
+  lams, both A100s ~99% (`0e550e0`). Still running as of 2026-07-09.
+- Hygiene (`5a80adf`): `te_frac` is TE/AIS everywhere; the coherence flag is
+  a threshold, not a statistical test.
+
+## [2026-07-08] structure | TE-firewall manuscript v0.5 via full ARS pipeline
+
+Backfilled from git (`65486fb`, `4186414`).
+
+- Paper Phase 1: fault-detection **signature table** scaffolding.
+- `reports/te-firewall-paper-draft.md` taken to **v0.5** through the full
+  ARS pipeline (write → review → revise → finalize). Thesis: wind→platform
+  TE≈0 is a blade-pitch-control *firewall*; TE rising = pitch fault →
+  health-monitoring signal.
+
+## [2026-07-09] lint | Log backfill — gap 2026-06-01 → 2026-07-09 closed
+
+- This log went unmaintained for five weeks while work continued (recorded
+  only in git commits and `SESSION-LOG-2026-06-29.md`). Entries above dated
+  2026-06-04 onward were reconstructed from git history today.
+- Process fix: the agent now appends a log entry at the end of every
+  substantive session (rule stored in agent memory) — the wiki log is the
+  durable record; git log is not a substitute.
+- Still uncommitted in the tree as of today: conference-talk deck builds
+  (`reports/_build_te_conference.js`, `_build_te_talk_v2.py`, `_conf2/`…
+  `_conf9/`), new figures (Sobol, TE network, delay profiles, pipeline
+  diagram), and paper-draft edits newer than v0.5.
