@@ -212,6 +212,26 @@ each new Claude session was forgetting what the last one discussed.
 - **Claude presented a plan** (SYNTHESIS.md at vault root with §0 current-state
   block + per-session entries; new CLAUDE.md carrying the maintenance rule;
   memory updates; one commit) → **User approved** the plan.
+- **User said:** "I need to do some update to the claude.md as well" →
+  **Claude asked** what updates → **User answered:** make it structured and
+  add role/mission sentences: planning agent + coding agent (not a chatbot);
+  mission = turn vague goals into sequenced execution plans a coding agent
+  can safely follow; senior planning agent with Ocean Engineering / offshore
+  wind / OpenFAST / information-theory expertise; plans carry milestones,
+  file-level work areas, verification steps, rollback notes, concise todos,
+  implementation-ready; push back on unclear scope / hidden coupling / risky
+  rewrites / missing acceptance criteria / unsplit work; during
+  implementation mark completed items with evidence, not optimism.
+- **User added (second batch):** before-edit workflow (inspect files, infer
+  patterns, list assumptions, short plans, todos); during-implementation
+  rules (scoped changes, preserve user work, prefer existing helpers, add
+  tests/checks against regressions); an **output contract** (objective,
+  assumptions, phased plan, touched areas, risk register, verification
+  commands, open questions); clarifying questions only when missing info
+  blocks safe implementation; **never guess — ask**. → **Claude** cleaned
+  typos and restructured CLAUDE.md into 8 sections (Role / Mission / Planning
+  standards / Execution workflow / Output contract / Session record /
+  Project pointers / Working agreements).
 ### Decisions
 - File named `SYNTHESIS.md` (spelling corrected from "sythesis.md"), vault
   root, append-only newest-at-bottom, §0 rewritten each session.
@@ -224,7 +244,12 @@ each new Claude session was forgetting what the last one discussed.
 - `pages/log.md` — backfilled 2026-06-04→07-09, committed **`8fe9488`**.
 - `SYNTHESIS.md` (this file) — created.
 - `CLAUDE.md` — created (maintenance rules). Committed together with this
-  file as **`5b886b8`** (hash recorded in a small follow-up commit).
+  file as **`5b886b8`** (hash recorded in a small follow-up commit,
+  `117a499`); today's log.md entry committed as `30861f7`.
+- `CLAUDE.md` — restructured later the same session into the 8-section
+  planning-agent charter (user-dictated role/mission/workflow/output-contract
+  rules); committed together with this SYNTHESIS.md update and a log.md
+  entry (hash: see git log, "CLAUDE.md: planning-agent charter").
 - Memory (outside repo): `feedback_update_wiki_log.md` (new),
   `feedback_synthesis_log.md` (new), `project_phase4_full_campaign.md`
   (11-day ETA added), `MEMORY.md` (index lines).

@@ -1077,3 +1077,19 @@ Backfilled from git (`65486fb`, `4186414`).
   phrasing, `test_ar1_te.py` gate before campaigns).
 - Division of labor: this log = task-level record; SYNTHESIS.md =
   conversation/decision record.
+
+## [2026-07-09] structure | CLAUDE.md restructured as planning-agent charter
+
+- User dictated role/mission/workflow rules; CLAUDE.md reorganized into 8
+  sections: **Role** (planning agent + coding agent, not a chatbot; Ocean
+  Engineering / offshore wind / OpenFAST / information-theory specialist),
+  **Mission** (vague goals → sequenced, safely executable plans),
+  **Planning standards** (milestones, file-level work areas, verification,
+  rollback notes, todos; push back on unclear scope/hidden coupling/risky
+  rewrites/missing acceptance criteria; completed items marked with
+  evidence, not optimism), **Execution workflow** (inspect → infer patterns
+  → list assumptions → plan → todos; scoped changes, preserve user work,
+  prefer existing helpers, regression checks; never guess — ask),
+  **Output contract** (objective, assumptions, phased plan, touched areas,
+  risk register, verification commands, open questions), plus the existing
+  session-record, pointers, and working-agreement sections.
