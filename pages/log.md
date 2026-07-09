@@ -1093,3 +1093,19 @@ Backfilled from git (`65486fb`, `4186414`).
   **Output contract** (objective, assumptions, phased plan, touched areas,
   risk register, verification commands, open questions), plus the existing
   session-record, pointers, and working-agreement sections.
+
+## [2026-07-09] lint | Manuscript v0.6 — full numeric re-verification + 4 fixes
+
+- Re-verified every headline number in `reports/te-firewall-paper-draft.md`
+  against the parquet tables — Tables 1–5, edge counts (341/486, 69/486),
+  te_frac (0.0004/0.043), coherence (0.72…), SURD 0.402, open-loop
+  0.167→0.000 & 0.0612→0.0265 (−57%), delay table (0.3/2.7/3.9/6.3 s),
+  surge secondary peak (~1.1 s) — **all reproduced exactly**.
+- Fixed 4 issues: stale abstract delay range (0.3–4.3 s → transport delays
+  0.3–3.9 s + surge antiphase at ≈Tp/2); "three orders of magnitude" → two
+  (§4.1); §3.4 now explains the retained non-significant (possibly negative)
+  KSG estimates behind Table 2's −0.0005 heave mean; §3.8 alias-avoidance
+  claim scoped to in-phase channels. Header bumped to v0.6.
+- Gotcha corrected in agent memory: open-loop drop is **−57%**, not −59%.
+- Standing requirement: re-verify all paper numbers against
+  `te_table_full.parquet` when the lams campaign lands, before Stage 5.

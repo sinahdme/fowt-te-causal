@@ -33,9 +33,13 @@ each new Claude session was forgetting what the last one discussed.
   wedged. **User-reported ETA: ~11 days** (→ ~2026-07-17). Output:
   `reports/te_table_full.parquet` (supersedes stale first-pass
   `te_table.parquet`).
-- **Paper**: `reports/te-firewall-paper-draft.md` at **v0.5** (commit
-  `4186414`, via full ARS pipeline). Thesis: wind→platform TE≈0 is a
+- **Paper**: `reports/te-firewall-paper-draft.md` at **v0.6** — v0.5 (commit
+  `4186414`, via full ARS pipeline) plus the Fig-7/surge-antiphase revision
+  and the 2026-07-09 verification fixes (all numbers re-checked from parquet;
+  abstract delay range, "two orders of magnitude", §3.4 negative-TE
+  bookkeeping, §3.8 alias wording). Thesis: wind→platform TE≈0 is a
   blade-pitch-control *firewall*; TE rising = pitch fault → health monitoring.
+  Open-loop drop is **−57%** (0.0612→0.0265), not the −59% in older notes.
 - **SURD subproject COMPLETE through Phase 2**: 55-case `surd_table.parquet`;
   2.8× firewall dose-response at/above-rated; open-loop twin −59%; 94% of
   TE-null cases show the mediated path.
@@ -253,11 +257,35 @@ each new Claude session was forgetting what the last one discussed.
 - Memory (outside repo): `feedback_update_wiki_log.md` (new),
   `feedback_synthesis_log.md` (new), `project_phase4_full_campaign.md`
   (11-day ETA added), `MEMORY.md` (index lines).
+### Dialogue (continued — manuscript double-check)
+- **User asked:** "you must remember that yesterday you prepared a manuscript
+  — do you want to double check the output?" → **Claude** re-verified every
+  headline number in `te-firewall-paper-draft.md` against the parquet tables
+  (te_table, surd_table, monitor_signature, delay_profiles). **All Tables 1–5
+  values, edge counts, te_frac, coherence, SURD 0.402, open-loop
+  0.167→0.000 and 0.0612→0.0265 (−57%), surge peaks reproduced exactly.**
+  Four issues found: (1) abstract still said delays "0.3–4.3 s" — stale after
+  the uncommitted Fig-7/surge revision changed surge to 6.3 s; (2) §4.1 said
+  "three orders of magnitude" where 0.04% vs 4.3% is two; (3) §3.4 claimed
+  non-significant channels return exactly 0, but 7 wind→heave rows retain
+  non-zero (4 negative) estimates → Table 2's −0.0005 heave mean; (4) §3.8
+  overclaimed that the half-period cap "avoids the aliases" when surge's
+  selected delay sits at ≈Tp/2. → **User said** "yes" to fixing all four.
+- **Claude applied** the four fixes, bumped the draft header to **v0.6**, and
+  corrected its own memory (−59% → −57% for the open-loop drop; the paper
+  had it right).
+### Decisions (continued)
+- Verification convention confirmed: paper numbers are checked against the
+  first-pass `te_table.parquet`; **must be re-verified against
+  `te_table_full.parquet` when the lams campaign lands, before Stage 5**.
 ### Open items / next steps
 - Rest of the 11-day window: user to specify next vault changes (content
   catch-up for SURD/paper pages, structural changes, hygiene pass were the
   offered options — "something else" chosen was this file; the others remain
   candidates).
+- **Paper**: re-verify all numbers against `te_table_full.parquet` when the
+  lams run finishes; then Stage 5 (LaTeX/PDF). Fault-TE computation
+  (`analysis/compute_fault_te.py`) still queued.
 - Uncommitted conference-deck work still needs sorting/committing.
 - When lams finishes: pull `te_table_full.parquet`, re-score hypotheses,
   finalize report ver08.
