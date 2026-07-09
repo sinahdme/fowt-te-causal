@@ -1109,3 +1109,14 @@ Backfilled from git (`65486fb`, `4186414`).
 - Gotcha corrected in agent memory: open-loop drop is **−57%**, not −59%.
 - Standing requirement: re-verify all paper numbers against
   `te_table_full.parquet` when the lams campaign lands, before Stage 5.
+
+## [2026-07-09] structure | CLAUDE.md rewritten by user as 13-section operating manual
+
+- User replaced the 8-section charter with a 13-section manual (core
+  principles, working modes, planning/verification/research standards,
+  output contract with confidence ratings, engineering philosophy).
+- Review pass applied 4 reconciliations: Mission sentence restored to §1;
+  Output Contract scoped to planning/implementation deliverables (short
+  answers report applicable sections, always Verification + Confidence when
+  work was performed); Planning Mode's no-file-edits rule now exempts the
+  mandatory §9 session records; heading levels + EOF newline normalized.

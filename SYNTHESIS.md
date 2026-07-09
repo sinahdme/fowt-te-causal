@@ -286,6 +286,29 @@ each new Claude session was forgetting what the last one discussed.
 - **Paper**: re-verify all numbers against `te_table_full.parquet` when the
   lams run finishes; then Stage 5 (LaTeX/PDF). Fault-TE computation
   (`analysis/compute_fault_te.py`) still queued.
+
+### Dialogue (continued — CLAUDE.md user rewrite)
+- **User said** they edited CLAUDE.md themselves → **Claude** found no change
+  on disk (file identical to `d0d5b05`, no other CLAUDE.md anywhere) →
+  unsaved editor buffer → **User saved**, revealing a full rewrite: the
+  8-section charter expanded to a **13-section operating manual** (Role /
+  Core Principles / Working Modes / Planning Standard / Push Back /
+  Implementation Rules / Verification Standard / Research Standards /
+  Session Records / Project References / Output Contract /
+  Project-Specific Agreements / Engineering Philosophy).
+- **Claude reviewed** and flagged 4 issues: (1) the dictated Mission sentence
+  was dropped; (2) §11 Output Contract's 10 sections applied to *every*
+  response would bury short answers in boilerplate; (3) §3 Planning Mode's
+  "do not modify files" contradicted §9's mandatory session records;
+  (4) §1 heading level inconsistent + missing trailing newline.
+  → **User asked** which to apply → **Claude recommended all four** →
+  **User approved** ("ok good").
+### Decisions (continued)
+- CLAUDE.md is now the user's 13-section operating manual with: Mission
+  restored into §1; Output Contract scoped (full contract for
+  planning/implementation deliverables, applicable sections otherwise,
+  Verification + Confidence always when work was performed); Planning Mode
+  exempts the §9 session records; headings normalized.
 - Uncommitted conference-deck work still needs sorting/committing.
 - When lams finishes: pull `te_table_full.parquet`, re-score hypotheses,
   finalize report ver08.
