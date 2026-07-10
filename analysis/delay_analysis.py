@@ -49,7 +49,12 @@ import load_runs  # noqa: E402
 FS_TARGET = 5.0          # Hz, after decimation (te_pipeline decimate_target_hz)
 TRANSIENT_S = 600.0      # te_pipeline transient_drop_s
 K = 4                    # te_pipeline kraskov_k
-MAX_DELAY = 30           # samples => 6.0 s at 5 Hz (covers max_lag_sources window)
+# Delay grid spans one full wave period (Tp = 12.95 s): for narrowband forcing
+# the profile ripples at the wave half-period (an |correlation| alias), so the
+# range must show that structure and the SELECTED delay must be restricted to
+# the first half period to avoid picking the alias or an edge point.
+MAX_DELAY = 65           # samples => 13.0 s at 5 Hz (~ one wave period)
+SEL_MAX_S = 6.5          # selected delay = argmax over d <= Tp/2 (interior)
 JITTER = 1e-10
 
 HEALTHY_11MS = [f"sims/dlc16_v11ms_s{ i:02d}/IEA-15-240-RWT-UMaineSemi/"
@@ -73,7 +78,7 @@ def preprocess(arr, dt_in, seed=0):
 
 
 def ksg_cmi(X, Y, Z, k=K):
-    """KSG estimator of I(X;Y|Z) in nats (Frenzel & Pombe 2007). X,Y,Z: (N,d)."""
+    """KSG estimator of I(X;Y|Z) in nats (Frenzel & Pompe 2007). X,Y,Z: (N,d)."""
     X, Y, Z = np.atleast_2d(X.T).T, np.atleast_2d(Y.T).T, np.atleast_2d(Z.T).T
     W = np.hstack([X, Y, Z])
     eps = cKDTree(W).query(W, k=k + 1, p=np.inf)[0][:, k]      # k-th nbr dist (excl self)
@@ -133,7 +138,8 @@ def main():
         sig.setdefault(case, chans)
         for src, tgt in edges:
             p = te_delay_profile(chans[src], chans[tgt], delays)
-            j = int(np.argmax(p))
+            sel = delays_s <= SEL_MAX_S            # first half wave period only
+            j = int(np.argmax(np.where(sel, p, -np.inf)))
             rows.append(dict(case=case, source=src, target=tgt,
                              sel_delay_s=round(delays_s[j], 2), peak_te=round(p[j], 4)))
             for d, s, v in zip(delays, delays_s, p):
@@ -160,17 +166,21 @@ def main():
     te_wave = te_delay_profile(wave, heave, delays)
     te_wind = te_delay_profile(wind, heave, delays)
     thr = null_threshold(wave, heave, delays)
-    d_sel = delays_s[int(np.argmax(te_wave))]
+    sel = delays_s <= SEL_MAX_S
+    d_sel = delays_s[int(np.argmax(np.where(sel, te_wave, -np.inf)))]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.0))
 
-    # panel (a): a 100 s span; wave leads platform heave by ~d_sel (visible lag)
+    # panel (a): a 100 s span; wave leads platform heave by ~d_sel (visible lag).
+    # t is real simulation time: index 0 of the array is the first sample AFTER
+    # the 600 s transient drop, so add TRANSIENT_S back (otherwise the axis reads
+    # 100-200 s but the shown data is really 700-800 s of the OpenFAST run).
     span = slice(500, 500 + int(100 * FS_TARGET))
-    t = np.arange(len(wave))[span] / FS_TARGET
+    t = np.arange(len(wave))[span] / FS_TARGET + TRANSIENT_S
     ax1.plot(t, wave[span], lw=1.2, label="Wave elevation", color="#1f77b4")
     ax1.plot(t, heave[span], lw=1.2, label="Platform heave", color="#d62728")
-    ax1.set_xlabel("time (s)"); ax1.set_ylabel("z-scored signal")
-    ax1.set_title(f"(a) 100 s span — platform heave lags the wave by ~{d_sel:.1f} s")
+    ax1.set_xlabel("simulation time (s)"); ax1.set_ylabel("z-scored signal")
+    ax1.set_title(f"(a) {t[0]:.0f}-{t[-1]:.0f} s span — platform heave lags the wave by ~{d_sel:.1f} s")
     ax1.legend(loc="upper right", fontsize=8, framealpha=0.9)
 
     # panel (b): delay-resolved TE, wave (coupled) vs wind (firewalled)

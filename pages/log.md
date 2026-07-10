@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-09
+updated: 2026-07-10
 tags: [meta, log, publication]
 ---
 
@@ -1120,3 +1120,62 @@ Backfilled from git (`65486fb`, `4186414`).
   answers report applicable sections, always Verification + Confidence when
   work was performed); Planning Mode's no-file-edits rule now exempts the
   mandatory §9 session records; heading levels + EOF newline normalized.
+
+## [2026-07-10] research | Wind–wave forcing independence check (closes Q6)
+
+- User asked whether wind↔wave correlation forces *conditional* TE in the
+  firewall paper (headline table uses IDTxl `BivariateTE`). Assessed: the
+  concern is real in principle but threatens the two claims asymmetrically —
+  the firewall (wind→platform≈0) is protected by SURD's synergy atom, the
+  wave-dominance side is the one exposed to redundancy inflation.
+- Measured wind/wave dependence directly with the existing
+  `analysis/wind_wave_indep.py` on all 8 locally-reachable FOWT runs (6× DLC 1.6
+  11 m/s seeds + 1× 8 m/s + the open-loop twin; `case-iea15-real` excluded as a
+  300 s calibration case emptied by the 600 s transient drop). Result: **every
+  run independent** — |Pearson r| ≤ 0.035, max |cross-corr| ≤ 0.043 over ±30 s,
+  MI ≈ 0.04 nats but == the finite-sample bias floor.
+- Key methodological catch: the plain i.i.d.-shuffle null gave spurious
+  z ≈ 5–12 (effective-sample-size artifact). Redid with an
+  **autocorrelation-preserving circular-shift surrogate** → observed MI
+  indistinguishable from null (z ∈ [−1.79, +0.90], no p < 0.05, mean excess
+  −0.001 nats). So true wind↔wave MI ≈ 0.
+- Conclusion: conditional TE ≡ bivariate TE for these sources; bivariate choice
+  justified. Full writeup + numbers in `reports/wind-wave-independence.md`.
+- IDTxl not installed on the Windows box (lazy import; lives in server env
+  `fowt-te`), so the belt-and-suspenders `TE(Wave→PtfmPitch|Wind)` confirmation
+  and the 15/20 m/s completeness runs are queued as server follow-ups.
+
+## [2026-07-10] tooling | Server script to finish wind/wave indep on all 54 runs
+
+- Wrote `analysis/wind_wave_indep_all.py` (batch aggregator; reuses
+  `wind_wave_indep.py`'s `mutual_info`/`cross_corr`, adds the circular-shift
+  surrogate p-value the single-run script lacks, writes
+  `reports/wind_wave_independence.parquet`) + thin launcher
+  `analysis/run_wind_wave_indep.sh` (matches `run_phase4_full.sh` conventions).
+- CPU-only (numpy + .outb reader, no IDTxl/GPU), so it runs in `fowt-te` on the
+  server without the estimator stack and doesn't disturb the running campaign.
+- **Verified locally**: launcher processed the 9 matched runs → 8/8 usable
+  INDEPENDENT (min p = 0.24, mean MI−null excess −0.0015 nats),
+  `case-iea15-real` auto-skipped as too_short; parquet schema confirmed.
+- Server next step: `conda activate fowt-te && ./analysis/run_wind_wave_indep.sh`
+  → adds the 15/20 m/s bins for all-54 coverage; fold rows into
+  `reports/wind-wave-independence.md`.
+
+## [2026-07-10] research | KSG k-sensitivity robustness check + §3.3 estimator justification
+
+- User (quoting an IEEE fault-detection paper) asked whether to "consider the
+  variables' PDF" in TE estimation. Assessment: the paper already uses the kNN
+  (KSG) estimator family — distribution-free, no bandwidth/PDF fitting — the
+  right choice vs kernel-density for non-Gaussian, multivariate (conditional +
+  SURD) signals; switching to explicit PDF estimation would be a step back.
+- Ran a k-sensitivity sweep (`ksg_cmi(...,k=k)` from `delay_analysis.py`, self-
+  contained scipy, 3 healthy 11 m/s seeds) over k ∈ {3,4,6,8} on
+  Wave→PtfmHeave and Wind→PtfmHeave delay profiles. Result: coupling delay
+  (2.73–2.87 s) and firewall (wind ceiling ≤0.03 nats; wave/wind ratio 39–48×)
+  are **k-invariant**; only the absolute TE magnitude scales with k
+  (1.256→0.866 as k 3→8), as expected for a kNN estimator. Table:
+  `reports/ksg-k-sensitivity.md`.
+- Inserted a §3.3 estimator-justification paragraph (kNN-KSG over kernel-density:
+  distribution-free/adaptive, non-Gaussian, multivariate, jitter for the
+  continuity assumption, k-robustness) into paper draft + final, with 3 new
+  APA refs (Frenzel & Pompe 2007, Khan et al. 2007, Kozachenko & Leonenko 1987).

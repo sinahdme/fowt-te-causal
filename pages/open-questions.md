@@ -2,7 +2,7 @@
 title: "Open Questions"
 type: open-questions
 created: 2026-05-12
-updated: 2026-05-13
+updated: 2026-07-10
 tags: [meta, planning, publication, multi-platform]
 ---
 
@@ -150,15 +150,36 @@ scale-up):
 
 ---
 
-## 🟢 Q6 — Are wind and wave correlated in the chosen DLCs?
+## 🔵 Q6 — Are wind and wave correlated in the chosen DLCs?
 
 DLC set A uses correlated wave seeds; set B uses decoupled. Real ocean
 conditions exhibit wind-wave correlation (wind sea). For the TE
 analysis, this matters because correlated env channels need *conditional*
 TE to disentangle.
 
-**Status**: covered by DLC set design (A vs B); flagged here so it isn't
-forgotten when interpreting results.
+**Resolved 2026-07-10** — measured directly (`analysis/wind_wave_indep.py`)
+on the 7 locally-reachable runs (6× DLC 1.6 11 m/s seeds + 1× 8 m/s). The
+executed campaign is the decoupled case: `Wind1VelX` and `Wave1Elev` come
+from independent TurbSim + JONSWAP seeds and test **statistically
+independent within each run** — |Pearson r| ≤ 0.035, max |cross-corr|
+≤ 0.043 over ±30 s, and MI (0.033–0.043 nats) indistinguishable from an
+autocorrelation-preserving circular-shift surrogate (no case p < 0.05;
+mean excess −0.001 nats = finite-sample bias floor). So conditional TE ≡
+bivariate TE for the wind/wave→structure edges; the paper's `BivariateTE`
+choice is justified. Full writeup: `reports/wind-wave-independence.md`;
+robustness paragraph inserted in §3.3 of the paper. The *synergy* failure
+mode (invisible to any pairwise estimator) is covered separately by SURD.
+
+**Caveats / follow-ups**: (a) 15/20 m/s bins (24 runs) not yet measured —
+on the server, same seeding, expected to confirm; (b) the pre-registered
+**H3** DLC-A (correlated) vs DLC-B (decoupled) *contrast* was **not
+executed** — only the decoupled set was run, so H3's "conditional shrinks
+more when correlated" demonstration is not available; the multivariate
+treatment is carried by this independence check + SURD instead. This must
+be stated honestly wherever H3 is reported (see [[hypothesis-scorecard]]).
+
+**Status**: 🔵 resolved for the executed campaign; server completeness run
++ H3 honesty note pending.
 
 ---
 

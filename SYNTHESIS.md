@@ -2,7 +2,7 @@
 title: "Synthesis — conversation & decision record"
 type: synthesis
 created: 2026-07-09
-updated: 2026-07-09
+updated: 2026-07-10
 tags: [meta, log, sessions, decisions]
 ---
 
@@ -26,7 +26,41 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-07-09)
+## §0 Current state — read this first (rewritten 2026-07-10)
+
+- **Latest (2026-07-10, part 3): KSG estimator justified + k-robustness shown.**
+  User asked (quoting an IEEE paper) whether to "consider the variables' PDF."
+  Answer: the paper already uses the kNN/KSG family (distribution-free), the
+  right call vs kernel-density. Ran k ∈ {3,4,6,8} sweep → coupling delay
+  (2.7–2.9 s) and firewall (wind ≤0.03 nats, wave/wind 39–48×) k-invariant;
+  only absolute nats scale with k (expected). Added a §3.3 estimator-
+  justification paragraph + 3 refs (Frenzel & Pompe 2007, Khan 2007,
+  Kozachenko & Leonenko 1987) to draft+final. Evidence:
+  `reports/ksg-k-sensitivity.md`. **Uncommitted.**
+- **Also 2026-07-10 (part 2): fixed Fig 6 panel (a) time axis.** It read
+  100–200 s but plotted the post-600 s-transient record; now reads real sim
+  time 700–800 s. Cosmetic only (TE recompute matched paper exactly).
+  `analysis/delay_analysis.py` + regenerated `reports/figs/fig6-delay-analysis.png`
+  + `reports/delay_profiles.parquet`. **Uncommitted.**
+
+- **Latest (2026-07-10): wind–wave independence check done.** Answered a user
+  methodology question — does wind↔wave correlation force conditional TE?
+  Measured directly (`analysis/wind_wave_indep.py`) on all 8 locally-reachable
+  FOWT runs (6× 11 m/s + 8 m/s + open-loop twin): **every run independent**
+  (|r| ≤ 0.035, MI == bias floor, circular-shift surrogate min p = 0.17). So conditional TE ≡ bivariate TE; the paper's
+  `BivariateTE` choice is justified. Writeup: `reports/wind-wave-independence.md`;
+  closes open-question **Q6**. §3.3 robustness paragraph inserted (draft+final);
+  Q6 marked 🔵. **Server script written + verified** to finish the 15/20 m/s
+  bins: `analysis/run_wind_wave_indep.sh` → `analysis/wind_wave_indep_all.py`
+  → `reports/wind_wave_independence.parquet` (CPU-only, runs in `fowt-te`,
+  8/8 local runs INDEP). Remaining server follow-ups: run that script for
+  all-54 coverage; optional `probe_conditional.py` belt-and-suspenders; carry
+  the "H3 contrast not executed" note into `hypothesis-scorecard.md`.
+  **All edits uncommitted.**
+
+---
+
+## §0 (prev, 2026-07-09)
 
 - **Phase 4 full TE campaign is RUNNING on lams** (both A100s, single-process
   GPU launcher `0e550e0`), relaunched 2026-07-06 after the CPU-shard run
@@ -312,3 +346,57 @@ each new Claude session was forgetting what the last one discussed.
 - Uncommitted conference-deck work still needs sorting/committing.
 - When lams finishes: pull `te_table_full.parquet`, re-score hypotheses,
   finalize report ver08.
+
+---
+
+## Session 2026-07-10 — Wind–wave independence / conditional-TE question
+
+### Dialogue
+- **User**: "In the manuscript, shall we consider calculation of the correlation
+  between wind and wave? Because if they have correlation the calculation of the
+  TE must be conditional, isn't it?"
+- **Claude**: Confirmed the instinct is methodologically sound but qualified it.
+  Bivariate TE (used in the paper's headline table, §3.3) conditions only on the
+  target's past; correlated sources can confound it. But the threat is
+  asymmetric: (a) the firewall wind→platform≈0 can only be broken by *synergy*,
+  which SURD's synergistic atom already tests and does not find; (b) the
+  wave-dominance side is the one exposed to *redundancy* inflation. Flagged that
+  linear correlation is the wrong screen (TE is nonlinear → use MI) and that the
+  relevant quantity is the *within-run* wind/wave dependence (independent
+  TurbSim+JONSWAP seeds), not the across-DLC metocean correlation.
+- **User**: "yes go ahead" (compute it).
+- **Claude**: Found existing tooling (`analysis/wind_wave_indep.py`,
+  `probe_conditional.py`). Ran the independence check on the 7 local runs.
+
+### Work done
+- Ran `wind_wave_indep.py` on 6× `dlc16_v11ms_s0*` + `dlca_v08ms_s00.outb`.
+  All independent: |Pearson r| ≤ 0.035, max |cross-corr| ≤ 0.043 (±30 s),
+  MI 0.033–0.043 nats.
+- Caught a null-model subtlety: i.i.d.-shuffle null gave spurious z ≈ 5–12
+  (destroys autocorrelation → inflates effective N → understates bias floor).
+  Redid with **circular-shift surrogate** (autocorrelation-preserving) → MI
+  indistinguishable from null (z ∈ [−1.79,+0.90], no p<0.05, mean excess
+  −0.001 nats). True wind↔wave MI ≈ 0.
+- IDTxl not installed locally (lazy import; server env `fowt-te`), so the
+  conditional-TE confirmation could not run here.
+
+### Decisions
+- Wind and wave forcing are statistically independent within a run → conditional
+  TE ≡ bivariate TE for these sources → paper's bivariate choice justified.
+  Confounding worry retired for the wind/wave→structure edges.
+- Report this as a §3.3 robustness paragraph rather than re-running the campaign;
+  SURD already covers the synergy failure mode.
+
+### Files changed (uncommitted)
+- `reports/wind-wave-independence.md` (new) — full method, 7-run table, conclusion.
+- `pages/log.md` — [2026-07-10] research entry; frontmatter updated → 2026-07-10.
+- `SYNTHESIS.md` — this entry + §0 rewrite.
+- `pages/open-questions.md` — **not yet edited**; Q6 should be flipped 🟢→🔵
+  with a pointer to the results note (pending user go-ahead).
+
+### Open items / next steps
+1. Server (`fowt-te`): `wind_wave_indep.py` on 15/20 m/s bins → all-54 coverage.
+2. Server: `probe_conditional.py` → numeric `TE(Wave→PtfmPitch|Wind)` ≈ bivariate.
+3. Insert the §3.3 robustness paragraph into `te-firewall-paper-final.md`; note
+   H3 (DLC-A/DLC-B contrast) was pre-registered but not executed.
+4. Mark Q6 resolved in `open-questions.md`.
