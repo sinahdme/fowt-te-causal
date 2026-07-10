@@ -1179,3 +1179,22 @@ Backfilled from git (`65486fb`, `4186414`).
   distribution-free/adaptive, non-Gaussian, multivariate, jitter for the
   continuity assumption, k-robustness) into paper draft + final, with 3 new
   APA refs (Frenzel & Pompe 2007, Khan et al. 2007, Kozachenko & Leonenko 1987).
+
+## [2026-07-10] paper | Cite Chen et al. 2019 (IEEE APAP) on the four TE parameters
+
+- User pointed to the IEEE fault-detection paper listing four TE parameters to
+  optimise (sampling rate, moving-window width, source & target Markov orders)
+  and asked to cite it where our project handles the Markov orders better,
+  with our values.
+- Citation pulled from Crossref (authoritative; arnumber 9224680 = DOI suffix):
+  Chen, Z., Li, Q., Feng, S., & Li, W. (2019). *Application of transfer entropy
+  algorithm in fault detection for power system with wind turbines.* 2019 IEEE
+  8th APAP, pp. 1465–1470. DOI 10.1109/APAP47170.2019.9224680. (IEEE Xplore page
+  is login-gated; local PDF metadata was a template placeholder.)
+- Added a §3.3 paragraph (draft+final) engaging the four-parameter view: sampling
+  rate fixed 5 Hz, window = full ~50-min record, and the two history/Markov
+  orders selected data-drivenly by IDTxl greedy embedding (bounds: target ≤150
+  samp/30 s, source ≤30 samp/6 s, tau=1, tau=5 slow-drift) rather than hand-set
+  — removing fixed-order sensitivity. Ref added APA-alphabetically (Chen, Z.).
+- Terminology guard noted for the write-up: Chen's Markov-order *k*/*l* ≠ the KSG
+  neighbour count *k*=4.

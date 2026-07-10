@@ -28,6 +28,14 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-07-10)
 
+- **Latest (2026-07-10, part 4): cited Chen et al. 2019 (IEEE APAP) on the four
+  TE parameters.** Added a §3.3 paragraph (draft+final) mapping the paper's four
+  tunables to ours — sampling 5 Hz, window = full record, and the source/target
+  Markov orders selected data-drivenly by IDTxl greedy embedding (not hand-set;
+  bounds target ≤150 samp/30 s, source ≤30 samp/6 s). Citation from Crossref
+  (DOI 10.1109/APAP47170.2019.9224680). Guard: Chen's Markov k/l ≠ KSG k=4.
+  **Uncommitted** (on top of committed `d051eb6`).
+
 - **Latest (2026-07-10, part 3): KSG estimator justified + k-robustness shown.**
   User asked (quoting an IEEE paper) whether to "consider the variables' PDF."
   Answer: the paper already uses the kNN/KSG family (distribution-free), the
