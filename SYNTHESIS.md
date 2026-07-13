@@ -26,9 +26,50 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-07-10)
+## §0 Current state — read this first (rewritten 2026-07-13)
 
-- **Latest (2026-07-10, part 4): cited Chen et al. 2019 (IEEE APAP) on the four
+- **Latest (2026-07-13, part 3): fixed the negative TE in Table 2.** User caught
+  Wind→PtfmHeave = −0.0005 nats (impossible; TE≥0). Cause: table means used raw
+  **signed** KSG estimates (4/54 PtfmHeave cases negative, all non-significant),
+  contradicting §3.4's "non-sig → 0 exactly." Fix (gating, user's choice): recomputed
+  all table means with non-sig→0; changed cells — Wave→PtfmSurge 0.1068→0.1069 (T1+T2),
+  Wind→PtfmHeave −0.0005→0.0001, Wind→RootMxc1 0.0018→0.0019, T3 15 m/s 0.0014→0.0018;
+  §4.2 prose "≤0.0016"→"≤0.0018"; added a §3.4 clause documenting the gated-mean
+  convention. Docx regenerated & verified (no negative TE remains). Gotcha logged:
+  `te_table.parquet` te_nats is signed — gate on `significant` + filter
+  `method=='bivariate_te_ksg'`. **Uncommitted.**
+
+- **Prev (2026-07-13, part 2): ARS-gate manuscript hardening.** Audited the paper
+  against the ARS pipeline quality gates (from ARCHITECTURE.md) and applied four
+  fixes to draft+final (docx regenerated, verified): (1) **§3.1 + Fig 2** — the
+  campaign is NOT "DLC 1.6, 4×6=54"; per `sims/run_campaign.py` it's `dlca`(NTM,
+  4w×6s, paired wave) + `dlcb`(same, decoupled wave)=48 **plus** `dlc16`(DLC 1.6
+  SSS, 11 m/s×6s)=6 = 54, so DLC 1.6 is only 6/54 — corrected the arithmetic and
+  the overreach. (2) **§4.1** — labeled blade/tower wind edges as an estimator
+  positive control (defends the platform null). (3) **Data Availability** — repro
+  block (IDTxl 1.6.1, KSG k=4, 200 perms, α=0.05, ROSCO+6 seeds). **Corrected my
+  own prior false alarm**: `te_table.parquet` does NOT contradict the firewall — I
+  had aggregated its `coherence_scipy` γ² rows as TE; KSG rows show wind→PtfmPitch
+  TE=0.000/ns (filter `method=='bivariate_te_ksg'`). **#1 open item unchanged:**
+  monitoring claim has 1 fault row with NaN TE (`compute_fault_te.py`, server).
+  Follow-up: `fig2-dlc-matrix.png` now mismatches its caption — regenerate.
+  **Uncommitted.**
+
+- **Prev (2026-07-13, part 1): §2.3 TE derivation reworked to follow Chen et al. (2019)
+  + docx resynced.** Expanded the single Schreiber TE equation in §2.3 (draft+final)
+  into Chen's core lineage — Shannon entropy → mutual information (with the
+  H(X)+H(Y)−H(X,Y) identity) → entropy rate → transfer entropy + the
+  entropy-rate-difference form `T_{Y→X}=h_X−h_{X|Y}`. Kept in the paper's own
+  conventions (estimator-agnostic, nats via KSG per §3.3), *not* Chen's
+  bits/kernel-density/fixed-order form, which would contradict §3.3 — user chose
+  this. Discovered `te-firewall-paper.docx` is a git-ignored pandoc export of
+  `…-final.md` and was 3 commits stale; regenerated it from the md (backup:
+  `te-firewall-paper.docx.bak-<ts>`), which also ported the missing Jul 9–10
+  content. Verified: validates, 8 figures intact, 182 OMML objects (was 94),
+  round-trip confirms all new equations. `…-paper.tex` left stale (offer to
+  regen). **Uncommitted** (docx is git-ignored; md/log/SYNTHESIS edits pending).
+
+- **Prev (2026-07-10, part 4): cited Chen et al. 2019 (IEEE APAP) on the four
   TE parameters.** Added a §3.3 paragraph (draft+final) mapping the paper's four
   tunables to ours — sampling 5 Hz, window = full record, and the source/target
   Markov orders selected data-drivenly by IDTxl greedy embedding (not hand-set;

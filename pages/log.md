@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [meta, log, publication]
 ---
 
@@ -1198,3 +1198,92 @@ Backfilled from git (`65486fb`, `4186414`).
   — removing fixed-order sensitivity. Ref added APA-alphabetically (Chen, Z.).
 - Terminology guard noted for the write-up: Chen's Markov-order *k*/*l* ≠ the KSG
   neighbour count *k*=4.
+
+## [2026-07-13] paper | §2.3 TE derivation reworked in Chen et al. (2019) lineage + docx resync
+
+- User asked to make the paper's TE theory follow the Chen et al. (2019) IEEE
+  reference's derivation and to update the `.docx`; flagged (correctly) that
+  `.md` edits since the docx build may not be reflected.
+- **Reconciliation finding:** `te-firewall-paper.docx` is a git-ignored pandoc
+  export of `te-firewall-paper-final.md` (the frontmatter-bearing source); it was
+  stale by 3 commits (docx Jul 8 vs md Jul 9–10: Fig 7/§3.8 delay profiles
+  `dfd2519`, KSG-justification + wind–wave independence `d051eb6`, Chen four-params
+  `fde08aa`). Confirmed the docx was missing "four quantities to optimise",
+  wind–wave-independence text, and delay-resolved §3.8. Regenerating from the md
+  is the correct fix (also reproduces all 8 embedded figures + native OMML).
+- **Equation rework (draft+final §2.3):** expanded the single Schreiber TE equation
+  into Chen's core chain — Shannon entropy H(X) → mutual information I(X;Y) [with
+  the H(X)+H(Y)−H(X,Y) identity] → entropy rate h_X → transfer entropy T_{Y→X}
+  (unchanged definition) + entropy-rate-difference form T_{Y→X} = h_X − h_{X|Y}.
+  Kept the paper's own conventions per user decision: estimator-agnostic, general
+  log, evaluated in **nats via KSG** (§3.3), rather than Chen's bits/log2 +
+  kernel-density + fixed k=l=1 (which would contradict §3.3). Chen (2019) cited at
+  the derivation; no new reference orphan (entry already present).
+- **Docx regenerated:** backed up old as `te-firewall-paper.docx.bak-<ts>`, then
+  `pandoc te-firewall-paper-final.md -o te-firewall-paper.docx` from `reports/`.
+  Verified: validates; 182 OMML objects (was 94); 8 figures intact; round-trip to
+  markdown shows all 4 new display equations incl. `T_{Y→X} = h_X − h_{X|Y}`;
+  stale content (Shannon/entropy-rate build-up, four-parameters, wind–wave
+  independence, delay-resolved) now present.
+- **Not done (follow-up):** `te-firewall-paper.tex` (tracked) is also a stale
+  Jul-8 export and was left untouched to avoid disturbing any custom LaTeX
+  workflow — offer to regenerate on request.
+
+## [2026-07-13] paper | ARS-gate manuscript hardening (arithmetic, campaign desc, positive control, repro)
+
+- After reading the ARS pipeline ARCHITECTURE.md, audited the manuscript against
+  its quality gates and made four evidence-grounded fixes (draft+final, docx
+  regenerated & round-trip-verified):
+  1. **Arithmetic + campaign description (§3.1 + Fig 2 caption/alt-text).** Old
+     text claimed the campaign "follows DLC 1.6, four wind speeds × six seeds =
+     54" — but 4×6=24, and per `sims/run_campaign.py` the real matrix is
+     `dlca` (NTM, 4 winds×6 seeds, wave seed paired) + `dlcb` (same, wave seed
+     decoupled) = 48, **plus** `dlc16` (DLC 1.6 SSS Hs=8.3/Tp=12.95, 11 m/s×6
+     seeds) = 6, **totalling 54**. So DLC 1.6 is only 6 of 54 cases. Rewrote to
+     the true structure (avoided the word "correlated" for dlca's wave seed so it
+     doesn't collide with the §3.3 wind–wave independence result).
+  2. **Positive-control framing (§4.1).** Labeled the existing blade/tower wind
+     edges (Wind→RootMxc1 39%, Wind→TwrBsMyt 28% vs Wind→PtfmPitch 3.7%) as an
+     estimator positive control — the same KSG/IDTxl config sees wind where the
+     physics puts it, so the platform zero is an absent pathway, not estimator
+     insensitivity. Pre-empts the adversarial reviewer's "your null is a blind
+     spot" objection.
+  3. **Reproducibility block (Data Availability).** Added IDTxl **1.6.1** (verified
+     from vendored `repos/IDTxl` setup), JIDT KSG k=4, 200 perms, α=0.05, ROSCO +
+     6 seeds/bin; commit left as submission-time placeholder (matches existing
+     `[Populate…]` convention).
+- **False alarm corrected (integrity):** my prior-turn claim that `te_table.parquet`
+  "disagrees" with the firewall was a **query bug on my side** — the table stores
+  two methods (`bivariate_te_ksg`, `coherence_scipy`) in a shared `te_nats`
+  column; I had aggregated the coherence γ² rows (~0.75) as TE. The KSG rows show
+  wind→PtfmPitch **TE=0.000, not significant** — firewall intact, table
+  consistent. Always filter `method=='bivariate_te_ksg'`.
+- **Monitoring gap quantified (still the #1 open item):** `monitor_signature.parquet`
+  = 42 healthy / 12 idle / **1 broken**, and that one broken row
+  (`dlca_v11ms_s00_openloop`) has `te_wind_pitch = NaN` ("pending TE legs").
+  Healthy ceiling TE(wind→pitch) mean 0.0011 / max 0.0293 nats. Central
+  health-monitoring claim still rests on zero computed fault points →
+  `analysis/compute_fault_te.py` (server/GPU) is the real unlock.
+- **Follow-up flagged:** `reports/figs/fig2-dlc-matrix.png` still depicts the old
+  4×6 / DLC-1.6 layout and now mismatches the corrected caption — needs
+  regeneration to show the dlca/dlcb/dlc16 structure.
+
+## [2026-07-13] paper | Fix negative TE in Table 2 (KSG signed estimate → significance-gated means)
+
+- User spotted Table 2 reporting **Wind→PtfmHeave = −0.0005 nats** — impossible for
+  TE (a conditional MI, ≥0). Root cause: table means were computed from **raw KSG
+  estimates**, which are signed; 4 of 54 PtfmHeave cases came out slightly negative
+  (min −0.021), all non-significant, dragging the mean below zero. It was the only
+  negative number in the paper, and it contradicted §3.4 ("non-significant channel
+  returns TE = 0 exactly").
+- Fix (user chose gating over a footnote): recomputed **all** table means under the
+  §3.4 convention (non-significant → 0), applied to draft+final, docx regenerated &
+  verified. Changed cells: Table 1 & Table 2 Wave→PtfmSurge 0.1068→**0.1069**;
+  Table 2 Wind→PtfmHeave −0.0005→**0.0001**, Wind→RootMxc1 0.0018→**0.0019**;
+  Table 3 15 m/s Wind→pitch mean 0.0014→**0.0018**; §4.2 prose "means ≤ 0.0016"→
+  "≤ 0.0018". Added a §3.4 reproducibility clause stating Tables 1–3 average
+  significance-gated values (so nobody recomputes the raw signed −0.0005 from the
+  parquet and thinks the paper is wrong — which is exactly what tripped me up
+  mid-session). Verified: no genuine negative TE anywhere in the regenerated docx.
+- Reusable gotcha: `te_table.parquet` KSG rows carry **signed** `te_nats`; always
+  gate on `significant` before averaging, and always filter `method=='bivariate_te_ksg'`.
