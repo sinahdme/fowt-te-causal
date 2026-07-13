@@ -1287,3 +1287,35 @@ Backfilled from git (`65486fb`, `4186414`).
   mid-session). Verified: no genuine negative TE anywhere in the regenerated docx.
 - Reusable gotcha: `te_table.parquet` KSG rows carry **signed** `te_nats`; always
   gate on `significant` before averaging, and always filter `method=='bivariate_te_ksg'`.
+
+## [2026-07-13] paper | Applied the immediately-actionable peer-review fixes (panel Major-Revision roadmap)
+
+- Ran the ARS `academic-paper-reviewer` full panel (5 reviewers) → decision Major
+  Revision; report saved as `reports/te-firewall-review-panel.docx`. User asked to
+  apply every roadmap item doable without the server/new sims. Applied to draft+final,
+  docx regenerated & verified:
+  - **§3.1 — ROSCO + hydro config (roadmap 5, 4).** Verified from the *local dlc16*
+    sim inputs: ROSCO **2.10.1**, `Fl_Mode=2` (floating nacelle-pitch-velocity
+    feedback, Fl_Kp −9.198 s), `SS_Mode=1` (set-point smoothing); HydroDyn
+    `PotMod=1`, **`DiffQTF=12`** (full difference-frequency 2nd-order QTF), `SumQTF=0`,
+    long-crested (`WaveDirMod=0`), Hs 8.3/Tp 12.95. Stated both in §3.1 — answers the
+    domain reviewer's "is 2nd-order wave loading on / is Fl on" directly.
+  - **§4.1 — bootstrap 95% CIs (roadmap 3).** 10⁴-resample percentile CIs over the 54
+    cases (gated): Wind→pitch 0.0009 [0.0000, 0.0024] (touches zero), Wave→pitch
+    0.1214 [0.1051, 0.1384]; surge added too. Computed from `te_table.parquet`.
+  - **§5.3 — k-sweep contradiction (roadmap 2).** Reconciled the §3.3 k∈{3,4,6,8}
+    sweep with §5.3's blanket "we did not sweep them"; now "only k was swept … the
+    rest were not," and the future-work sentence drops k.
+  - **§4.3 — attribution honesty (DA major).** Added that the two attribution lines
+    are both SURD-based (coarse 3-bin) → complementary, not independent; the
+    independent TE-rise test is pending.
+  - **§5.2 — nacelle-anemometer hedge (roadmap 7).** Softened "ordinary operational
+    signals" to flag the rotor-wake caveat / lidar.
+  - **Figure 2 regenerated** to the true dlca+dlcb+dlc16 × 4-speed × 6-seed matrix
+    (12/18/12/12 = 54), replacing the stale 4×6/DLC-1.6 image.
+- **Deferred (need server / new runs / author decision):** roadmap 1 (fault-case TE
+  via `compute_fault_te.py`, or the title/abstract retitle), roadmap 6 (more open-loop
+  seeds), and the 20 m/s low-frequency wind PSD (no local 20 m/s sim — dlca/dlcb are
+  server-side; only dlc16 at 11 m/s is local).
+- Note: the config was verified on the local **dlc16** cases; dlca/dlcb reuse the same
+  VolturnUS-S reference model but their raw inputs are server-side (unverified locally).

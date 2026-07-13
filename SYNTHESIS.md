@@ -28,7 +28,21 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-07-13)
 
-- **Latest (2026-07-13, part 3): fixed the negative TE in Table 2.** User caught
+- **Latest (2026-07-13, part 4): applied the immediately-doable peer-review fixes.**
+  Ran the ARS 5-reviewer panel (→ Major Revision; report at
+  `reports/te-firewall-review-panel.docx`) and applied every roadmap item not needing
+  the server/new sims (draft+final, docx regenerated & verified): §3.1 now states the
+  verified ROSCO config (2.10.1, `Fl_Mode=2` floating feedback, `SS_Mode=1`) and hydro
+  config (`PotMod=1`, `DiffQTF=12` full 2nd-order QTF) — answering the domain reviewer;
+  §4.1 adds bootstrap 95% CIs (Wind→pitch [0.0000,0.0024], Wave→pitch [0.1051,0.1384]);
+  §5.3 reconciles the k-sweep contradiction with §3.3; §4.3 flags that both attribution
+  lines are SURD-based (not independent); §5.2 hedges the nacelle-anemometer claim;
+  Figure 2 regenerated to the true dlca+dlcb+dlc16 matrix (12/18/12/12=54). **Deferred
+  (need server/decision):** roadmap 1 (fault-case TE or retitle), roadmap 6 (more
+  open-loop seeds), 20 m/s wind PSD. Config verified on local dlc16; dlca/dlcb inputs
+  server-side. **Uncommitted.**
+
+- **Prev (2026-07-13, part 3): fixed the negative TE in Table 2.** User caught
   Wind→PtfmHeave = −0.0005 nats (impossible; TE≥0). Cause: table means used raw
   **signed** KSG estimates (4/54 PtfmHeave cases negative, all non-significant),
   contradicting §3.4's "non-sig → 0 exactly." Fix (gating, user's choice): recomputed
