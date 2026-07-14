@@ -1364,3 +1364,17 @@ Backfilled from git (`65486fb`, `4186414`).
   fig7-delay-profiles.png). Remaining before Stage 5: server items (fault TE,
   open-loop TE legs/seeds, rotor-averaged wind, tau=1 control) + full numeric
   re-verification against `te_table_full.parquet`, then Stage 3′ re-review.
+
+## [2026-07-14] campaign | Fault-case TE (openloop) launched on CPU server
+
+- JIDT validated first (`analysis/test_ar1_te.py`: forward 0.1892 nats sig /
+  reverse 0.0000 non-sig — PASS), per the standing pre-campaign rule.
+- `compute_fault_te.py` launched on isaactest@oem-MD72-HB3-00 (env fowt-te),
+  PID 1737763, log `logs/fault_te.log`, CPU/JVM backend so the lams GPU
+  campaign is untouched. Input: `sims/dlca_v11ms_s00_openloop/.../*.outb`
+  (the .outb lives inside the case dir — not at repo root as the script's
+  default assumes). Output: `reports/te_fault_openloop.parquet` + printed
+  verdict vs the 0.029-nats healthy ceiling.
+- Server repo fast-forwarded to e020ac0 first (rebase dropped a local commit
+  whose patch was already upstream). Verdict pending — closes round-1
+  roadmap #1 (monitoring test) and #3 (attribution converse) when it lands.

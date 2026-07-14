@@ -570,3 +570,21 @@ each new Claude session was forgetting what the last one discussed.
   with an ARCHIVED banner naming final as single source of truth (two-copy sync
   policy retired). Docx regenerated + python-docx-verified (5 new-content markers).
 - Commit hashes recorded in pages/log.md entry for this date.
+
+### Part 3 (same session) — fault-case TE launched on the CPU server
+- User chose to run the queued fault-TE job on the CPU box (isaactest@oem-MD72-HB3-00),
+  driving the commands themselves (no key auth from this Windows box; probing LAN
+  hosts with guessed usernames was rejected — don't do that again).
+- Server repo was 1 local commit ahead / 18 behind → `git rebase origin/phase4-full-rerun`
+  cleanly dropped the local commit (patch already upstream); server now at e020ac0.
+- `analysis/test_ar1_te.py` (note: lives in analysis/, not repo root) **PASSED**:
+  TE(X→Y)=0.1892 nats p=0.005 sig; TE(Y→X)=0.0000 p=1.0 non-sig.
+- Launched: `nohup python analysis/compute_fault_te.py --outb
+  sims/dlca_v11ms_s00_openloop/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi.outb`
+  → PID 1737763, log `logs/fault_te.log`, output `reports/te_fault_openloop.parquet`.
+  CPU/JVM backend (no --gpu) — does not touch the lams A100 campaign.
+- **Pending:** the verdict block (fault Wind→PtfmPitch/Surge/Heave vs healthy
+  ceiling 0.029 nats + chance floor). Breach ⇒ §4.4 gets its first empirical
+  test point AND the §4.3 attribution converse closes; no breach ⇒ reshape the
+  graded-fault campaign. Either way: fold into the manuscript at the te_table_full
+  re-verification pass, not before.
