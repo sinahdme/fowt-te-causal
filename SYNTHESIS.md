@@ -26,9 +26,40 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-07-13)
+## §0 Current state — read this first (rewritten 2026-07-14)
 
-- **Latest (2026-07-13, part 4): applied the immediately-doable peer-review fixes.**
+- **Latest (2026-07-14): Round-2 ARS panel review → Major Revision; all 10 required
+  items applied locally.** Panel report: `reports/te-firewall-review-round2.md`.
+  Round 2 found the **final.md had regressed on the v0.6 delay corrections** (Table 5
+  surge said 4.3 s; parquet argmax reproduces 6.3 s ≈ Tp/2 antiphase; abstract said
+  "0.3–4.3 s"; "three orders of magnitude"; no Fig 7) while the **draft.md** still had
+  the pre-gating §3.4 prose — the two copies had diverged in *both* directions.
+  Fixes applied to draft+final (now byte-identical in body; docx regenerated &
+  verified): v0.6 delay block ported into final (abstract, §3.8 half-period rule,
+  §4.5+Table 5 antiphase reading, Fig 7, Fig 6 caption, two orders); sea states
+  corrected — `run_campaign.py DLC_WAVES` varies (Hs,Tp) with wind speed (3.5 m/9 s …
+  8 m/13 s; DLC1.6 8.3/12.95), so §3.1/§3.2 "Tp≈12.95 s / 0.077 Hz" was wrong for
+  48/54 runs → now the full (Hs,Tp) list + 0.077–0.111 Hz; Intro "DLC 1.6 at four
+  wind speeds" scope sentence fixed; §4.5 seeds identified as the DLC 1.6 set;
+  coherence floor added to §3.5 (K=6 Welch averages, γ²₉₅ ≈ 0.45); **SURD units
+  fixed** — `rus`/`drop` values are normalised (max-MI / leak fractions), NOT nats
+  (§3.6 convention + §4.3 ×2 + Fig 4c + §5.3); open-loop twin stated as n=1;
+  rotor-effective-vs-point-wind limitation added (§5.3, the DA's strongest
+  counter-argument); §5.2 window–latency trade-off; abstract "if anything, total" →
+  "within the resolution of the significance test". Draft header bumped v0.7.
+  **Part 2 (same day): S2–S4 closed + draft archived + committed.** S2: verified
+  the MoorDyn layout (line 1 = single up-wave line, fairlead (−58,0)→anchor
+  (−837.6,0); lines 2/3 the symmetric down-wave pair) → §4.1 geometry observation
+  added, mechanism explicitly NOT asserted (wave-sig by wind speed shows no trend:
+  58/44/83/33%). S4: §3.1 now states dlca=paired wave seed, dlcb=decoupled
+  (XOR bit-mask, per `run_campaign.py`). S3: §5.2 control-performance-monitoring
+  bridge + operator action. **Draft is ARCHIVED/frozen — `te-firewall-paper-final.md`
+  is the single source of truth from now on** (S2–S4 applied to final only).
+  Docx regenerated & verified. **Deferred (server, unchanged):** fault-case TE,
+  open-loop TE legs + seeds, rotor-averaged-wind TE, tau=1 control, te_table_full
+  re-verification before Stage 5.
+
+- **Prev (2026-07-13, part 4): applied the immediately-doable peer-review fixes.**
   Ran the ARS 5-reviewer panel (→ Major Revision; report at
   `reports/te-firewall-review-panel.docx`) and applied every roadmap item not needing
   the server/new sims (draft+final, docx regenerated & verified): §3.1 now states the
@@ -463,3 +494,79 @@ each new Claude session was forgetting what the last one discussed.
 3. Insert the §3.3 robustness paragraph into `te-firewall-paper-final.md`; note
    H3 (DLC-A/DLC-B contrast) was pre-registered but not executed.
 4. Mark Q6 resolved in `open-questions.md`.
+
+## Session 2026-07-14 — Round-2 panel review + revision *(logged live)*
+
+### Dialogue
+- **User asked:** "lets go for the review commend and revise the manuscript" →
+  ran `/ars-reviewer` (full 5-reviewer panel, round 2) on
+  `reports/te-firewall-paper-final.md`, then applied the revision (user's request
+  covered both steps, so Phase 2.5 coaching was skipped).
+- **Claude verified panel claims against the repo first** (not the manuscript):
+  `delay_profiles.parquet` argmax, `run_campaign.py DLC_WAVES`,
+  `te_pipeline.py coherence_nperseg`, `surd/phase2_campaign.py` normalisation,
+  `analysis/delay_analysis.py` selection rule.
+
+### Findings (the round-2 review's own catches)
+1. **final.md regressed on the 2026-07-09 v0.6 delay fixes** (stale Table 5
+   surge 4.3 s — irreproducible from parquet, which gives 6.4/6.2/6.2 s →
+   6.3 s ≈ Tp/2 antiphase; stale abstract "0.3–4.3 s"; "three orders"; missing
+   Fig 7 / §3.8 half-period rule). draft.md conversely retained the pre-gating
+   §3.4 prose that final had already fixed. Two-way desync.
+2. **§3.1 sea-state description wrong for 48/54 runs**: campaign uses
+   wind-speed-matched (Hs,Tp) per `DLC_WAVES`, not "Tp ≈ 12.95 s".
+3. **SURD numbers were mislabelled as nats** — they are normalised fractions
+   (`rus` by max MI, `drop` = leak differences).
+4. Coherence baseline had no zero-coherence significance floor (K = 6 averages
+   → γ²₉₅ ≈ 0.45; all Table 4 peaks clear it).
+5. §4.5's "three healthy 11 m/s seeds" are the DLC 1.6 severe-sea seeds.
+6. Open-loop twin is n = 1 (now stated); DA's strongest counter-argument
+   (rotor-effective vs point wind) added as an explicit §5.3 limitation.
+
+### Decisions
+- Panel decision: **Major Revision** (DA CRITICAL on the data/manuscript
+  mismatch). All 10 required items were local-actionable and were applied to
+  **both** draft and final in the same session; bodies are now byte-identical
+  (only header/frontmatter differ). Draft bumped to v0.7; final date 2026-07-14.
+- Rotor-effective-wind challenge resolved per R1's position: limitation text
+  now, recomputation queued with the server campaign.
+- FAIRTEN1 mooring-orientation explanation NOT applied (needs MoorDyn layout
+  verification first) — carried as an open reviewer question (S2).
+
+### Files changed (all uncommitted)
+- `reports/te-firewall-review-round2.md` (new — full panel report + roadmap)
+- `reports/te-firewall-paper-final.md` (15 edits per roadmap RR1–RR9 + Fig 6 caption)
+- `reports/te-firewall-paper-draft.md` (18 edits: shared fixes + §3.4 sync + v0.7 header)
+- `reports/te-firewall-paper.docx` (regenerated via pandoc; content-verified by
+  python-docx assertions; backup `te-firewall-paper.docx.bak-20260714-*`)
+- `SYNTHESIS.md` (§0 rewrite + this entry), `pages/log.md` (entry appended)
+
+### Verification
+- Stale-pattern grep over both md files: 0 hits for `0.3–4.3 / three orders /
+  nats summed / if anything, total / peak period near 12.95 / marginally negative`.
+- Body diff draft↔final after edits: 0 differing lines.
+- docx assertions: Table 5 has `6.3 (≈ Tp/2…)`; all 12 new-content markers present.
+- Table 5 values re-derived from `delay_profiles.parquet` (0.3/2.7/3.9/6.3 s ✓).
+
+### Open items / next steps
+- Commit the 2026-07-13 + 2026-07-14 manuscript work (user's call).
+- Server queue unchanged: fault-case TE, open-loop TE legs + seed replication,
+  rotor-averaged-wind robustness, tau=1 control, te_table_full re-verification.
+- S2 (FAIRTEN1 orientation) and R2-Q1 (dlca/dlcb seed pairing) still open.
+- Re-review (Stage 3′) after the server items land, before Stage 5.
+
+### Part 2 (same session) — recommendation executed
+- **User asked** "did you address all the comments?" → honest status: RR1–RR9 done,
+  RR10 partial (full numeric re-verification gated on te_table_full), S2–S4 open.
+  Then "what is your recommendation?" → close S2–S4 locally, commit, freeze the
+  draft, no more paper edits until server items land. **User said go.**
+- S2 verified before writing: MoorDyn points — line 1 fairlead (−58, 0, −14) →
+  anchor (−837.6, 0, −200), i.e. the single up-wave in-plane line; lines 2/3
+  symmetric at ±50.229 m / anchors (418.8, ±725.383). Wave→FAIRTEN1 significance
+  by wind speed = 58/44/83/33% (no thrust trend) → mechanism NOT asserted in text.
+- S4 verified: `run_campaign.py` — dlca/dlc16 wave_seed = wind_seed (paired);
+  dlcb wave_seed = wind_seed XOR 0x5A5A5A5A (decoupled).
+- Applied S2 (§4.1), S4 (§3.1), S3 (§5.2) to **final.md only**; draft.md frozen
+  with an ARCHIVED banner naming final as single source of truth (two-copy sync
+  policy retired). Docx regenerated + python-docx-verified (5 new-content markers).
+- Commit hashes recorded in pages/log.md entry for this date.

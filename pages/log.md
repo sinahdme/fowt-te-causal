@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [meta, log, publication]
 ---
 
@@ -1319,3 +1319,48 @@ Backfilled from git (`65486fb`, `4186414`).
   server-side; only dlc16 at 11 m/s is local).
 - Note: the config was verified on the local **dlc16** cases; dlca/dlcb reuse the same
   VolturnUS-S reference model but their raw inputs are server-side (unverified locally).
+
+## [2026-07-14] paper | Round-2 review panel + Major-Revision fixes applied
+
+- Ran the ARS 5-reviewer panel (round 2) on `te-firewall-paper-final.md` →
+  **Major Revision**; full report + roadmap: `reports/te-firewall-review-round2.md`.
+- Round-2 catches (all verified against repo artefacts, not the manuscript):
+  final.md had **regressed on the v0.6 delay fixes** (Table 5 surge 4.3 s vs
+  parquet-reproducible 6.3 s ≈ Tp/2 antiphase; stale abstract; "three orders";
+  missing Fig 7) while draft.md kept the pre-gating §3.4 prose — two-way
+  draft/final desync; §3.1 sea states wrong for 48/54 runs (`DLC_WAVES` varies
+  Hs/Tp with wind speed, 3.5 m/9 s → 8 m/13 s, not "Tp ≈ 12.95 s"); SURD values
+  mislabelled as nats (they are normalised max-MI / leak fractions); coherence
+  baseline lacked its zero-coherence floor (K = 6 Welch averages → γ²₉₅ ≈ 0.45);
+  delay seeds are the DLC 1.6 severe-sea set; open-loop twin is n = 1.
+- Applied all 10 required roadmap items to **draft + final** (bodies now
+  identical): delay block ported, sea-state list + 0.077–0.111 Hz, Intro scope
+  fix, SURD normalised-units convention (§3.6/§4.3/Fig 4c/§5.3), coherence
+  floor (§3.5), n=1 stated + replication queued, rotor-effective-wind
+  limitation (§5.3), §5.2 window–latency trade-off, abstract "total" bound to
+  the chance floor. Draft header → v0.7.
+- `te-firewall-paper.docx` regenerated (pandoc) and content-verified
+  (python-docx assertions; backup kept). Verification: stale-pattern grep = 0
+  hits both files; draft↔final body diff = 0 lines; Table 5 re-derived from
+  `delay_profiles.parquet`.
+- Deferred to server (unchanged): fault-case TE, open-loop TE legs + seeds,
+  rotor-averaged-wind robustness, tau=1 control, `te_table_full` re-verification.
+
+## [2026-07-14] paper | S2–S4 closed, draft archived, round-2 work committed
+
+- S2 (FAIRTEN1 asymmetry): verified the MoorDyn layout first — line 1 is the
+  single up-wave line (fairlead (−58, 0) → anchor (−837.6, 0)), lines 2/3 the
+  symmetric down-wave pair — and checked wave→FAIRTEN1 significance by wind
+  speed (58/44/83/33%, no operating-point trend), so §4.1 now states the
+  geometric observation **without asserting a mechanism**.
+- S4: §3.1 states the wave-seed policy — dlca/dlc16 paired to the wind seed,
+  dlcb decoupled via XOR bit-mask (verified in `sims/run_campaign.py`).
+- S3: §5.2 bridge to control-loop performance monitoring + what an operator
+  does with a breach alarm (targeted pitch-system inspection).
+- **`te-firewall-paper-draft.md` is ARCHIVED/frozen**; `te-firewall-paper-final.md`
+  is the single source of truth (two-copy sync retired after the round-2
+  divergence finding). S2–S4 applied to final only; docx regenerated + verified.
+- Committed: **ddc45fe** (round-2 panel report, revised final, archived draft,
+  fig7-delay-profiles.png). Remaining before Stage 5: server items (fault TE,
+  open-loop TE legs/seeds, rotor-averaged wind, tau=1 control) + full numeric
+  re-verification against `te_table_full.parquet`, then Stage 3′ re-review.
