@@ -527,6 +527,25 @@ def _pool_child(job: dict, settings: "TESettings", q) -> None:
     q.put(_run_heavy_job(job, settings))
 
 
+# Grace period between SIGTERM and SIGKILL when reaping a timed-out child.
+TERM_GRACE_S = 30.0
+
+
+def _kill_stubborn_child(p, grace_s: float = TERM_GRACE_S) -> None:
+    """Reap a timed-out child, escalating terminate() -> kill().
+
+    JPype's JVM installs its own signal handlers and can swallow the
+    watchdog's SIGTERM; a child that survives terminate() blocks a bare
+    join() forever and wedges the whole pool (fault-TE run 2026-07-14,
+    same mode as the earlier Phase-4 CPU shard). SIGKILL cannot be caught.
+    """
+    p.terminate()
+    p.join(grace_s)
+    if p.is_alive():
+        p.kill()
+        p.join()
+
+
 def _execute_watchdog(jobs: list, settings: "TESettings",
                       n_workers: int, timeout_s: float) -> list:
     """Run jobs up to n_workers at a time, each in its own spawned child pinned
@@ -562,7 +581,7 @@ def _execute_watchdog(jobs: list, settings: "TESettings",
                                     "runtime_s": time.time() - d["t0"],
                                     "tau_used": settings.tau})
             elif time.time() - d["t0"] > timeout_s:
-                p.terminate(); p.join()
+                _kill_stubborn_child(p)
                 print(f"  !! TIMEOUT {timeout_s:.0f}s: {job['kind']} "
                       f"{job.get('source')}->{job['target']} (terminated)",
                       file=sys.stderr, flush=True)
