@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-14
+updated: 2026-07-16
 tags: [meta, log, publication]
 ---
 
@@ -1378,3 +1378,30 @@ Backfilled from git (`65486fb`, `4186414`).
 - Server repo fast-forwarded to e020ac0 first (rebase dropped a local commit
   whose patch was already upstream). Verdict pending — closes round-1
   roadmap #1 (monitoring test) and #3 (attribution converse) when it lands.
+
+## [2026-07-16] bugfix | Fault-TE run wedged: watchdog terminate() eaten by JVM — kill escalation added
+
+- Symptom (user's `tail -f logs/fault_te.log`): one `TIMEOUT 9000s: ais
+  None->RootMyc1` + `java.lang.InterruptedException`, then silence. Census:
+  **0/63 jobs done at 46.5 h elapsed**, exactly one TIMEOUT ever printed.
+- Diagnosis (ps evidence): job 1 = AIS(RootMyc1), tau=1 -> 150 candidates,
+  can't finish on the CPU/JIDT backend -> watchdog killed it at 9000 s (the
+  InterruptedException traceback + buffered candidate dump are that same kill
+  seen from inside the child). Job 2 = AIS(RootMxc1, tau=5) then **ate the
+  watchdog's SIGTERM** (JPype JVM signal handlers); `_execute_watchdog` did
+  `p.terminate(); p.join()` with **no join timeout**, so the parent (PID
+  1737831, 0% CPU) blocked forever while the child (PID 1754367, 45% CPU)
+  ran ~42 h past its deadline. Same failure mode as the Phase-4 CPU shard.
+- Fix (**24a44b1**): `_kill_stubborn_child()` — terminate, 30 s grace,
+  then SIGKILL (uncatchable). Regression test
+  `analysis/test_watchdog_kill.py` (SIGTERM-immune child must be reaped);
+  passes locally, to be run on the server pre-relaunch alongside
+  `test_ar1_te.py`.
+- Bonus find: stray probe `te_pipeline.py -o /tmp/te_probe.parquet`
+  (PID 546698) burning ~37% CPU for **44 days** — flagged for kill.
+- Relaunch plan: kill wedged tree (1737763/1737831/1754367), `git pull`,
+  rerun with `--slow-drift-targets` extended to all 9 channels (tau=1 heavy
+  jobs are guaranteed 2.5 h burns on CPU; tau=5 rows beat dropped rows —
+  provenance caveat noted for non-platform channels, verdict channels
+  unchanged) + `PYTHONUNBUFFERED=1` so the log is live. Verdict via
+  `compute_fault_te.py --eval-only` when the parquet lands.

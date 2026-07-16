@@ -26,9 +26,24 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-07-14)
+## §0 Current state — read this first (rewritten 2026-07-16)
 
-- **Latest (2026-07-14): Round-2 ARS panel review → Major Revision; all 10 required
+- **Latest (2026-07-16): fault-TE run on the CPU server was WEDGED — watchdog
+  kill-escalation fix committed (24a44b1), relaunch pending.** User's log tail +
+  `ps` showed 0/63 jobs done at 46.5 h: job 1 (AIS RootMyc1, tau=1, 150 candidates)
+  legitimately timed out at 9000 s on the CPU/JIDT backend, but job 2's JVM **ate the
+  watchdog's SIGTERM** and `_execute_watchdog`'s bare `p.join()` blocked the parent
+  forever (same mode as the old Phase-4 CPU shard wedge). Fix: `_kill_stubborn_child()`
+  (terminate → 30 s grace → SIGKILL) + regression test `analysis/test_watchdog_kill.py`;
+  pushed on `phase4-full-rerun`. Also found a stray 44-day `te_pipeline.py` probe
+  (PID 546698, `/tmp/te_probe.parquet`) to kill. **Next on server:** kill wedged tree
+  (1737763/1737831/1754367) + stray, `git pull`, run `test_watchdog_kill.py` +
+  `test_ar1_te.py`, relaunch te_pipeline on the openloop .outb with
+  `--slow-drift-targets` extended to all 9 channels + `PYTHONUNBUFFERED=1`, then
+  `compute_fault_te.py --eval-only` for the verdict (caveat: non-platform fault rows
+  will be tau=5 vs healthy tau=1; verdict channels Ptfm* remain tau=5-matched).
+
+- **Prev (2026-07-14): Round-2 ARS panel review → Major Revision; all 10 required
   items applied locally.** Panel report: `reports/te-firewall-review-round2.md`.
   Round 2 found the **final.md had regressed on the v0.6 delay corrections** (Table 5
   surge said 4.3 s; parquet argmax reproduces 6.3 s ≈ Tp/2 antiphase; abstract said
@@ -588,3 +603,47 @@ each new Claude session was forgetting what the last one discussed.
   test point AND the §4.3 attribution converse closes; no breach ⇒ reshape the
   graded-fault campaign. Either way: fold into the manuscript at the te_table_full
   re-verification pass, not before.
+
+---
+
+## Session 2026-07-16 — fault-TE wedge diagnosed, watchdog kill-escalation fix
+
+**Dialogue.** User pasted `tail -f logs/fault_te.log` from the CPU server
+(isaactest@oem-MD72-HB3-00): `java.lang.InterruptedException` traceback +
+`TIMEOUT 9000s: ais None->RootMyc1` + a 150-candidate dump. Claude's first
+read: one event seen three ways (watchdog SIGTERM → JPype JVM interrupt →
+child's buffered stdout flushing at death); RootMyc1 is tau=1 (not in the
+slow-drift list) so 150 candidates can't finish on CPU; verdict legs (Wind→
+Ptfm*, tau=5) unaffected — recommended letting it run and gave census
+commands. User's census flipped the diagnosis: **0/63 done at 46.5 h, only
+one TIMEOUT ever** → run wedged, not slow. `ps` confirmed: te_pipeline parent
+(1737831) at 0% CPU blocked in the bare `p.join()`, spawn child (1754367,
+job 2 = AIS RootMxc1) at 45% CPU, ~42 h past its 9000 s deadline — the JVM
+swallowed the SIGTERM. Same failure mode that wedged the Phase-4 CPU shard.
+
+**Decisions.**
+- Root-cause fix in `te_pipeline.py`: `_kill_stubborn_child()` — terminate,
+  `join(30)`, then SIGKILL if still alive (uncatchable). Watchdog now calls it.
+- Regression test `analysis/test_watchdog_kill.py` (spawn child that ignores
+  SIGTERM must be reaped within grace+10 s); to be run on the server with
+  `test_ar1_te.py` before relaunch, per the standing pre-campaign rule.
+- Relaunch recommendation: extend `--slow-drift-targets` to all 9 response
+  channels on CPU (tau=1 heavy jobs are near-guaranteed 2.5 h timeout burns;
+  ~25 of them ≈ 2.5 days dead wall clock, rows dropped anyway). Provenance
+  caveat accepted for non-platform channels; verdict channels stay matched.
+- Kill the stray 44-day probe (PID 546698, `/tmp/te_probe.parquet`, 37% CPU).
+
+**Files changed.** `analysis/te_pipeline.py` (kill escalation),
+`analysis/test_watchdog_kill.py` (new) — commit **24a44b1**, pushed to
+origin/phase4-full-rerun. Records: pages/log.md entry, SYNTHESIS §0 rewrite.
+
+**Verification.** `py_compile` both files; test PASSes locally (Windows =
+trivial path — TerminateProcess can't be ignored; the real SIGTERM-immune
+path needs the POSIX server run). Diagnosis verified against live `ps`
+output, `grep` census, and code reading; not yet against a healthy relaunch.
+
+**Open items.** (1) Server: kill wedged tree + stray, pull 24a44b1, run both
+tests, relaunch (extended slow-drift list, PYTHONUNBUFFERED=1). (2) Verdict
+via `compute_fault_te.py --eval-only` when the parquet lands. (3) Unchanged
+deferred set: open-loop TE legs + seeds, rotor-averaged-wind TE, tau=1
+control, te_table_full re-verification before Stage 5.
