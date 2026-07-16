@@ -1405,3 +1405,20 @@ Backfilled from git (`65486fb`, `4186414`).
   provenance caveat noted for non-platform channels, verdict channels
   unchanged) + `PYTHONUNBUFFERED=1` so the log is live. Verdict via
   `compute_fault_te.py --eval-only` when the parquet lands.
+
+## [2026-07-16] campaign | Fault-case TE relaunched (PID 1992582) after watchdog fix
+
+- Pre-launch gates on the server, both PASS: `test_watchdog_kill.py`
+  ("reaped in 3.0s" = the SIGTERM-immune child was killed by the new
+  SIGKILL escalation, exercised for real on POSIX) and `test_ar1_te.py`
+  (forward 0.1892 nats sig / reverse 0.0000 non-sig — canonical).
+- Relaunch: `te_pipeline.py` directly (not the `compute_fault_te.py`
+  wrapper, whose slow-drift list is hard-coded) on the openloop .outb,
+  `--slow-drift-targets` extended to all 9 response channels (tau=5
+  everywhere — CPU can't finish tau=1's 150-candidate searches) +
+  `PYTHONUNBUFFERED=1` for a live log. Output parquet matches the
+  wrapper's default path so `--eval-only` picks it up.
+- PID 1992582, log `logs/fault_te.log`. First `[done ...]` runtime
+  calibrates the full 63-job sweep. Verdict on completion via
+  `compute_fault_te.py --eval-only reports/te_fault_openloop.parquet`
+  vs the 0.029-nats healthy ceiling.

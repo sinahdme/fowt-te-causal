@@ -29,7 +29,14 @@ each new Claude session was forgetting what the last one discussed.
 ## §0 Current state — read this first (rewritten 2026-07-16)
 
 - **Latest (2026-07-16): fault-TE run on the CPU server was WEDGED — watchdog
-  kill-escalation fix committed (24a44b1), relaunch pending.** User's log tail +
+  kill-escalation fix committed (24a44b1); RELAUNCHED as PID 1992582.** Both
+  pre-launch gates passed on the server: `test_watchdog_kill.py` reaped a
+  SIGTERM-immune child in 3.0 s (the SIGKILL escalation path, exercised for
+  real) and `test_ar1_te.py` gave the canonical 0.1892/0.0000 nats. Relaunch
+  uses the extended 9-target `--slow-drift-targets` (all tau=5) +
+  `PYTHONUNBUFFERED=1`; log `logs/fault_te.log`. When the parquet lands:
+  `compute_fault_te.py --eval-only reports/te_fault_openloop.parquet`.
+  Original wedge story: user's log tail +
   `ps` showed 0/63 jobs done at 46.5 h: job 1 (AIS RootMyc1, tau=1, 150 candidates)
   legitimately timed out at 9000 s on the CPU/JIDT backend, but job 2's JVM **ate the
   watchdog's SIGTERM** and `_execute_watchdog`'s bare `p.join()` blocked the parent
