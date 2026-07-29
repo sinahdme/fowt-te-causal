@@ -2,7 +2,7 @@
 title: "Synthesis — conversation & decision record"
 type: synthesis
 created: 2026-07-09
-updated: 2026-07-10
+updated: 2026-07-29
 tags: [meta, log, sessions, decisions]
 ---
 
@@ -26,9 +26,57 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-07-16)
+## §0 Current state — read this first (rewritten 2026-07-29)
 
-- **Latest (2026-07-16): fault-TE run on the CPU server was WEDGED — watchdog
+- **Latest (2026-07-29): BOTH server campaigns finished — CPU fault-TE = clean
+  NULL, GPU te_table_full = complete (3888 rows).** (1) **CPU fault-TE (open-loop
+  twin, PID 1992582, done ~71.4 h): NO firewall breach.** `compute_fault_te.py
+  --eval-only reports/te_fault_openloop.parquet` → Wind→PtfmPitch/Surge/Heave all
+  TE=0.0000, significant=False, above_ceiling=False vs the 0.029-nats healthy
+  ceiling → "No breach demonstrated." Real null, not a pipeline failure: the same
+  log carries a *significant* control edge (conditional Wave1Elev→FAIRTEN3,
+  TE=+0.0550, p=0.0050). **Interpretation (agreed): open-loop ≠ a pitch fault**, so
+  this null neither refutes nor supports the monitoring claim — it is a robustness
+  data point on an imperfect proxy, n=1 (dlca_v11ms_s00_openloop, one seed, 11 m/s).
+  **Decision: accept the null; §4.4 stays an OUTLOOK (no paper edit); round-1
+  roadmap #1/#3 closed as "test executed."** Do NOT reframe as a positive
+  "structural firewall" finding on n=1. Reserve (only if we later choose to upgrade
+  §4.4 to proof-of-concept): run ONE *targeted* stuck-pitch / pitch-bias fault case
+  (the correct instrument), not more open-loop seeds. (2) **GPU Phase-4 full
+  campaign (lams, `run_phase4_full.sh`) COMPLETE** — `reports/te_table_full.parquet`,
+  3888 rows across [54/54] cases (written Jul 21; the `[1]+ Done` only surfaced
+  Jul 29 because that shell sat open ~8 days). Graph `reports/te_full_graph.pkl`
+  (5 nodes, 4 edges). Method summary: granger 818/972 sig (84%), bivariate_te_ksg
+  264/972 (27%), coherence 972/972 (100%), **conditional_te_ksg|Wave1Elev 0/486
+  (0%)**, conditional_te_ksg|Wind1VelX 251/486 (52%) — conditioning on wave collapses
+  all transfer (wave-mediation, the SURD story). This is the authoritative full
+  table for the deferred **te_table_full re-verification before Stage 5**.
+  **FIREWALL RE-VERIFIED (PASS, on lams):** bivariate_te_ksg gated on `significant`,
+  Wind1VelX→PtfmPitch/Surge/Heave = 1/1/0 significant of 54 (chance floor ~2.7),
+  max gated TE 0.0047 nats ≪ 0.029 → wind→platform statistically indistinguishable
+  from noise. Positive controls strong: Wave→PtfmPitch 52/54, Wave→PtfmSurge 47/54;
+  Wind→RootMxc1 7/54 (real wind→blade load, above chance) → firewall is
+  platform-specific, exactly the thesis. Conditional-on-wave 0/486 corroborates
+  wave-mediation. **RESOLVED — paper-numbers decision (user, 2026-07-29): KEEP first-pass
+  `te_table` numbers; cite `te_table_full` only as a firewall robustness check.**
+  The comparison IS apples-to-apples — paper Table 2 caption = "mean over 54
+  simulations" (all 54, gated), same as the full-run means. Finding: wind side
+  agrees and is *cleaner* in the full run (Wind→PtfmSurge sig 11.1%→0%; max
+  wind→platform 0.029→0.0047), but wave→platform *magnitudes* run 3–5× lower and
+  **Wave→PtfmHeave flips 87%→13% significant (47/54→7/54)**. Cause = te_table_full's
+  `--max-lag-sources 20` ≈ **4 s** source-lag window at 5 Hz, SHORTER than the
+  physical **Wave→PtfmSurge delay of 6.3 s (≈Tp/2)** from delay_profiles → the full
+  run cannot see the wave→platform delay and UNDERESTIMATES wave TE. So te_table_full
+  is the better instrument for the *wind/firewall* side (near-zero delay) but a
+  *worse* one for wave magnitudes than the first-pass. ⇒ Do NOT rewrite Table 2/3;
+  the paper's first-pass magnitudes stand. **Reserve (rejected for now): targeted
+  re-run with `--max-lag-sources ≥35`** to compare on equal footing — not needed for
+  the thesis. **Next:** add ONE robustness sentence to `te-firewall-paper-final.md`
+  (full-settings GPU re-estimation reproduces the wind→platform firewall) + regen
+  docx; the DON'T-adopt-full-magnitudes rationale is captured here + in
+  [[project-phase4-full-campaign]]. Both A100s idle; no live pipeline procs.
+
+- **Prev (2026-07-16): fault-TE run on the CPU server was WEDGED — watchdog
   kill-escalation fix committed (24a44b1); RELAUNCHED as PID 1992582.** Both
   pre-launch gates passed on the server: `test_watchdog_kill.py` reaped a
   SIGTERM-immune child in 3.0 s (the SIGKILL escalation path, exercised for
@@ -654,3 +702,67 @@ tests, relaunch (extended slow-drift list, PYTHONUNBUFFERED=1). (2) Verdict
 via `compute_fault_te.py --eval-only` when the parquet lands. (3) Unchanged
 deferred set: open-loop TE legs + seeds, rotor-averaged-wind TE, tau=1
 control, te_table_full re-verification before Stage 5.
+
+## Session 2026-07-29 — Both server campaigns landed: fault-TE null + te_table_full complete
+
+**Dialogue.** User: "let go back to the project I had two codes one on cpu and
+the other on gpu." Read §0 + log tail; oriented on the two runs (CPU fault-TE
+PID 1992582; GPU Phase-4 full). User had server access and ran the status
+one-liners; agreed to do CPU first, then GPU.
+
+**CPU fault-TE (isaactest@oem-MD72-HB3-00, ~/다운로드/Sina/fowt-te-causal).**
+PID 1992582 DEAD (job *done*, not wedged). Log tail: `case done in 257114s,
+67 rows` / `[1/1] OK`. Parquet `reports/te_fault_openloop.parquet` present;
+header confirms input `sims/dlca_v11ms_s00_openloop/.../IEA-15-240-RWT-UMaineSemi.outb`.
+Verdict via `python analysis/compute_fault_te.py --eval-only
+reports/te_fault_openloop.parquet`:
+Wind→PtfmPitch/Surge/Heave = 0.0000 nats, non-sig, below 0.029 ceiling →
+"No breach demonstrated." Internal control positive (significant Wave1Elev→FAIRTEN3
+edge in same log) → null is real, not a broken estimator.
+
+**GPU Phase-4 full (lams, ~/Desktop/sina/fowt_te_causal/fowt-te-causal).**
+Shell surfaced `[1]+ Done  nohup ./analysis/run_phase4_full.sh > analysis/run-full-gpu.log`.
+Log: `[54/54] OK`, `reports/te_table_full.parquet` = 3888 rows / 54 cases
+(written Jul 21 11:38 — finished 8 days ago, notification just fired), graph
+`te_full_graph.pkl` (5 nodes, 4 edges), GPUs idle. Method summary logged in §0;
+key on-thesis result: **conditional_te_ksg|Wave1Elev 0/486 significant** vs
+|Wind1VelX 251/486 — wave-mediation collapse.
+
+**Decisions.** (1) Accept the fault-TE null; §4.4 stays an OUTLOOK — no paper
+edit; round-1 roadmap #1/#3 closed as "test executed." (2) Reject reframing the
+null as a positive structural-firewall finding (n=1 open-loop, and open-loop ≠
+pitch fault — the wrong instrument for the monitoring claim). (3) Reserve, not
+scheduled: ONE targeted stuck-pitch/pitch-bias fault case is the correct
+instrument if we later upgrade §4.4 to proof-of-concept. (4) te_table_full is
+the authoritative data for the deferred Stage-5 re-verification.
+
+**Stage-5 firewall re-verification (done, on lams).** bivariate_te_ksg gated on
+`significant`: Wind→PtfmPitch/Surge/Heave = 1/1/0 sig of 54 (chance ~2.7), max
+gated 0.0047 nats ≪ 0.029 → firewall PASS, cleaner than first-pass. Positive
+controls strong (Wave→PtfmPitch 52/54, Wind→RootMxc1 7/54). BUT wave→platform
+magnitudes run 3–5× low and Wave→PtfmHeave sig flips 87%→13% — traced to
+te_table_full's `--max-lag-sources 20` (≈4 s at 5 Hz) being shorter than the
+6.3 s Wave→PtfmSurge delay → it underestimates wave TE. Paper Table 2 aggregation
+confirmed apples-to-apples ("mean over 54").
+
+**Decision (user, this session).** KEEP the paper's first-pass `te_table`
+magnitudes (Tables 2/3, abstract, CIs unchanged); cite te_table_full only as a
+firewall robustness check. Rejected: adopting full magnitudes (imports the
+source-lag-truncation bias) and a targeted `--max-lag-sources ≥35` re-run (held in
+reserve, not needed for the thesis).
+
+**Files changed.** SYNTHESIS.md (§0 rewritten + this entry); pages/log.md (4
+entries: fault-TE null, GPU complete, firewall PASS, decision); memory
+`project-phase4-full-campaign` (marked COMPLETE + wave-underestimate caveat);
+**`reports/te-firewall-paper-final.md`** — one robustness sentence added to §4.1
+positive-control paragraph (independent GPU OpenCL–Kraskov re-estimation reproduces
+the firewall; wind→surge sig 11%→0%, max wind→platform TE <0.005 nats);
+**`reports/te-firewall-paper.docx`** regenerated via pandoc 3.8 and verified
+(new sentence present in docx XML). No code changes; server parquets read-only.
+
+**Open items / next.** (a) Stage 3′ re-review is now unblocked on the fault-TE +
+te_table_full fronts (both closed). (b) Remaining deferred (server): open-loop TE
+legs + more seeds, rotor-averaged-wind TE, tau=1 control — none blocking. (c)
+Reserve: targeted stuck-pitch fault case (upgrades §4.4 to proof-of-concept) and/or
+`--max-lag-sources ≥35` full re-run (equal-footing wave magnitudes). (d) Uncommitted:
+the paper edit + docx + these records are on `phase4-full-rerun`, not yet committed.

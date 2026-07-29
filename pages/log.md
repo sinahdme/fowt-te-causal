@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-16
+updated: 2026-07-29
 tags: [meta, log, publication]
 ---
 
@@ -1422,3 +1422,87 @@ Backfilled from git (`65486fb`, `4186414`).
   calibrates the full 63-job sweep. Verdict on completion via
   `compute_fault_te.py --eval-only reports/te_fault_openloop.parquet`
   vs the 0.029-nats healthy ceiling.
+
+## [2026-07-29] campaign | Fault-case TE (open-loop) completed — clean NULL, no firewall breach
+
+- Run finished on the CPU server (isaactest@oem-MD72-HB3-00, PID 1992582 now
+  gone; `case done in 257114s ≈ 71.4 h, 67 rows, [1/1] OK`). Output landed at
+  `reports/te_fault_openloop.parquet`; log header confirms the open-loop twin
+  input `sims/dlca_v11ms_s00_openloop/.../IEA-15-240-RWT-UMaineSemi.outb`.
+- Verdict — `python analysis/compute_fault_te.py --eval-only
+  reports/te_fault_openloop.parquet`:
+  `Wind→PtfmPitch/PtfmSurge/PtfmHeave = 0.0000 nats, significant=False,
+  above_ceiling=False` vs the 0.029-nats healthy ceiling → **"No breach
+  demonstrated."** The firewall held even with pitch feedback disabled.
+- Not a pipeline artifact: the same log contains a *significant* control edge
+  (`conditional Wave1Elev→FAIRTEN3, TE=+0.0550, p=0.0050`), so the estimator
+  finds transfer where it exists — none from wind to platform.
+- Reading (agreed with user): **open-loop ≠ a pitch fault**, so this null is a
+  robustness data point on an imperfect proxy (n=1: one seed, 11 m/s), NOT a
+  refutation *or* confirmation of the monitoring claim. Decision: **§4.4 stays
+  an outlook (no paper edit); round-1 roadmap #1/#3 closed as "test executed."**
+  Not reframing as a positive structural finding on n=1. The correct future test,
+  if we upgrade §4.4 to proof-of-concept, is ONE targeted stuck-pitch / pitch-bias
+  case — not more open-loop seeds.
+
+## [2026-07-29] campaign | GPU Phase-4 full campaign COMPLETE — te_table_full.parquet (3888 rows)
+
+- `run_phase4_full.sh` on lams finished (`[54/54] OK`; the `[1]+ Done` shell
+  notice surfaced 2026-07-29 but the file was written Jul 21 11:38 — an
+  ~8-day-open shell). Both A100s idle, no live `te_pipeline` process.
+- `reports/te_table_full.parquet` = **3888 rows across 54 cases**, 5 methods;
+  graph `reports/te_full_graph.pkl` (5 nodes, 4 edges).
+- Method summary: bivariate_granger 818/972 sig (84%), bivariate_te_ksg
+  264/972 (27%), coherence_scipy 972/972 (100%),
+  **conditional_te_ksg|Wave1Elev 0/486 (0%)**, conditional_te_ksg|Wind1VelX
+  251/486 (52%). Conditioning on wave elevation collapses all significant
+  transfer — the wave-mediation result the SURD subproject argued.
+- This is the authoritative full table for the deferred **te_table_full
+  re-verification before Stage 5**. Next: edge-level filter for wind→Ptfm* to
+  re-confirm the firewall against the paper's `te_table.parquet` numbers
+  (pull the 76 KB parquet local or run on the box) before Stage 3′ re-review.
+
+## [2026-07-29] verification | Stage-5 firewall re-verified on te_table_full — PASS (magnitudes flagged)
+
+- Edge-level filter of `te_table_full.parquet` on lams: `method=='bivariate_te_ksg'`,
+  gate `te_nats` on `significant` (non-sig → 0), group by (source,target) over 54 cases.
+- **Firewall holds:** Wind1VelX→PtfmPitch/Surge/Heave = 1/1/0 significant of 54
+  (chance floor at α=0.05 ≈ 2.7), max gated TE **0.0047 nats ≪ 0.029** ceiling →
+  wind→platform is statistically indistinguishable from noise in the full campaign.
+- **Positive controls pass:** Wave→PtfmPitch 52/54 sig, Wave→PtfmSurge 47/54, and
+  Wind→RootMxc1 7/54 (real, weak wind→blade-root load, above chance) → the null is
+  estimator-real and *platform-specific*, matching the thesis. Corroborated by the
+  conditional_te_ksg|Wave1Elev = 0/486 (wave-mediation).
+- **Flagged (paper-numbers decision, OPEN):** full-campaign wave→platform
+  *magnitudes* are ~2–5× lower than the paper's first-pass Table 2 (full
+  Wave→PtfmSurge mean-gated 0.038 vs paper ~0.107; Wave→PtfmPitch 0.023 / max 0.045
+  vs paper ~0.121). Expected — te_table_full uses `--max-lag-sources 20`, tau=5,
+  5 Hz decimation and was designed to supersede the JIDT/OpenCL-mixed first-pass.
+  Comparison not yet apples-to-apples (means over all 54 vs the paper's T1+T2 subset
+  aggregation). Next: reproduce the paper's exact Table-2 recipe on the LOCAL
+  first-pass `reports/te_table.parquet`, then apply it to te_table_full before
+  deciding whether the manuscript adopts the full-settings numbers. Qualitative
+  thesis (firewall + wave-mediation) is robust either way.
+
+## [2026-07-29] decision | Paper keeps first-pass te_table numbers; te_table_full is firewall-robustness only
+
+- Reproduced the paper's Table-2 aggregation and confirmed it is apples-to-apples:
+  caption = "mean over 54 simulations" (gated), same as the full-run means.
+- Result: wind/firewall side AGREES and is cleaner in the full run (Wind→PtfmSurge
+  11.1%→0% sig; max wind→platform 0.029→0.0047 nats). Wave→platform magnitudes,
+  however, run 3–5× lower and **Wave→PtfmHeave flips from 87% to 13% significant
+  (47/54 → 7/54)**.
+- Root cause: te_table_full ran `--max-lag-sources 20` — a ~4 s source-lag search
+  at 5 Hz decimation — which is SHORTER than the physical Wave→PtfmSurge delay of
+  6.3 s (≈ Tp/2, from `delay_profiles.parquet`). The full run therefore cannot
+  resolve the wave→platform delay and underestimates wave TE. It is the better
+  instrument for the (near-zero-delay) wind firewall but a worse one for wave
+  magnitudes than the first-pass table.
+- **Decision (user):** KEEP the paper's first-pass `te_table` numbers in Tables
+  2/3, abstract, and CIs; add te_table_full only as an independent robustness check
+  that the wind→platform firewall reproduces under a fully self-consistent GPU
+  estimator. No magnitude edits. Rejected for now: adopting the full magnitudes
+  (would import the source-lag-truncation bias) and a targeted re-run with
+  `--max-lag-sources ≥35` (not needed for the thesis; held in reserve).
+- Follow-up: insert one robustness sentence into `te-firewall-paper-final.md` +
+  regenerate docx.
