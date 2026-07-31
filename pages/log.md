@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-29
+updated: 2026-07-31
 tags: [meta, log, publication]
 ---
 
@@ -1506,3 +1506,54 @@ Backfilled from git (`65486fb`, `4186414`).
   `--max-lag-sources ≥35` (not needed for the thesis; held in reserve).
 - Follow-up: insert one robustness sentence into `te-firewall-paper-final.md` +
   regenerate docx.
+
+## [2026-07-31] paper | Robustness sentence confirmed in §4.1; docx rebuilt & verified
+
+- Follow-up from the 2026-07-29 decision **CLOSED**. On review the robustness
+  sentence was already present and committed at `reports/te-firewall-paper-final.md`
+  line 201 (commit `2ba1d80`, `git log -L` confirmed): "…re-estimated transfer
+  entropy over the entire 54-case campaign on an independent GPU (OpenCL–Kraskov)
+  backend: the wind→platform null reproduces and, if anything, tightens — the
+  wind→platform-surge significance rate falls from 11% to 0% and the maximum
+  wind→platform transfer entropy over all cases drops below 0.005 nats, remaining
+  at or beneath the α = 0.05 chance floor in every case." Framed as robustness
+  only; no wave-magnitude edits — matches the decision. **No new sentence written**
+  (would have duplicated).
+- Docx regenerated per convention: backed up old as
+  `te-firewall-paper.docx.bak-20260731-105217`, then
+  `pandoc te-firewall-paper-final.md -o te-firewall-paper.docx` from `reports/`.
+  Rebuild byte-size identical (1,842,543 B) to the prior 2026-07-29 build → the md
+  was already faithfully rendered; clean rebuild proves it.
+- Verified (python-docx / document.xml text scan): robustness sentence present
+  (`independent GPU` + `OpenCL`, `from 11% to 0%`, `drops below 0.005 nats`), and
+  first-pass magnitudes intact (Table 1 `0.1214`, Table 2 `0.1069`). All 5 checks PASS.
+
+## [2026-07-31] paper | Re-review (round 3) verified; NEW-1/NEW-2 honest-reporting edits applied
+
+- Ran `academic-paper-reviewer` re-review against the round-2 roadmap. Found a
+  round-3 report already existed (`reports/te-firewall-review-round3.md`,
+  2026-07-29, verdict Minor Revision): all 10 required + 4 suggested round-2 items
+  FULLY_ADDRESSED, but it flagged two NEW issues from post-round-2 results that were
+  **still unaddressed** in the manuscript. Independently re-verified both were live.
+- **NEW-2 (Major) — §4.3 factual-currency defect.** The paragraph still called the
+  open-loop twin's TE converse "pending" and promised it "would close both arguments
+  at once" — but that computation had since run (`te_fault_openloop.parquet`) and
+  returned a NULL (wind→platform TE does not rise with the loop open). Root cause: the
+  2026-07-29 "no paper edit" decision addressed the §4.4 monitoring outlook, not this
+  distinct §4.3 currency issue, which was skipped.
+- **Fix (NEW-2):** rewrote §4.3 to report the null, note the estimator still finds a
+  significant control edge in the same run (conditional Wave1Elev→FAIRTEN3, TE ≈ 0.055
+  nats, p = 0.005) so the null is real, untangle the open-loop converse from the §4.4
+  pitch-fault test (still uncomputed), read the null conservatively (n=1; loop-disabling
+  ≠ a fault), and fold in the "partly structural firewall" reading cross-ref §5.1.
+  Attribution now explicitly rests on the two SURD lines, not the TE-converse. Abstract
+  and §4.6 unchanged (they lean on the SURD organisation-collapse leg, which stands).
+- **Fix (NEW-1, Minor):** §4.1 robustness sentence now states it is a wind-side check
+  only and why the full-campaign wave magnitudes are not adopted (~4 s source-lag window
+  truncates the 6.3 s wave→surge delay).
+- Docx regenerated (backup `te-firewall-paper.docx.bak-20260731-112332`). Verified in md
+  and docx: stale phrases gone; NEW-1/NEW-2 content present (document.xml scan 7/7 PASS).
+  Resolution addendum appended to the round-3 report.
+- **Status:** technical body (Abstract→Conclusion) now submission-ready. Remaining before
+  actual submission: RR10 final scripted table re-check vs `te_table.parquet` (advisory);
+  front/back matter (CRediT, funding, COI, data DOI, AI disclosure) + citation-check.
