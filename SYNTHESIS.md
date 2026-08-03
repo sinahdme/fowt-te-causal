@@ -28,6 +28,42 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-03)
 
+- **Latest (2026-08-03, session 7): project artifacts ingested into the `pages/` wiki
+  graph (LLM Wiki pattern's "ingest" op).** User introduced the vault's origin (Karpathy
+  LLM-maintained-wiki pattern, `LLM_Wiki_Pattern.md`), then asked to ingest the project
+  directory into the wiki. Confirmed via decision prompt: target = **main `pages/` wiki**
+  (not `vault-legacy/`), scope = **project artifacts** (excl. vendored `repos/`, binary sim
+  outputs, build-script noise). Found the theory/reference layer well-covered but the project
+  *state* living only in SYNTHESIS/log/memory and `analyses/` **empty**, and `overview.md`
+  badly **stale** (dated 2026-05-12, "nothing verified / Phases 2–6 pending"). Created **8
+  pages**: entities `te-pipeline`, `compute-servers`, `surd`; concepts `information-firewall`,
+  `blade-pitch-health-monitoring`; analyses `te-firewall-54case-2026-08-03`,
+  `firewall-attribution-surd-openloop-2026-08-03`, `firewall-manuscript-status-2026-08-03`.
+  Updated `index.md`, **fixed the stale `overview.md`** (all 6 phases done + firewall finding),
+  appended a `pages/log.md` ingest entry. All numbers cross-checked against the vetted
+  manuscript `reports/te-firewall-paper-final.md`, not re-derived. **Verified:** 8 pages
+  present; broken-link scan of the new pages = 0 (4 unresolved links are pre-existing index
+  stubs). Deferred: full lint pass + reconciling `open-questions.md`/`wiki-improvement-plan.md`
+  with the completed campaign. Not committed.
+
+- **Latest (2026-08-03, session 6): title changed to drop the controller over-claim.**
+  Old: "…: Blade-Pitch Control Decouples Wind from Platform Motion, with Implications for
+  Health Monitoring". New: "An Information Firewall Between Wind and Platform Motion in
+  Floating Offshore Wind Turbines: A Transfer-Entropy Analysis with Implications for Health
+  Monitoring". Reason: old title asserted controller-as-mechanism (the exposed flank —
+  open-loop TE-converse null + possible structural filtering); new title leads with the
+  firewall finding + method, attribution stays in the body (SURD, contribution #2). User
+  picked the "drop controller from title" option. Docx rebuilt+verified (backup
+  `te-firewall-paper.docx.bak-20260803-161642`). UNCOMMITTED since 00a6156: abstract trim
+  (session 5) + this title change.
+
+- **Latest (2026-08-03, session 5): abstract trimmed 422 → 249 words** (MSSP/Elsevier ~250
+  limit). Preserved all load-bearing claims/numbers (0.0009/0.029/3.7%/0.121/100%/0.72/54);
+  dropped from the abstract only the te_frac 0.04% detail (kept in §4.1) and the per-channel
+  delay list (kept in §4.5/Table 5). Refs still APA (venue undecided; numbered conversion
+  available if Elsevier). Docx rebuilt+verified (backup `te-firewall-paper.docx.bak-20260803-160353`,
+  1,842,062 B). Committed set 00a6156 is PRIOR to this abstract trim → the trim is uncommitted.
+
 - **Latest (2026-08-03, session 4): carried-over reviewer polish (items 2/3 fixed; 1/4
   held).** (2) §5.3 rotor-averaged-check sentence de-narrated — dropped "we had expected …
   has since been computed" → "the open-loop twin's wind→platform TE is itself null (§4.3),
@@ -938,3 +974,49 @@ campaign remain. Edits applied cleanly (Edit tool confirmed each).
    (NaN -> te_wind_pitch~0.0, sig=False) from the parquet; force-add both parquets.
 3. Regenerate docx (one rebuild covering both the 3 prose edits + any final matter).
 4. Commit the whole set on `phase4-full-rerun`.
+
+---
+
+## Session 7 — 2026-08-03 — Wiki ingest of project artifacts
+
+**Dialogue.**
+- User: "what do you understand from this vault?" → Claude read SYNTHESIS §0 +
+  directory layout and summarised the project (FOWT causal-TE, the firewall finding,
+  the manuscript in reviewer-response, the two-server compute setup).
+- User then explained the vault's *origin*: it instantiates Karpathy's
+  LLM-maintained-wiki pattern from a single bootstrap prompt (`LLM_Wiki_Pattern.md`
+  + the gist). Claude read the local pattern doc + fetched the gist, connected it to
+  the vault, and flagged honestly that the wiki graph had drifted (frozen ~2026-05-13)
+  while SYNTHESIS/log/memory carried real progress.
+- User: "can you ingest the project directory … into this vault?"
+
+**Decisions (user-confirmed via decision prompt).**
+- Target vault = **main `pages/` wiki** (the pattern's LLM-owned layer), not
+  `vault-legacy/` (older Obsidian tree) — where the shell happened to be cwd'd.
+- Scope = **project artifacts** (code pipeline, campaign results, paper, infra,
+  internal docs); **exclude** vendored `repos/` (OpenFAST source, 7784 files),
+  binary sim outputs, and build-script noise (pattern's anti-wide-shallow rule).
+
+**Files changed.**
+- New (8): `pages/entities/{te-pipeline,compute-servers,surd}.md`,
+  `pages/concepts/{information-firewall,blade-pitch-health-monitoring}.md`,
+  `pages/analyses/{te-firewall-54case-2026-08-03,firewall-attribution-surd-openloop-2026-08-03,firewall-manuscript-status-2026-08-03}.md`
+  (first real pages in the previously-empty `analyses/` layer).
+- Updated: `pages/index.md` (new entries + `updated:` → 2026-08-03),
+  `pages/overview.md` (**stale currency fixed**: phase table Phases 2–6 → DONE,
+  "nothing verified" → firewall finding + verification note, `updated:` bumped),
+  `pages/log.md` (ingest entry), this file.
+
+**Verification.**
+- All quantitative claims sourced from the vetted manuscript
+  `reports/te-firewall-paper-final.md` (§4.1–§4.6, Tables 1–5) — read this session,
+  not re-derived from parquet.
+- 8 new pages confirmed present on disk.
+- Broken-link scan over the new pages: **0 unresolved from new content** (the 4
+  unresolved targets are pre-existing `*(stub)*` links already in `index.md`).
+
+**Open items / next.**
+- Deferred lint pass (orphans/stubs across the whole wiki; the 4 pre-existing stubs).
+- Reconcile `open-questions.md` + `wiki-improvement-plan.md` (both dated 2026-05-12)
+  with the completed campaign.
+- Uncommitted, alongside the prior session-5/6 abstract-trim + title change.

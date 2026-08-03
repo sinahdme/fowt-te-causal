@@ -1622,3 +1622,55 @@ rotor-averaged wind check remains queued (server down; needs ambient disk-averag
 motion-contaminated RtVAvgxh) — expect it as a major-revision ask; and abstract length (422 w)
 / APA-vs-numbered refs deferred pending venue choice (undecided). Docx rebuilt + verified
 (backup ...bak-20260803-154604). Not committed.
+
+## [2026-08-03] paper | Abstract trimmed 422 -> 249 words
+
+Cut the abstract to ~250 words (MSSP/Elsevier limit) while preserving every load-bearing
+claim and number: firewall thesis; TE(Wind→pitch)=0.0009 (max 0.029, sig 3.7%) vs wave 0.121
+(100%); below-chance selection; coherence γ²≈0.72 spurious; delay-robustness; SURD + open-loop
+attribution; monitoring outlook (no fault-case TE, graded-fault validation specified); novelty.
+Dropped from the abstract only: the te_frac 0.04%/4.3% detail (retained in §4.1 body) and the
+per-channel delay list (retained in §4.5/Table 5). Reference style unchanged (APA) — venue
+still undecided; numbered-ref conversion available if Elsevier. Docx rebuilt + verified
+(backup ...bak-20260803-160353; new abstract present, old opening gone). Not committed.
+
+## [2026-08-03] paper | Title changed to remove the controller over-claim
+
+Retitled from "...: Blade-Pitch Control Decouples Wind from Platform Motion, with Implications
+for Health Monitoring" to "An Information Firewall Between Wind and Platform Motion in Floating
+Offshore Wind Turbines: A Transfer-Entropy Analysis with Implications for Health Monitoring".
+Rationale: the old title asserted the controller as the decoupling mechanism, the paper's most
+exposed flank (open-loop TE-converse null; possible structural spatial filtering, §4.3/§5.1).
+New title leads with the bulletproof empirical finding + method, leaving attribution to the
+body (still contribution #2 via SURD). Docx rebuilt+verified (backup ...bak-20260803-161642;
+new title present, old gone). Not committed.
+
+## [2026-08-03] ingest | Project artifacts ingested into the wiki graph
+
+Ingested the project's own work-artifacts into the LLM-owned `pages/` layer (the
+theory/reference layer was well-covered but the *project state* lived only in
+`SYNTHESIS.md`/`log.md`/memory, and `analyses/` — the pattern's compounding layer
+— was empty). Target `pages/` wiki, scope "project artifacts" (both user-confirmed
+via decision prompt); vendored `repos/`, binary sim outputs, and build-script
+noise excluded by design.
+
+- New entities: [[entities/te-pipeline]] (`pipeline.py`/`te_pipeline.py`),
+  [[entities/compute-servers]] (65-core CPU + `lams` 2×A100 GPU),
+  [[entities/surd]] (attribution subproject).
+- New concepts: [[concepts/information-firewall]] (central finding),
+  [[concepts/blade-pitch-health-monitoring]] (the monitoring outlook).
+- New analyses (first pages in `analyses/`):
+  [[analyses/te-firewall-54case-2026-08-03]] (0.0009 vs 0.121 nats; coherence
+  contrast; delay-robustness; GPU cross-check),
+  [[analyses/firewall-attribution-surd-openloop-2026-08-03]] (SURD redirection +
+  open-loop twin, with the TE-converse-null / n=1 / structural-vs-control caveats),
+  [[analyses/firewall-manuscript-status-2026-08-03]] (thesis/structure/status +
+  open reviewer risks).
+- Updated: [[index]] (new entries + `updated:` bumped), [[overview]] (**stale
+  currency fixed** — was "nothing verified / Phases 2–6 pending" dated 2026-05-12;
+  now reflects all six phases done + the firewall finding).
+- All figures from the vetted manuscript `reports/te-firewall-paper-final.md`;
+  numbers cross-checked against it, not re-derived.
+- Follow-up (deferred): a lint pass (orphans/broken-link check on the new pages),
+  and reconciling [[open-questions]] + [[wiki-improvement-plan]] with the completed
+  campaign. Not committed.
