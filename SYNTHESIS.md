@@ -2,7 +2,7 @@
 title: "Synthesis — conversation & decision record"
 type: synthesis
 created: 2026-07-09
-updated: 2026-07-29
+updated: 2026-08-03
 tags: [meta, log, sessions, decisions]
 ---
 
@@ -26,7 +26,91 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-07-31)
+## §0 Current state — read this first (rewritten 2026-08-03)
+
+- **Latest (2026-08-03, session 4): carried-over reviewer polish (items 2/3 fixed; 1/4
+  held).** (2) §5.3 rotor-averaged-check sentence de-narrated — dropped "we had expected …
+  has since been computed" → "the open-loop twin's wind→platform TE is itself null (§4.3),
+  … rather than as settling the attribution" (timeless). (3) Intro "This paper makes three
+  contributions" → "two contributions and develops a motivated outlook" (+ prose "The two
+  contributions above … Beyond them, we develop"), and fixed a cross-ref (graded-fault
+  campaign is §5.3, not §5.2). (1) Rotor-averaged wind check STILL queued in §5.3 — can't run
+  (server down; and must use ambient disk-average from wind.bts, NOT RtVAvgxh which is
+  motion-contaminated, corr −0.31 w/ PtfmPitch); hedged framing is the protection, expect a
+  major-revision ask. (4) Venue UNDECIDED → abstract kept at 422 words, refs kept APA
+  author-year (19 entries); trim-to-~250 + numbered-ref conversion deferred until a venue is
+  chosen (MSSP/Elsevier would need both; Wind Energy Science would not). Docx REBUILT +
+  verified (backup `te-firewall-paper.docx.bak-20260803-154604`, 1,842,437 B; document.xml
+  PASS — item 2/3 edits present, old text/leaks/dup-captions absent). Not committed.
+
+- **Latest (2026-08-03, session 3): duplicated figure captions fixed.** Reviewer/author
+  found every one of the 9 figures showed TWO captions in the rendered PDF/docx. Root cause:
+  each image carried descriptive alt-text (`![Figure N. …](figs/…)`) and pandoc's
+  `implicit_figures` renders non-empty alt-text as a figure caption — which then sat above
+  the formal `**Figure N.**` caption. Fix: stripped the alt-text on all 9 images
+  (`sed 's#!\[[^]]*\](figs/#![](figs/#g'`) so pandoc no longer auto-captions; the bold
+  caption is now the sole caption. Verified in md (0 `![Figure`, 9 `![](figs/`, 9 `**Figure`)
+  and in the rebuilt docx (backup `te-firewall-paper.docx.bak-20260803-153837`; document.xml
+  scan: 7 alt-only phrases ABSENT, 4 sampled bold captions PRESENT ×1 each, leak regression 0).
+  Docx current (1,842,477 B). Not committed.
+
+- **Latest (2026-08-03, session 2): internal pipeline/code artifacts stripped from the
+  manuscript (reviewer: "internal pipeline artifacts must come out").** A reviewer flagged
+  that the paper cited internal repo paths as if reader-visible and carried an ARS-pipeline
+  workflow note. Verified against the file and found MORE than the reviewer listed; removed
+  all of them per user instruction ("remove the parts related to code and code files"),
+  6 edits to `reports/te-firewall-paper-final.md`: (§References) deleted the note
+  "*(APA 7.0 … verified at the Stage 2.5 integrity gate …)*"; (§3.4) dropped "read directly
+  from te_pipeline.py"; (§3.7) dropped "(monitor_signature.parquet)"; (§3.8) dropped
+  "implemented in delay_analysis.py"; (Data Availability) removed the four `.parquet` paths
+  + two `.py` code-file names, retitled to "Data and Code Availability Statement", rewrote
+  to "available from the corresponding author on reasonable request [Add repository/DOI at
+  submission]"; (repro block) dropped "read directly from te_pipeline.py … repository commit
+  to be fixed at submission". Verified: grep for `.py` / `.parquet` / `analysis/` / `reports/`
+  / Stage-2.5 / integrity-gate / repository-commit → **zero matches**. All methodological
+  content preserved. Then (user go-ahead) also cleaned the **AI-Usage Disclosure**: dropped "via the
+  academic-pipeline workflow" and "at Stage 5" → "with AI assistance (Claude) … [Adjust to
+  the target venue's AI-disclosure policy before submission]". Still carrying legit
+  `[To be completed]` placeholders in CRediT/Funding (author's call, not leaks).
+  **Docx REBUILT + verified (2026-08-03):** backup `te-firewall-paper.docx.bak-20260803-152834`,
+  `pandoc te-firewall-paper-final.md -o te-firewall-paper.docx` (1,842,996 B); document.xml
+  scan PASS — 10 leak strings (Stage 2.5 / integrity gate / te_pipeline / delay_analysis /
+  .parquet / academic-pipeline workflow / at Stage 5 / monitor_signature / analysis/ /
+  reports/) ABSENT, 5 content markers (Data and Code Availability, fault-adjacent, reasonable
+  request, AI assistance (Claude), Blade-Pitch Control) PRESENT. Docx now current with the md
+  for ALL of today's edits. Parquet sync remains independent/deferred (doesn't affect paper
+  text). Not committed.
+
+- **Latest (2026-08-03): §4.4 + §5.3 currency defect closed — the open-loop/pitch-lock
+  "pending" language that a reviewer flagged as "worst of both" is gone; the computed
+  null is now reported consistently.** A reviewer note observed §4.4 still said the
+  pitch-lock fault case "does not yet have its transfer-entropy legs computed ... recorded
+  as pending ... queued as a separate task" — directly contradicting §4.3, which already
+  reports that same case (`dlca_v11ms_s00_openloop`, the open-loop twin) as a computed
+  NULL. Root cause: the 2026-07-31 NEW-2 fix updated §4.3's currency but explicitly left
+  §4.4 out of scope, and `monitor_signature.parquet` still carries that row as NaN /
+  "pending TE legs". **Decision (user): "Reconcile & report the null"** — no re-run (the
+  71.4 h CPU job already returned the null), no reframe to proof-of-concept (open-loop ≠
+  pitch fault, n=1 stands). Applied THREE surgical prose edits to
+  `reports/te-firewall-paper-final.md`: (§4.4) replaced the false "pending/queued"
+  sentence with "the one fault-adjacent run — the open-loop twin (§4.3) — has its
+  wind→platform TE computed and it is null; but loop≠fault and n=1, so it probes the
+  attribution *mechanism*, not the monitoring hypothesis; the graded pitch-fault campaign
+  (§5.3) is what the hypothesis requires and is not run here"; (§5.3) fixed "computing TE
+  for the existing pitch-lock case" (stale — done) → "the graded-fault runs do not yet";
+  (§5.3) fixed "the pending open-loop TE legs would settle the attribution" → "has since
+  been computed and is null (§4.3), read cautiously". Abstract/intro/§4.6/conclusion
+  UNCHANGED — their "no computed fault-case TE" is still true (open-loop = fault-*adjacent*,
+  not a fault-case). Verified: grep for pending / existing pitch-lock / queued-as-separate /
+  legs-computed / "the runs do not yet" → all gone; only the (true) injected-fault
+  future-work statements remain. **OPEN / next step (DEFERRED — user temporarily off the server, 2026-08-03):** the durable
+  artifact `reports/te_fault_openloop.parquet` is on the CPU server (isaactest@…) and is
+  GITIGNORED (`reports/*.parquet`; only `surd_table.parquet` is force-tracked), which is
+  why `git pull` never brought it. Plan: server `git add -f` + commit + push → pull here →
+  update the `dlca_v11ms_s00_openloop` row of `monitor_signature.parquet` (NaN →
+  te_wind_pitch≈0.0, sig=False) from the parquet → force-add both. NOT committed yet;
+  prose edits are local only. Docx NOT yet regenerated (do after parquet sync so one rebuild
+  covers everything).
 
 - **Latest (2026-07-31, session 2): round-3 re-review confirmed + its two NEW issues
   fixed — technical body now submission-ready.** Ran `academic-paper-reviewer` re-review;
@@ -805,3 +889,52 @@ legs + more seeds, rotor-averaged-wind TE, tau=1 control — none blocking. (c)
 Reserve: targeted stuck-pitch fault case (upgrades §4.4 to proof-of-concept) and/or
 `--max-lag-sources ≥35` full re-run (equal-footing wave magnitudes). (d) Uncommitted:
 the paper edit + docx + these records are on `phase4-full-rerun`, not yet committed.
+
+## Session 2026-08-03 — §4.4/§5.3 "pending pitch-lock" currency defect closed
+
+**Dialogue.** User (relaying a reviewer note): §4.4 says the pitch-lock fault case
+"exists in the dataset but its TE is recorded as pending ... queued as a separate
+task." Reviewer: if the run and pipeline both exist, why not computed? "Either
+compute it (n=1, honestly caveated) or remove all traces — the current middle
+position is the worst of both." Claude investigated before acting and found the
+premise had already moved: the computation is DONE. `openloop.outb` is a complete
+3600 s run (BldPitch1 frozen at 1.0deg); SYNTHESIS 2026-07-29 records the CPU job
+(PID 1992582, ~71.4 h) returned a clean NULL (Wind->PtfmPitch/Surge/Heave TE=0.0000,
+sig=False, below the 0.029-nats ceiling; same run has a significant control edge
+Wave1Elev->FAIRTEN3 TE=+0.055 p=0.005). §4.3 already reports this null. The defect
+was purely bookkeeping: `git show` confirmed the "fault-TE null"/"open-loop TE null"
+commits touched ONLY prose (no parquet committed); §4.4 + `monitor_signature.parquet`
+(row `dlca_v11ms_s00_openloop`, still NaN/"pending TE legs") were never reconciled.
+This is the un-fixed half of the 2026-07-31 NEW-2 currency defect (which fixed §4.3
+but scoped out §4.4). Presented findings + a 3-way choice via AskUserQuestion.
+
+**Decisions.**
+- User chose **"Reconcile & report the null"** (not remove; not upgrade to
+  proof-of-concept). Rationale: computation already exists; open-loop != pitch fault
+  and n=1 still stand, so no reframe.
+- User: sync the durable parquet **from the server via git push/pull**.
+
+**Files changed (local, NOT committed).**
+- `reports/te-firewall-paper-final.md` — 3 surgical edits:
+  §4.4 stale "pending/queued" sentence -> computed-null-but-fault-adjacent framing
+  (cross-ref §4.3); §5.3 "computing TE for the existing pitch-lock case" -> "graded-
+  fault runs do not yet"; §5.3 "pending open-loop TE legs would settle attribution"
+  -> "since computed and null (§4.3), read cautiously". Abstract/intro/§4.6/conclusion
+  untouched (their "no fault-case TE" remains true; open-loop = fault-adjacent).
+- `SYNTHESIS.md` §0 rewritten + this entry.
+- `pages/log.md` — entry appended.
+
+**Verification.** Grep of the manuscript for pending / existing-pitch-lock /
+queued-as-separate / legs-computed / "the runs do not yet" -> all gone; only the
+(true) injected-fault future-work statements + the genuinely-uncomputed graded-fault
+campaign remain. Edits applied cleanly (Edit tool confirmed each).
+
+**Open items / next steps.**
+1. Server sync: `reports/te_fault_openloop.parquet` is GITIGNORED (`reports/*.parquet`;
+   only `surd_table.parquet` force-tracked) — that's why `git pull` never fetched it.
+   On server: `git add -f reports/te_fault_openloop.parquet && commit && push`; then
+   pull here. Branch coordination TBD (local on `phase4-full-rerun`, ahead 2).
+2. After sync: update `monitor_signature.parquet` row `dlca_v11ms_s00_openloop`
+   (NaN -> te_wind_pitch~0.0, sig=False) from the parquet; force-add both parquets.
+3. Regenerate docx (one rebuild covering both the 3 prose edits + any final matter).
+4. Commit the whole set on `phase4-full-rerun`.

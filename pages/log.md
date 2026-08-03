@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-07-31
+updated: 2026-08-03
 tags: [meta, log, publication]
 ---
 
@@ -1557,3 +1557,68 @@ Backfilled from git (`65486fb`, `4186414`).
 - **Status:** technical body (Abstract→Conclusion) now submission-ready. Remaining before
   actual submission: RR10 final scripted table re-check vs `te_table.parquet` (advisory);
   front/back matter (CRediT, funding, COI, data DOI, AI disclosure) + citation-check.
+
+## [2026-08-03] paper | §4.4/§5.3 open-loop "pending" language reconciled to the computed null
+
+Reviewer flagged §4.4's "pitch-lock fault ... recorded as pending ... queued as a
+separate task" as the worst-of-both middle position. Investigation showed the TE was
+already computed: `openloop.outb` is a complete run (BldPitch1 frozen at 1.0deg) and the
+CPU job (PID 1992582, ~71.4 h) returned a NULL — Wind->platform TE below the 0.029-nats
+ceiling, non-significant, with a real same-run control edge (Wave1Elev->FAIRTEN3
+TE=+0.055, p=0.005); §4.3 already reports it. The "pending" wording was a stale
+bookkeeping artefact (the null commits touched only prose; `monitor_signature.parquet`
+row `dlca_v11ms_s00_openloop` still NaN). Per user decision "Reconcile & report the
+null", applied 3 surgical edits to `reports/te-firewall-paper-final.md`: §4.4 now cites
+the computed null and frames the open-loop twin as fault-*adjacent* (loop != fault, n=1)
+not the monitoring test; §5.3 two stale "pending/uncomputed" references corrected.
+Abstract/intro/§4.6/conclusion unchanged (their "no fault-case TE" stays true). Verified
+by grep: no pending/uncomputed open-loop language remains. Pending: sync
+`reports/te_fault_openloop.parquet` from the server (it is gitignored — needs `git add -f`),
+update the parquet row, regenerate docx, commit. Not yet committed.
+
+## [2026-08-03] paper | Internal pipeline/code artifacts removed from the manuscript
+
+Reviewer flagged internal repo artifacts leaking into the paper. Verified and removed all
+(6 edits to `reports/te-firewall-paper-final.md`): deleted the References pipeline note
+("APA 7.0 … Stage 2.5 integrity gate …"); dropped in-text code-file paths in §3.4/§3.7/§3.8
+(te_pipeline.py, monitor_signature.parquet, delay_analysis.py); cleaned the availability
+section — removed the four .parquet paths + two .py names, retitled to "Data and Code
+Availability Statement", rephrased to "available from the corresponding author on reasonable
+request [Add repository/DOI at submission]"; dropped the "read directly from te_pipeline.py …
+repository commit to be fixed" clause from the reproducibility block. Verified by grep: no
+.py / .parquet / analysis|reports paths / Stage-2.5 / integrity-gate strings remain; all
+methodological content preserved. Not touched (out of scope): AI-Usage Disclosure still names
+"academic-pipeline workflow" + "Stage 5", CRediT/Funding placeholders — flagged for author.
+Docx now stale vs md; rebuild pending. Not committed.
+
+## [2026-08-03] paper | AI-disclosure cleaned + docx rebuilt/verified
+
+Cleaned the AI-Usage Disclosure (removed internal-pipeline refs "via the academic-pipeline
+workflow" and "at Stage 5" -> "with AI assistance (Claude) … [Adjust … before submission]").
+Rebuilt the submission docx to fold in all of today's md edits (§4.4/§5.3 reconciliation,
+code-artifact removal, AI-disclosure): backup te-firewall-paper.docx.bak-20260803-152834,
+`pandoc te-firewall-paper-final.md -o te-firewall-paper.docx` (1,842,996 B). Verified via
+document.xml scan: PASS — 10 internal-artifact strings absent, 5 content markers present.
+Docx now current with md. Not committed.
+
+## [2026-08-03] paper | Duplicated figure captions fixed (alt-text vs bold caption)
+
+All 9 figures rendered two captions in the PDF/docx. Cause: images carried descriptive
+alt-text and pandoc's implicit_figures renders non-empty alt-text as a caption, duplicating
+the formal `**Figure N.**` caption. Fixed by emptying alt-text on all 9 images
+(`sed 's#!\[[^]]*\](figs/#![](figs/#g'`), leaving the bold caption as the sole caption.
+Verified: md (0 alt figures, 9 empty-alt images, 9 bold captions) and rebuilt docx
+(backup ...bak-20260803-153837; document.xml scan — alt-only phrases absent, bold captions
+present once, no leak regression). Not committed.
+
+## [2026-08-03] paper | Carried-over reviewer polish: §5.3 de-narration + intro contributions
+
+Applied two carried-over fixes. (2) §5.3: rewrote the rotor-averaged-check sentence to remove
+revision-process narration ("we had expected … has since been computed") -> "the open-loop
+twin's wind→platform TE is itself null (§4.3), … rather than as settling the attribution".
+(3) Intro: "three contributions" -> "two contributions and develops a motivated outlook" with
+matching prose, and corrected a cross-ref (graded-fault campaign is §5.3, not §5.2). Held: the
+rotor-averaged wind check remains queued (server down; needs ambient disk-average, not the
+motion-contaminated RtVAvgxh) — expect it as a major-revision ask; and abstract length (422 w)
+/ APA-vs-numbered refs deferred pending venue choice (undecided). Docx rebuilt + verified
+(backup ...bak-20260803-154604). Not committed.
