@@ -446,3 +446,15 @@ Prefer:
 - reproducible results over anecdotal success
 
 Every change should make the project easier to understand, easier to verify, and easier to maintain.
+
+## Research notes (knowledge base)
+
+- Project notes live in `research-notes/` — an Obsidian vault of plain Markdown files.
+- `[[name]]` wiki-links point to the file `name.md` somewhere in that folder.
+- The entry point is `research-notes/MOC-mini-twin.md`. When gathering context on any topic, start there.
+- To find related notes efficiently, run:
+  `python tools/vault_graph.py research-notes --neighbors "<note-name>" --depth 2`
+  then read the files listed in the output instead of scanning the whole vault.
+- To see what links TO a note: `python tools/vault_graph.py research-notes --backlinks "<note-name>"`
+- When you make a significant finding or decision during a session, record it as a Markdown note in `research-notes/` (or append to `research-notes/decision-log.md`), and add `[[links]]` to related notes. Keep notes short and factual.
+- Never modify anything inside `research-notes/.obsidian/`.
