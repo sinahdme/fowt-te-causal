@@ -1748,3 +1748,29 @@ Applied to both final.md (LaTeX inline math) and the git-ignored docx (unicode i
 math, matching how the docx already renders γ² ≈ 0.72). Verified: docx re-extract vs
 final.md → full word-parity; sentence renders identically in both. Backup
 te-firewall-paper.docx.bak-20260807-…-prenat. Not committed.
+
+## [2026-08-07] paper | Convert first-person voice to agentless passive throughout
+
+Per user request, reworded every first-person construction (~63: "we"×60, "our"×6,
+"ours"×2, "us"×2) across abstract + body to agentless passive — e.g. "We attribute the
+firewall to the controller" → "The firewall is attributed to the controller"; "We use
+SURD" → "SURD is used"; "we do not claim" → "the … is not claimed"; set phrase "To our
+knowledge" → "To the authors' knowledge". Wind-Energy DOI URLs (`10.1002/we.34`,
+`/we.1887`) correctly left untouched. Applied to final.md via two scripted passes with
+per-anchor uniqueness asserts (`_passivize*.py`, since removed); residual first-person
+scan → 0. Manuscript uses straight apostrophes (U+0027), which caused 4 first-pass
+misses on possessives ('s) — fixed in pass 2.
+
+docx re-synced by **regenerating from final.md** with plain `pandoc` (no --reference-doc):
+verified structurally identical to the prior docx (9 media, 6 tables, Title/Author/Date
+block, identical para/table styles — the current docx uses pandoc's default styles). Note
+the earlier "docx has no title block" claim (2026-08-07 nat-definition entry / two-copy
+memory) was WRONG — an artifact of pandoc's `-t plain` writer stripping metadata; the
+docx does carry a title block, so regeneration needs no title stripping. pandoc 3.8 names
+media `rIdNN.png` and declares each png via a Content_Types `<Override>` (not a `<Default
+Extension="png">`) — valid OOXML that Word opens, but the docx-skill pack.py/validate.py
+flag it as a false positive, so the regen is used raw (not round-tripped through pack.py).
+Internal-consistency check: all 9 image embeds resolve to declared media; OMML math
+present; docx↔md full word-parity; zero first-person in both. Backups
+te-firewall-paper-final.md.bak-…-prepassive, te-firewall-paper.docx.bak-…-prepassive.
+Not committed.
