@@ -1732,3 +1732,19 @@ in the task-input docx but absent from the md; a controlled no-edit unpack→pac
 round-trip confirmed the docx tooling itself does not corrupt text, so the mechanism of
 that earlier drift is unattributed but is now corrected and verified against the md.
 Not committed.
+
+## [2026-08-07] paper | Define the "nat" unit + nats↔bits conversion in §2.3
+
+Added one theory sentence at the first substantive mention of nats (§2.3, transfer-
+entropy subsection) defining the unit: a nat is the information from measuring entropy
+with the natural logarithm rather than log₂ — the form the digamma-based KSG estimator
+returns natively — so observing an event of probability 1/e conveys one nat, equal to
+1/ln 2 ≈ 1.443 bits (equivalently 1 bit = ln 2 ≈ 0.693 nats). This is how the paper now
+"reports both": a single conversion note rather than dual nats/bits columns in every
+table (user's call). Deliberately NOT converted: SURD atoms (normalised dimensionless
+fractions, not nats), coherence γ², and delays (s).
+
+Applied to both final.md (LaTeX inline math) and the git-ignored docx (unicode inline
+math, matching how the docx already renders γ² ≈ 0.72). Verified: docx re-extract vs
+final.md → full word-parity; sentence renders identically in both. Backup
+te-firewall-paper.docx.bak-20260807-…-prenat. Not committed.
