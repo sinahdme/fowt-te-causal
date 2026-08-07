@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-08-03
+updated: 2026-08-07
 tags: [meta, log, publication]
 ---
 
@@ -1674,3 +1674,61 @@ noise excluded by design.
 - Follow-up (deferred): a lint pass (orphans/broken-link check on the new pages),
   and reconciling [[open-questions]] + [[wiki-improvement-plan]] with the completed
   campaign. Not committed.
+
+## [2026-08-07] paper | Synced te-firewall-paper.docx to final.md (two spelling fixes)
+
+Verified `reports/te-firewall-paper.docx` against the source of truth
+`reports/te-firewall-paper-final.md`. A normalized word-level diff showed the docx
+was already word-for-word identical to the final markdown *except* one sentence in
+§3.2 (Simulation campaign) that retained two American spellings the final md had
+switched to British: "analy**z**ed" → "analy**s**ed" and "nearest-neighbo**r**" →
+"nearest-neighbo**ur**". Applied as a surgical two-word edit to
+`word/document.xml` (unpack → edit → repack), preserving all embedded figures,
+formatting, and OMML equations — no regeneration. Backup:
+`te-firewall-paper.docx.bak-20260807-120331`.
+
+Verification: pack validation PASSED (paragraphs 317 → 317, 0 delta); re-extracted
+the repacked docx and diffed its prose word-stream against final.md → full parity
+(only residual diff tokens are LaTeX macro artifacts inside the SURD equation, i.e.
+OMML↔LaTeX serialization noise, not content); post-edit spelling counts in the docx
+now match final.md exactly (7 "analysed", 17 "neighbour", zero American variants).
+Note: initial repack aborted on a `cp949` codec error (validator subprocess reading
+UTF-8 XML under the Windows Korean default encoding); resolved with `PYTHONUTF8=1` —
+document was never corrupted. Not committed.
+
+## [2026-08-07] paper | Added channel-definition Table 1 (OpenFAST signals) + renumbered tables
+
+Added a new **Table 1** to §3.1 of the manuscript defining all 13 monitored OpenFAST
+output channels (the ones written in the same identifier format as `PtfmPitch`), with
+columns Channel / Physical quantity / Units / Role. Units were taken authoritatively
+from the simulations' own output headers via `openfast_toolbox` (main `.outb` +
+MoorDyn `.MD.out`): `Wind1VelX` m/s; `Wave1Elev`, `PtfmSurge`, `PtfmHeave` m;
+`PtfmPitch`, `BldPitch1` deg; `FAIRTEN1`–`FAIRTEN3` N; `RootMxc1`, `RootMyc1`,
+`TwrBsMyt` kN·m; `RotThrust` kN. (`research-notes/data-conventions.md` is a
+`status: template` stub, so it was **not** used as a source.) Role column mirrors the
+paper's own grouping: environmental drivers (sources), platform/mooring/structural
+responses (targets), control/intermediate signals.
+
+Because the table appears in §3.1 — before the former Table 1 in §4.1 — it takes the
+number 1 and the existing five results tables were renumbered 1→2 … 5→6, with all 17
+in-text cross-references and range references ("Tables 1–3"→"2–4", "Tables 2–3"→"3–4")
+updated by a single cascade-safe regex pass applied identically to both files.
+
+Applied to **both** copies: `reports/te-firewall-paper-final.md` (source of truth,
+edited directly) and `reports/te-firewall-paper.docx` (unpack → renumber XML → splice
+in a pandoc-generated table styled with the doc's existing `Table` style → repack).
+Backups: `te-firewall-paper-final.md.bak-20260807-131252`,
+`te-firewall-paper.docx.bak-20260807-131858-pretable`.
+
+Verification: docx validation PASSED; re-extracted docx vs final.md → **full prose
+parity** (blank word-diff excluding OMML↔LaTeX math-macro noise); docx now has 6
+`w:tbl`, 9 embedded figures, captions Table 1–6; the rendered Table 1 shows all 13
+channels/units/roles in §3.1 ahead of Figure 2 and §3.2. No LibreOffice on this box,
+so no PDF visual render was possible — the new table reuses the exact `Table` style of
+the existing five, so it renders identically. During verification I caught and fixed a
+pre-existing 3-point drift in the docx **abstract** (artefact→artifact,
+collapsing→collapses, and an added comma in "To our knowledge, this") that was present
+in the task-input docx but absent from the md; a controlled no-edit unpack→pack
+round-trip confirmed the docx tooling itself does not corrupt text, so the mechanism of
+that earlier drift is unattributed but is now corrected and verified against the md.
+Not committed.
