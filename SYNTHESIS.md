@@ -28,6 +28,17 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-09)
 
+- **Latest (2026-08-09, session 13): text audited for leftover Sobol; Figure 5 rebuilt (was stale Sobol).**
+  Author asked whether removing the Sobol arm from Figure 1 required text deletions. **Text: no changes
+  needed** — RAFT/Saltelli/design-parameter/Phase-6/two-arm/hybrid vocabulary is entirely absent; the two
+  "Sobol" mentions are §1.2 foils (kept); "sensitivity" mentions are all generic. **But** the check found
+  `fig5-combined-graph.png` was still the stale two-arm Sobol image (design-variable column + Sobol $S_T$
+  edges), contradicting its TE+SURD caption/body. **Rebuilt** via new `reports/figs/_make_fig5_firewall_graph.py`
+  (te_table wave edges + paper's SURD values): Wave→responses TE web, Wind→BldPitch1 (SURD ≈ 0.40),
+  BldPitch1→PtfmPitch (U = 0.167), explicit empty wind→platform firewall. Old generator bannered SUPERSEDED
+  (backup `fig5-combined-graph.png.bak-sobol`). docx regenerated. Remaining figure item: a visual spot-check
+  of Figures 4a–c (SURD) and 6–7 (delay), which are in-scope and whose captions match.
+
 - **Latest (2026-08-09, session 12): Figure 1 rebuilt to match the paper; Figures 2–3 audited.** Author
   flagged a possible "Sobol arm" in Figure 1 — confirmed stale: the old `fig1-methodology-arms.png` (from
   the superseded `reports/figs/_make_figures.py`) drew the broader original project's "TE arm + Sobol arm →

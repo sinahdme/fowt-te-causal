@@ -2003,3 +2003,28 @@ the three arm panels so no sub-box text spills out of the orange/blue/green boxe
 box to three short lines ("Monitoring-signature construction / healthy baseline: TE(wind → platform) ≈ 0 /
 a breach is the fault diagnostic") so the text sits fully inside. Regenerated `fig1-methodology-arms.png`;
 docx re-synced (9 media). Committed.
+
+## [2026-08-09] figures | Figure 5 rebuilt as TE + SURD firewall graph (was stale Sobol)
+
+Prompted by the author's "is anything to delete from the text now Sobol is gone?" check. **Text audit:**
+the removed-methodology vocabulary (RAFT, Saltelli, design parameter/variable, Phase 6, combined-causal,
+two-arm, hybrid) is entirely absent from the manuscript; the only "Sobol" mentions are two §1.2 foils
+(variance-based tools the paper argues against — kept, they strengthen the motivation); all six
+"sensitivity" mentions are generic (TE property / estimator / thrust). **No text changes needed.**
+
+But the check surfaced that **`fig5-combined-graph.png` was still the stale two-arm Sobol image** — a
+"Design vars (Sobol arm)" column (D_OCol, D_Pt, H_Pt, L_u) with dashed Sobol $S_T$ edges — while the
+Figure 5 caption (line 286) and body lead-in (line 282) correctly describe a **TE + SURD firewall graph**.
+Same defect class as Figure 1/3.
+
+**Rebuilt** (author chose rebuild over removal): new `reports/figs/_make_fig5_firewall_graph.py` reads
+`te_table.parquet` for the wave TE edges (width ∝ $TE_{\mathrm{frac}}$: Pitch/Heave 4.3%, Surge 3.8%,
+TwrBs 1.9%, FT3 8.6%, FT2 7.5%, FT1 1.4%) and uses the paper's reported SURD values for the two
+control-loop edges — **Wind → BldPitch1** (thick red, "wind → pitch command, SURD ≈ 0.40", §3.3) and
+**BldPitch1 → PtfmPitch** (indigo, "U = 0.167", Figure 4c) — with the direct **wind → platform** edge drawn
+as an explicit ✕ over a shaded "FIREWALL" band. Tells the caption's story: wave drives the platform/mooring/
+structural web; the wind information is routed into and held by the controller; the direct wind→platform
+channel is empty. Old generator `_make_fig5_combined_graph.py` bannered SUPERSEDED; previous image backed up
+`fig5-combined-graph.png.bak-sobol`. Figures 4a–c (SURD) and 6–7 (delay) are in-scope analyses (SURD and
+delay-resolved TE) whose captions match; a visual spot-check of those images is the only remaining figure
+item. docx regenerated (9 media). Committed.
