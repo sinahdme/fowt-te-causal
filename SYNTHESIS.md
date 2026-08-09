@@ -28,6 +28,20 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-09)
 
+- **Latest (2026-08-09, session 12): Figure 1 rebuilt to match the paper; Figures 2–3 audited.** Author
+  flagged a possible "Sobol arm" in Figure 1 — confirmed stale: the old `fig1-methodology-arms.png` (from
+  the superseded `reports/figs/_make_figures.py`) drew the broader original project's "TE arm + Sobol arm →
+  Phase-6 combined causal graph" hybrid, which this paper does not do (Sobol is only a critiqued foil in
+  §1.2). **Rebuilt** via new `reports/figs/_make_fig1_pipeline.py`: 3-arm schematic (directed TE [primary] ·
+  linear coherence [foil] · SURD [mechanism] → monitoring-signature), matching the caption; committed.
+  Added a "SUPERSEDED — DO NOT RUN" banner to `_make_figures.py`. **Figure 2 OK** (on-disk case-grid matches
+  caption; not the stale box-diagram; minor British-spelling in its title). **Figure 3 DEFECT (fix pending):**
+  `fig3-te-network.png` shows wave-only edges in TE_frac %, but its caption promises a wind+wave directed
+  network in nats showing the firewall (wind reaches blade/tower, not platform). Cause: the generator's
+  ">50%-of-cases-significant" filter drops every wind edge (none clears 50%; wind→platform sits at the
+  chance floor — which IS the firewall), so the figure erases the headline result. `te_table.parquet` is
+  local, so it is fixable; **options put to the author, not yet changed.**
+
 - **Latest (2026-08-09, session 11): whole manuscript converted to US spelling.** Resolves the
   British/American mix the reverse-sync left. Explicit case-preserving map (not a blanket -ise→-ize, which
   would wrongly hit comprise/revise/precise), **References excluded** (cited titles stay verbatim): **85

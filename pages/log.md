@@ -1939,3 +1939,36 @@ the rendered text. The manuscript is now consistently US-spelled. Committed.
 *Judgment note:* `analogue → analog` in "the structural-monitoring analog of control-loop performance
 monitoring" — US usage is split (many US authors keep "analogue" for the "counterpart" sense, reserving
 "analog" for signals); converted per the US directive but trivially reversible if the author prefers.
+
+## [2026-08-09] figures | Figure 1 rebuilt (three-arm pipeline); Figures 2–3 audited
+
+Author flagged that Figure 1 might show a "Sobol arm" absent from the results. Confirmed: the old
+`fig1-methodology-arms.png` (from the superseded `_make_figures.py`) depicted the **broader original
+project** — a "TE arm + **Sobol arm** → combined causal graph (Phase 6)" hybrid with a RAFT Saltelli
+9-variable design-parameter ensemble. **None of that is in this paper** (Sobol appears only as a critiqued
+undirected foil in §1.2). The figure *caption* was already correct; only the image was stale.
+
+**Figure 1 — rebuilt.** New dedicated generator `reports/figs/_make_fig1_pipeline.py` produces a schematic
+matching the caption: OpenFAST 54-case campaign → signal conditioning → three parallel arms (① directed
+transfer entropy [primary]; ② linear coherence baseline [foil]; ③ SURD attribution [mechanism]) →
+monitoring-signature construction. US spelling, palette consistent with Figs 2–3. Rendered at 200 dpi;
+visually verified. The stale `_make_figures.py` got a "SUPERSEDED — DO NOT RUN" banner (running it would
+clobber the good fig1 and the fig2 case-grid).
+
+**Figure 2 — audited, OK.** The on-disk `fig2-dlc-matrix.png` is the clean case-grid (4 speeds × 6 seeds;
+dlca/dlcb/dlc16), which matches its caption (54 = 48 + 6). It is NOT the stale box-diagram that
+`_make_figures.py::make_fig2()` would draw (that one carried H1/H2/H3 hypothesis labels and a Jeon-2025
+reference not cited here). Only nitpick: the figure's title still reads "analysed"/"wave-realisation"
+(British) after the manuscript's US-spelling conversion.
+
+**Figure 3 — audited, DEFECT found (fix pending author decision).** `fig3-te-network.png` shows only the
+**wave** driver fanning to 7 channels, edge weights in **TE_frac %**. But its caption promises a directed
+network where "wave (blue) … wind (red) reaches blade and tower channels but not platform rigid-body
+motion — the firewall," with weights "in nats." Root cause: the generator (`_make_fig3_te_network.py`,
+`build_graph`) keeps only edges significant in **>50% of cases**; from `te_table.parquet`, **no** Wind1VelX
+edge clears 50% (strongest: →RootMxc1 39%, →TwrBsMyt 28%, →RootMyc1 17%; platform edges at the chance
+floor, PtfmPitch 3.7%), so the wind node — and the firewall itself — is filtered out. The figure therefore
+omits the paper's headline finding and contradicts its caption (and the caption's "nats" ≠ the shown %).
+Options put to the author for the fix (data is available locally). Not yet changed.
+
+docx regenerated with the corrected Figure 1 (9 media). Figure 1 committed; Figure 3 fix deferred.

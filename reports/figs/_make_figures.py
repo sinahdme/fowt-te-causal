@@ -1,4 +1,14 @@
-"""Generate the three figures for the technical report (v2 — improved text layout).
+"""[SUPERSEDED — DO NOT RUN for the te-firewall paper.]
+
+WARNING: this script is a leftover from the *broader original project* (the
+two-arm "TE arm + Sobol arm -> combined causal graph" hybrid). Its make_fig1()
+draws a Sobol arm the paper does not use, and its make_fig2()/make_fig3() are
+NOT the images the manuscript embeds. Running it will OVERWRITE the current,
+correct fig1-methodology-arms.png (see reports/figs/_make_fig1_pipeline.py) and
+fig2-dlc-matrix.png (the case-grid) with stale versions. Kept only for archival
+reference. For the paper's figures use the dedicated per-figure scripts.
+
+Generate the three figures for the technical report (v2 — improved text layout).
 
 Produces:
   reports/figs/fig1-methodology-arms.png
@@ -148,7 +158,7 @@ def make_fig2():
 
     # Title
     ax.text(6.5, 8.0,
-            "Phase 2 Design Load Case matrix",
+            "Design Load Case matrix",
             ha="center", fontsize=13.5, fontweight="bold", color=BLUE_DARK)
     ax.text(6.5, 7.6,
             "54 OpenFAST cases × 1 hour simulated time each = 14 GB raw .outb",
