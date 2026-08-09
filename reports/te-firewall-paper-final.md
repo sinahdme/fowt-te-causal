@@ -237,7 +237,7 @@ Figure 3 renders the overall pattern as a directed network: a dense wave→platf
 
 ![](figs/fig3-te-network.png)
 
-**Figure 3.** Directed transfer-entropy network across the FOWT. Edge weight is TE in nats; only statistically significant edges are drawn. Wave forcing (blue) propagates through platform motion into mooring and structural loads; wind forcing (red) reaches blade and tower channels but not platform rigid-body motion — the firewall.
+**Figure 3.** Directed transfer-entropy network across the FOWT. Edge weight is the mean $TE_{\mathrm{frac}}$ — transfer entropy normalized by the target's active-information storage — over the 54 cases. Wave forcing (solid, blue; edge width proportional to $TE_{\mathrm{frac}}$) propagates through platform motion into mooring and structural loads and is significant in the majority of cases. Wind forcing (dashed, red) reaches only the blade-root and tower-base load channels, and then only intermittently — labels give the fraction of cases in which each wind edge is significant — while carrying no significant information into the platform rigid-body motions: the information firewall.
 
 The interpretation is not that wind is dynamically unimportant — at these wind speeds the rotor is producing large aerodynamic thrust — but that the *fluctuating information* in the wind is not reaching the platform. Something is intercepting it. Sections 3.2 and 3.3 show what.
 

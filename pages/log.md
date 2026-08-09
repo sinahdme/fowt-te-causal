@@ -1972,3 +1972,23 @@ omits the paper's headline finding and contradicts its caption (and the caption'
 Options put to the author for the fix (data is available locally). Not yet changed.
 
 docx regenerated with the corrected Figure 1 (9 media). Figure 1 committed; Figure 3 fix deferred.
+
+## [2026-08-09] figures | Figure 3 rebuilt as a two-driver firewall network
+
+Per the author's choice (Option A of the Figure 3 options), rebuilt `fig3-te-network.png` to show both
+environmental drivers and the firewall. New generator `reports/figs/_make_fig3_firewall_network.py` reads
+`reports/te_table.parquet` (method `bivariate_te_ksg`, 54 cases) and draws:
+- **Wave1Elev** — solid blue edges (width ∝ mean $TE_{\mathrm{frac}}$) to the 7 channels it drives with
+  >50% significance: FAIRTEN3 8.6%, FAIRTEN2 7.5%, PtfmPitch 4.3%, PtfmHeave 4.3%, PtfmSurge 3.8%,
+  TwrBsMyt 1.9%, FAIRTEN1 1.4%.
+- **Wind1VelX** — dashed red edges to the blade/tower channels it reaches intermittently, labelled by the
+  fraction of cases significant: RootMxc1 39%, TwrBsMyt 28%, RootMyc1 17%.
+- **Firewall** — wind→platform drawn as a blocked ✕ ("wind → platform: no significant edge") over a shaded
+  band across PtfmPitch/Heave/Surge (wind→platform significance sits at the chance floor, 4–11%).
+
+Caption updated to match: "Edge weight is TE in nats" → "mean $TE_{\mathrm{frac}}$ … over the 54 cases",
+and the wind/wave propagation + firewall described accurately. (The remaining "TE in nats" in the paper is
+legitimate §2.5 prose, not a caption.) Old wave-only generator `_make_fig3_te_network.py` bannered
+"SUPERSEDED"; previous image backed up `fig3-te-network.png.bak-waveonly`. All figure numbers taken directly
+from the authoritative parquet, not re-derived. docx regenerated (9 media; new Fig 3 embedded, caption
+verified present, "active-information storage" ×1, "Wind forcing (dashed" ×1). Committed.
