@@ -1913,3 +1913,29 @@ reworded emphasis terms plain. The contraction "doesn't" (§1.1) was left as the
 serialization). docx then regenerated from the synced md (author's edited docx backed up
 `te-firewall-paper.docx.bak-20260809-202844-usermanual`): 9 media, 6 tables, headings §1.1 Background /
 §1.2 Motivation and Contribution present, "information firewall" ×4. Committed.
+
+## [2026-08-09] paper | Whole manuscript converted to US spelling
+
+Following the reverse-sync (which left the paper a British/American mix), the author asked to convert the
+**whole paper to US spelling**, resolving the inconsistency in the US direction. Approach: scanned the body
+for British forms, then applied an **explicit case-preserving map** (not a blanket -ise→-ize, which would
+wrongly hit comprise/revise/precise etc.), and **excluded the References section** so cited titles/journals
+stay verbatim.
+
+**85 replacements** across 26 word-forms: analysed→analyzed (8), normalised→normalized (9),
+realisation(s)→realization(s) (13), organis*→organiz* (7), quantisation→quantization (3),
+neighbour(s)→neighbor(s) (17), artefact(s)→artifact(s) (11), generalise→generalize (2),
+maximising→maximizing (2), characterised/-ising→characterized/-izing (2), normalisation→normalization,
+optimise→optimize, summarised→summarized, behaviour→behavior, favourable→favorable, labelled→labeled,
+modelled→modeled, modelling→modeling, analogue→analog, grey→gray. Same-in-both words (noise, precise,
+pairwise, otherwise, flapwise, edgewise, raise, four) were correctly left alone; whilst/amongst/towards
+were absent.
+
+**Verified.** Post-conversion body scan → **0 residual British spellings**; US forms present (neighbor ×17,
+artifact ×11, analyzed ×8, normalized ×9); References untouched. docx regenerated (backup
+`te-firewall-paper.docx.bak-20260809-203601-preusspelling`): 9 media, 6 tables, 0 stray British forms in
+the rendered text. The manuscript is now consistently US-spelled. Committed.
+
+*Judgment note:* `analogue → analog` in "the structural-monitoring analog of control-loop performance
+monitoring" — US usage is split (many US authors keep "analogue" for the "counterpart" sense, reserving
+"analog" for signals); converted per the US directive but trivially reversible if the author prefers.

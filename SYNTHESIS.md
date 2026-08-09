@@ -28,6 +28,17 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-09)
 
+- **Latest (2026-08-09, session 11): whole manuscript converted to US spelling.** Resolves the
+  British/American mix the reverse-sync left. Explicit case-preserving map (not a blanket -ise→-ize, which
+  would wrongly hit comprise/revise/precise), **References excluded** (cited titles stay verbatim): **85
+  replacements** across 26 forms — analysed→analyzed, normalised→normalized, realisation(s)→realization(s),
+  organis*→organiz*, quantisation→quantization, neighbour(s)→neighbor(s) ×17, artefact(s)→artifact(s) ×11,
+  behaviour→behavior, favourable→favorable, labelled→labeled, modelled/modelling→modeled/modeling,
+  analogue→analog, grey→gray, etc. Same-in-both words left alone. **Verified:** post-scan 0 residual British
+  spellings in body; References untouched; docx regenerated (backup `…docx.bak-20260809-203601-preusspelling`;
+  9 media, 6 tables, 0 stray British forms). Manuscript is now consistently US-spelled. Committed. (One
+  debatable case flagged: analogue→analog in the "counterpart" sense — reversible.)
+
 - **Latest (2026-08-09, session 10): reverse-sync — the author's manual `.docx` edits were merged back
   into `final.md`.** One-off reversal of the usual md→docx direction ([[paper-two-copy-sync]]). Author
   edited `reports/te-firewall-paper.docx` in Word; detected the real edits by diffing a fresh
