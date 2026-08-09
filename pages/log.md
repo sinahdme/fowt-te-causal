@@ -1992,3 +1992,14 @@ legitimate §2.5 prose, not a caption.) Old wave-only generator `_make_fig3_te_n
 "SUPERSEDED"; previous image backed up `fig3-te-network.png.bak-waveonly`. All figure numbers taken directly
 from the authoritative parquet, not re-derived. docx regenerated (9 media; new Fig 3 embedded, caption
 verified present, "active-information storage" ×1, "Wind forcing (dashed" ×1). Committed.
+
+## [2026-08-09] figures | Figure 1 decluttered per author feedback
+
+Trimmed Figure 1 to reduce on-figure text: the conditioning box was reduced from
+"drop 600 s transient · decimate 40→5 Hz · KSG jitter · z-score" to just **"Signal conditioning"** (those
+details belong in the §2.3 Methods text); removed the italic subtitle "the same conditioned signals feed
+three parallel arms"; removed the three per-arm "Output:" labels (they overflowed the panels) and widened
+the three arm panels so no sub-box text spills out of the orange/blue/green boxes; and shortened the bottom
+box to three short lines ("Monitoring-signature construction / healthy baseline: TE(wind → platform) ≈ 0 /
+a breach is the fault diagnostic") so the text sits fully inside. Regenerated `fig1-methodology-arms.png`;
+docx re-synced (9 media). Committed.
