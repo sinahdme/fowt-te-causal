@@ -2028,3 +2028,22 @@ channel is empty. Old generator `_make_fig5_combined_graph.py` bannered SUPERSED
 `fig5-combined-graph.png.bak-sobol`. Figures 4a–c (SURD) and 6–7 (delay) are in-scope analyses (SURD and
 delay-resolved TE) whose captions match; a visual spot-check of those images is the only remaining figure
 item. docx regenerated (9 media). Committed.
+
+## [2026-08-09] figures | Spot-check of Figures 4a–c and 6–7 — all correct (no changes)
+
+Visual + data verification of the five figures not yet audited. All match their captions and the source
+data; **none carries stale Sobol content** — they are genuine SURD and delay-resolved-TE analyses the paper
+performs. Fig 4a (dose–response): regime medians 0.023/0.066/0.064/0.042, 2.8× at/above vs below rated.
+Fig 4b (SURD-vs-TE): bivariate TE(Wind→PtfmPitch)≈0 while SURD drop positive in all 54 (94% TE-null
+mediated). Fig 4c (open-loop twin): leak drop −59%, unique BldPitch1→pitch term → 0. Fig 6 (delay):
+wave→heave peaks at ~2.6 s, wind flat below chance. Fig 7 (delay profiles): four wave edges at 0.3/2.7/3.9/
+6.3 s, wind below chance in every panel.
+
+**Number verification (surd_table.parquet):** the `U:BldPitch1→PtfmPitch` value cited as 0.167 in the §3.3
+body / Fig 4c caption / rebuilt Fig 5 is `dlca_v11ms_s00` = **0.1669** (the case whose loop is opened; open
+twin = **0.0** exactly). The Fig 4c right-panel median bar **0.140** is the median of the six dlca 11 m/s
+seeds (0.097–0.213). Both correct — single-case (twin) vs 6-seed median — so Fig 5's "U = 0.167" is
+consistent with the caption/body. Optional-only clarity tweak noted (4c caption 0.167 vs panel median 0.140
+refer to different quantities). **No figure or text changes made.**
+
+Sobol cleanup now complete: Figures 1, 3, 5 rebuilt; Figures 2, 4a–c, 6, 7 verified correct.
