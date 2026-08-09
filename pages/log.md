@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-08-07
+updated: 2026-08-09
 tags: [meta, log, publication]
 ---
 
@@ -1749,7 +1749,25 @@ math, matching how the docx already renders γ² ≈ 0.72). Verified: docx re-ex
 final.md → full word-parity; sentence renders identically in both. Backup
 te-firewall-paper.docx.bak-20260807-…-prenat. Not committed.
 
-## [2026-08-07] paper | Convert first-person voice to agentless passive throughout
+## [2026-08-07] paper | Introduction + literature scan drafted to reports/introduction.md
+
+Created `reports/introduction.md` (working/review doc, NOT manuscript prose) to prep the next session's
+Introduction work. Parts: (A) audit of the current gap statement (§2.4) and §1 framing — flags six
+reviewer-exposed weaknesses W1–W6; (B) audit of the 20 current refs (strong on TE estimation, thin on
+applications/monitoring, zero floating-specific SHM / causal-alternatives / control-performance-monitoring);
+(C) four literature gaps→themes; (D) a **source-verified** scan of 23 candidate papers across the four
+themes; (E) tiered recommendations + a draft reframed gap statement.
+
+Scan run by 4 parallel general-purpose agents with web tools (WebSearch/WebFetch), each instructed to
+include only papers verified against Crossref with real DOIs — no fabricated citations. All 23 DOIs
+Crossref-checked (22 VERIFIED, a few PARTIAL on publication-year only). Key finds: TE-in-SHM lineage
+(Nichols 2005 PRE, Nichols 2006 PEM) and control-performance-monitoring ancestry (Harris 1989, Jelali 2006,
+Qin 1998, Thornhill & Horch 2007) — the paper sits at their intersection, so citing both *sharpens* the
+novelty claim rather than weakening it; plus causal-method situating (Granger 1969, Sugihara 2012 CCM),
+floating SHM (Kostecka 2025 review, Park 2025 mooring-on-same-15MW-FOWT), pitch reviews (Badihi 2022, Lan
+2024), IPC-FOWT (Namik 2010, Sarkar 2021, Jonkman 2008). Field correction noted: Qin 1998 is *Computers &
+Chemical Engineering*. Recommend Tier 1+2 (~26 refs total) next pass. Nothing added to the manuscript yet —
+awaiting author review. Not committed.
 
 Per user request, reworded every first-person construction (~63: "we"×60, "our"×6,
 "ours"×2, "us"×2) across abstract + body to agentless passive — e.g. "We attribute the
@@ -1774,3 +1792,47 @@ Internal-consistency check: all 9 image embeds resolve to declared media; OMML m
 present; docx↔md full word-parity; zero first-person in both. Backups
 te-firewall-paper-final.md.bak-…-prepassive, te-firewall-paper.docx.bak-…-prepassive.
 Not committed.
+
+## [2026-08-09] paper | Introduction strengthened + 10 verified references added (Tier 1+2)
+
+Executed the queued Introduction + literature work (prep doc `reports/introduction.md`, Parts A–E from
+2026-08-07). Chosen scope (user-confirmed via decision prompt): **reinforce the existing §1 structure in
+place** (no CPM re-lead) and add the **Tier 1 + Tier 2** references — 10 total, taking the reference list
+20 → 30.
+
+**Citation discipline.** All 10 DOIs re-verified against Crossref / landing pages by a search agent before
+insertion: 10/10 resolved; one correction (Sugihara co-author Hsieh initial C. → **C.-H.**); two
+draft-flagged fields (Kostecka *Energies* 18(22) Art. 5937; Park *Appl. Ocean Res.* 165 Art. 104844)
+confirmed correct as drafted; Namik year **2010** confirmed as version-of-record (Crossref's 2009 is the
+online-first date). Granger end page 438 is not stored by Crossref (start-page-only record); the accepted
+range 424–438 is retained.
+
+**In-text insertions (`final.md`, author–year, agentless-passive preserved):**
+- §1 — Kostecka 2025 (floating-SHM review) on the "fixed-bottom experience does not fully cover" claim;
+  Badihi 2022 (WT CM review) on the condition-monitoring-maturity sentence.
+- §2.1 — Badihi 2022 (signal- vs model-based CM taxonomy); a new floating-SHM passage citing Kostecka 2025
+  + **Park 2025** (mooring-failure detection from hull motion on the same 15-MW-class FOWT — the closest
+  adjacent work, positioned as a black-box classifier against this paper's interpretable directed measure).
+  Fixes W2.
+- §2.3 — Granger 1969 at the Granger-equivalence mention; a one-line **CCM** contrast (Sugihara 2012)
+  justifying TE for stochastic wind/wave forcing (W4); Nichols 2005/2006 TE-in-SHM lineage plus a sharpened
+  differentiating clause ("damage-induced coupling in a passive structure" vs "controller-induced *absence*
+  in a closed loop") (W1).
+- §2.4 — gap statement replaced with the **earned-novelty** reframe: acknowledges TE-for-SHM (Nichols) and
+  control-performance monitoring (Harris 1989, Jelali 2006), then differentiates the
+  controller-induced-absence quantity as the paper's gap. Fixes W1/W3.
+- §5.2 — Harris 1989 + Jelali 2006 anchor the control-loop-performance-monitoring analogy; Namik & Stol
+  2010 anchors the IPC "would re-route the pathway" caveat (W5).
+
+Defaults taken on the prep doc's two smaller open calls: one differentiating **sentence** vs Nichols (not a
+dedicated paragraph), one-line **CCM nod** (not a full method comparison). W6 (canonical Sobol/coherence
+foil cites) **deferred** — it needs its own verified references (Sobol′; Bendat & Piersol), outside the
+Tier 1+2 set.
+
+**Verified.** Reference list = **30 entries, alphabetical**; Nichols (2006, sole) correctly precedes Nichols
+et al. (2005) per APA 7.0 §9.47; all 10 new citations resolve both ways (no orphans, correct et-al./`&`
+forms); **first-person residual = 0** (the 3 word-boundary regex hits are all `10.1002/we.NNN` Wind-Energy
+DOIs, not prose — the 2026-08-07 passive-voice invariant is preserved). docx regenerated from `final.md` by
+plain `pandoc` 3.8 (`PYTHONUTF8=1`): 9 media, 6 tables, title block intact; all new citations and the
+reframed gap sentence present in the rendered `document.xml`. Backup
+`te-firewall-paper.docx.bak-20260809-161333-prelit`. Not committed.
