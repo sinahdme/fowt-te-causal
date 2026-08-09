@@ -28,6 +28,21 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-09)
 
+- **Latest (2026-08-09, session 10): reverse-sync — the author's manual `.docx` edits were merged back
+  into `final.md`.** One-off reversal of the usual md→docx direction ([[paper-two-copy-sync]]). Author
+  edited `reports/te-firewall-paper.docx` in Word; detected the real edits by diffing a fresh
+  md-generated reference docx against it (identical pandoc path ⇒ only author edits surface; the ~13
+  equation "diffs" were Word OMML/minus re-serialization and were ignored — md LaTeX untouched). Applied
+  10 prose changes: four reworded paragraphs (§1.1 floating-monitoring; §1.2 common-methods, TE, gap),
+  **§1.2 heading "Gap" → "Motivation and Contribution"**, and small edits. Author's rewrites came through
+  plain (italics lost); applied verbatim. **Author decisions on flags: keep the US spellings**
+  (stabilizes/recognized/organized — paper is otherwise British, so now a deliberate mix) and **restore
+  `*information firewall*`** italics at its defining sentence only. **Verified:** fresh md→docx reference
+  re-diffed against the author's docx = 0 prose differences; docx regenerated from synced md (author's
+  edited copy backed up `…docx.bak-20260809-202844-usermanual`); 9 media, 6 tables. Committed. **Note the
+  British/American spelling is now mixed by author's choice — a full US conversion is the obvious follow-up
+  if a US venue is chosen.**
+
 - **Latest (2026-08-09, session 9): paper reorganised — Background + Gap folded into the Introduction;
   Theory + Methods became §2.** At the author's request, old §2 "Background and Related Work" (SHM/CM +
   blade-pitch control) and the §2.4 gap statement moved **into §1** as light subsections **§1.1 Background**

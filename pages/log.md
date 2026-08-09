@@ -1882,3 +1882,34 @@ bottom-fixed foundations (jacket, tripod, gravity-base), not just monopiles, and
 the term already used twice in §1 ("fixed-bottom experience", "its fixed-bottom counterpart"). Only
 occurrence of "monopile" in the manuscript. Markdown committed; **docx regen deferred — the docx was
 locked (open in Word) at edit time**, so it must be re-synced by plain pandoc regen once closed.
+(Regen completed later this session once Word was closed.)
+
+## [2026-08-09] paper | Reverse-sync: author's manual docx edits merged back into final.md
+
+The author edited `reports/te-firewall-paper.docx` directly in Word and asked to pull those changes back
+into `final.md` — a **one-off reversal** of the normal md→docx source-of-truth direction ([[paper-two-copy-sync]]).
+
+Detection method (to avoid drowning real edits in LaTeX↔OMML math-serialization noise): regenerated a
+throwaway reference docx from the current md and diffed it, paragraph-aligned, against the author's docx —
+both pass through identical pandoc, so only the author's manual edits surface. Result: 10 genuinely-changed
+prose paragraphs; the ~13 equation-paragraph "diffs" were Word re-serialization only (Unicode minus − →
+hyphen, OMML fraction rewrites) and were **ignored** — the md LaTeX was not touched.
+
+Applied to `final.md`: full rewordings of the floating-monitoring paragraph (§1.1), the "common methods"
+paragraph, the transfer-entropy paragraph, and the gap paragraph (§1.2); the **§1.2 heading "Gap" →
+"Motivation and Contribution"**; and small edits (stabilises→stabilizes, recognised→recognized, "operating
+region"→"the operating region", implication→implications / "is developed"→"are outlined" /
+giving→yielding, organised→organized). Run-level extraction showed the author's rewrites came through
+**plain** (italics dropped); text applied verbatim.
+
+Author decisions on the two consistency flags: **keep the US spellings** (stabilizes/recognized/organized —
+paper is otherwise British: neighbour ×17, analysed ×8, organis* ×9, so it is now a deliberate mix); and
+**restore `*information firewall*`** italics at its defining sentence (§1.2) only, leaving the other
+reworded emphasis terms plain. The contraction "doesn't" (§1.1) was left as the author wrote it.
+
+**Verified.** Regenerated a fresh reference from the synced md and re-diffed against the author's docx →
+**0 remaining prose differences** (the one flagged residual was a lone straight vs curly apostrophe in
+"doesn't", which pandoc normalizes to the document's curly convention; 13 residuals are equation
+serialization). docx then regenerated from the synced md (author's edited docx backed up
+`te-firewall-paper.docx.bak-20260809-202844-usermanual`): 9 media, 6 tables, headings §1.1 Background /
+§1.2 Motivation and Contribution present, "information firewall" ×4. Committed.
