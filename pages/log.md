@@ -2178,3 +2178,23 @@ Edited the canonical docx in place (Python `zipfile`, member-preserving repack, 
 `testzip()` clean; 26 members; structure unchanged (390 paras, 10 imgs, 12 tbls, 113 eqs, 8 fig-caps); all
 module keywords (TurbSim/InflowWind, SeaState, AeroDyn 15, ServoDyn, ElastoDyn, MoorDyn, MoorPy, BeamDyn)
 still present — no content lost, only relocated. Backup `.bak-20260810-182831-prefig2cap`.
+
+## [2026-08-10] paper | Cleaned up Figure 3 (case matrix): removed subtitle, legend to right-centre
+
+Author: declutter Figure 3 — delete the top explanatory line ("dlca + dlcb: 2 wave-realisation variants … =
+48  •  dlc16: DLC 1.6 at 11 m/s × 6 seeds = 6") and move the legend from the bottom to the right-centre.
+
+The original figure had **no saved generator** (one-off; `_make_figures.py` `make_fig2()` is the superseded
+stale version, not the embedded image, per its own banner). Wrote a clean dedicated generator
+`reports/figs/_make_fig3_case_matrix.py` that reproduces the case grid faithfully — marker colours sampled
+from the original PNG (dlca `#0C6CB4`, dlcb `#E49C0C`, dlc16 `#0C9C6C`); 4 speeds × 6 seeds with dlca+dlcb
+everywhere and dlc16 added at 11 m/s (n = 12/18/12/12 = 54) — with the two requested changes: subtitle removed,
+legend at `loc="center left", bbox_to_anchor=(1.02, 0.5)`. Kept the title, the per-column `n =` counts, and the
+axis labels. File keeps its historical name `fig2-dlc-matrix.png` (it is Figure **3** in the paper, but the
+docx embeds it as `word/media/image2.png`; renaming would force a docx re-point).
+
+Re-embedded into the canonical docx: swapped `word/media/image2.png` and **corrected the drawing extent**
+(the new figure is wider, so kept `cx=5334000` and recomputed `cy 3147995 → 2072669` to match the 2136×830
+aspect, avoiding squish). Verification: `testzip()` clean; embedded image2 md5 == on-disk PNG; extent aspect
+0.3886 == PNG aspect; structure unchanged (390 paras, 10 imgs, 12 tbls, 113 eqs, 8 fig-caps); Figure 3 caption
+intact. Backup `.bak-20260810-191545-fig3refresh`.

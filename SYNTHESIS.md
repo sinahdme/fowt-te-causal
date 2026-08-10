@@ -37,6 +37,14 @@ each new Claude session was forgetting what the last one discussed.
   [[project_paper_two_copy_sync]] (memory) and a `DO NOT REGENERATE` HTML-comment banner sits at the top of
   `te-firewall-paper-final.md`.
 
+- **Latest (2026-08-10, session 17): cleaned up Figure 3 (case matrix) — removed the top subtitle line, moved the legend to right-centre.**
+  Original figure had no saved generator (one-off; `_make_figures.py` `make_fig2()` is the superseded stale
+  version). Wrote a dedicated reproducible generator `reports/figs/_make_fig3_case_matrix.py` (marker colours
+  sampled from the original for fidelity), reproducing the 54-run grid with the subtitle removed and the legend
+  at right-centre; kept title, `n =` counts, axis labels. Re-embedded in the docx (swapped `image2.png` and
+  fixed the drawing extent `cy 3147995 → 2072669` for the new wider aspect, no squish). File keeps the name
+  `fig2-dlc-matrix.png` though it is Figure 3. Backup `.bak-20260810-191545-fig3refresh`.
+
 - **Latest (2026-08-10, session 17): shortened the Figure 2 caption; moved the module detail into §2.2 body.**
   Caption was a full paragraph enumerating every module. Trimmed it to one identifying sentence ("Figure 2.
   OpenFAST coupled aero-hydro-servo-elastic model — the modules used in this work and their coupling.") and
