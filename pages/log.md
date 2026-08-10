@@ -2,7 +2,7 @@
 title: "Log"
 type: log
 created: 2026-05-12
-updated: 2026-08-09
+updated: 2026-08-10
 tags: [meta, log, publication]
 ---
 
@@ -2047,3 +2047,52 @@ consistent with the caption/body. Optional-only clarity tweak noted (4c caption 
 refer to different quantities). **No figure or text changes made.**
 
 Sobol cleanup now complete: Figures 1, 3, 5 rebuilt; Figures 2, 4a–c, 6, 7 verified correct.
+
+## [2026-08-10] paper | §2.1 theory enrichment — joint entropy + multivariate X vector
+
+Enriched the transfer-entropy formalism in §2.1 of `reports/te-firewall-paper-final.md`, drawing on
+Chen et al. (2019) (already cited 5× + in refs). Two additions, scoped minimal:
+
+1. **Joint entropy as its own equation** `H(X,Y) = -Σ p(x,y) log p(x,y)`, inserted between the Shannon
+   entropy and the mutual-information block. Completes Chen's Eq1→Eq2→Eq3 buildup chain the paper already
+   attributes to Chen, and makes the MI identity `I(X;Y)=H(X)+H(Y)-H(X,Y)` reference a defined quantity.
+2. **Multivariate observation vector** `**X** = [x1, x2, …, xn]` (bold, tied to Table 1's 13 channels)
+   introduced up front. Reconciles notation: the scalar `X`/`Y` in the formalism are stated to be any two
+   components `x_i, x_j` of **X**; the directed analysis runs over all ordered pairs, conditional/SURD
+   extensions condition on further components. Fixes the user's `z1`→`x1` typo and the vector-vs-scalar-`X`
+   collision via bolding.
+
+**Declined** (author-approved scope): Chen's Eq. 7 four-joint-probability expansion — its kernel-density /
+fixed k=l=1 form conflicts with the paper's estimator-agnostic KSG framing (§2.4). No results, tables, or
+§2.4 touched. Verification: visual check of rendered §2.1 region (equation LaTeX standard; buildup reads
+Shannon→joint→MI cleanly). docx/PDF not regenerated this session.
+
+## [2026-08-10] paper | Cited equation numbers (1)–(6) in §2.1 text — docx edited in place
+
+Author hand-numbered the six §2.1 theory equations as centered `(1)`–`(6)` paragraphs directly in
+`reports/te-firewall-paper.docx` (and made other manual prose tweaks, e.g. "two variables **is** the
+reduction"). Requested in-text citation of those numbers. **Edited the docx in place** (unpack → edit
+`word/document.xml` → repack) rather than regenerating from markdown, which would have destroyed the manual
+numbering + edits. Added `(Eq. N)` at each of the six lead-in sentences:
+(1) Shannon `H(X)` · (2) joint entropy `H(X,Y)` · (3) mutual information `I(X;Y)` · (4) entropy rate `h_X` ·
+(5) transfer-entropy definition `T_{Y→X}` · (6) entropy-rate-difference form `T=h_X−h_{X|Y}`.
+
+Verification: pack.py validation PASSED; final docx contains all six `(Eq. 1..6)` in-text refs and retains the
+six `(1..6)` labels, 9 figures, 12 display equations, 12 `<w:tbl>` — identical structure to the pre-citation
+backup (`.bak-20260810-143806-preeqcite`), so only the six text runs changed. `--resource-path` N/A (no rebuild).
+
+**Divergence flag:** the docx now leads `te-firewall-paper-final.md` — it carries equation numbering + manual
+prose edits the markdown lacks, and the markdown equations are unnumbered. Regenerating the docx from markdown
+is now DESTRUCTIVE. Source-of-truth (was: final.md) needs an explicit decision — see SYNTHESIS §0.
+
+## [2026-08-10] paper | Added two equation back-references in the docx
+
+Follow-up to the (Eq. 1)–(Eq. 6) definition-point citations: added two back-references where equations are
+re-invoked later, edited directly in the canonical `reports/te-firewall-paper.docx` (unpack → edit
+document.xml → pack.py, PYTHONUTF8=1; validation PASSED):
+- **§2.1** — "Written this way, **as in Eq. (6)**, the measure has a direct diagnostic reading…" (the
+  entropy-rate-difference form).
+- **§2.5** — AIS described as "the mutual information **(Eq. 3)** between the target's future and its own
+  embedded past."
+Verification: final docx has all six forward refs + both back-refs (8 "Eq." refs total); "IDTxl
+ActiveInformationStorage" spacing intact; 388→388 paras. Backup `.bak-20260810-154300-preeqbackref`.

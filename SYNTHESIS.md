@@ -26,7 +26,35 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-08-09)
+## §0 Current state — read this first (rewritten 2026-08-10)
+
+- **⚠ CANONICAL SOURCE FLIPPED (2026-08-10, author decision): `reports/te-firewall-paper.docx` is the LIVE MASTER; `te-firewall-paper-final.md` is FROZEN.**
+  The author hand-edited the docx (numbered §2.1 equations (1)–(6); minor prose tweaks) and Claude added the
+  in-text `(Eq. N)` citations directly in the docx. Asked how to sync, the author chose **"docx is canonical
+  now."** So: **DO NOT run `pandoc → te-firewall-paper.docx`** — it would wipe the manual numbering + edits and
+  is destructive. All future paper edits go **directly into the docx** (unpack → edit `word/document.xml` →
+  `pack.py` with `PYTHONUTF8=1`). The markdown is an archived draft only. Rule recorded in
+  [[project_paper_two_copy_sync]] (memory) and a `DO NOT REGENERATE` HTML-comment banner sits at the top of
+  `te-firewall-paper-final.md`.
+
+- **Latest (2026-08-10, session 15): cited equation numbers (1)–(6) in §2.1 text (docx edited in place).**
+  Author numbered the six §2.1 theory equations manually in the docx and asked to cite them in the running
+  text. Edited the docx in place (unpack → `document.xml` → repack; validation PASSED) — six `(Eq. N)` refs at
+  the lead-in sentences (Shannon/joint-entropy/MI/entropy-rate/TE-def/entropy-rate-difference). Deliberately
+  did **not** regenerate from markdown (would wipe the author's manual numbering + prose edits). Backups:
+  `.bak-20260810-143806-preeqcite` (pre-citation) and `.bak-20260810-105802-pre2p1enrich`. See divergence flag
+  above.
+
+- **Latest (2026-08-10, session 14): §2.1 theory enrichment from Chen et al. (2019) + multivariate X vector.**
+  Author asked whether to enrich the theory formula using the newly-added Chen et al. (2019) fault-detection
+  paper, and to introduce `X = [x1,…,xn]`. Assessment surfaced that Chen is **already** cited 5× + in refs
+  (the Shannon→MI→entropy-rate→TE buildup and the four-parameter framing already borrow it), so enrichment
+  was scoped minimal. Author chose the **recommended** option (joint entropy + X vector; declined Chen's
+  Eq. 7 joint-probability expansion, which clashes with the estimator-agnostic KSG framing of §2.4). Made two
+  edits to `reports/te-firewall-paper-final.md` §2.1: added `H(X,Y) = -Σ p(x,y) log p(x,y)` between Shannon
+  and MI (completing Chen's Eq1→Eq2→Eq3 chain), and introduced bold `**X** = [x1,…,xn]` tied to Table 1,
+  reconciling scalar `X`/`Y` = components `x_i,x_j`. Fixed the `z1`→`x1` typo + vector/scalar-X collision via
+  bolding. No results/tables/§2.4 touched; docx/PDF not regenerated.
 
 - **Latest (2026-08-09, session 13): text audited for leftover Sobol; Figure 5 rebuilt (was stale Sobol).**
   Author asked whether removing the Sobol arm from Figure 1 required text deletions. **Text: no changes
@@ -1198,3 +1226,26 @@ campaign remain. Edits applied cleanly (Edit tool confirmed each).
   Results→Discussion→Conclusion.
 - Unchanged carry-overs: W6 canonical Sobol/coherence foil cites; Tier 3 references; venue undecided
   (APA-7 author–year retained); rotor-averaged-wind robustness check (server down).
+
+---
+
+## Session 14 — 2026-08-10 · §2.1 theory enrichment (Chen 2019) + X vector
+
+**Dialogue.**
+- **User:** provided `raw/papers/Application_of_Transfer_Entropy_Algorithm_in_Fault_Detection_for_Power_System_with_Wind_Turbines.pdf` (Chen, Li, Feng & Li, 2019, IEEE APAP) — "we need to enrich the theory formula with considering this paper. what do you think? and at the same time we need to mention that X = [z1,x2,…xn]".
+- **Claude:** read the paper in full (6 pp; fitz text extraction, no page-render available) and §2.1/§2.4 + refs of `te-firewall-paper-final.md`. Reported that Chen is **already** integrated (cited at lines 66/78/90/96/142, ref line 415 with DOI): the manuscript already borrows Shannon H(X), MI identity, entropy rate, TE definition, Chen's Eq.6 identity `T=h_X−h_{X|Y}`, and the four-parameters framing. So "enrich" = complete/strengthen, not add a large new block. Pushed back on importing Chen's Eq.7 (four-joint-probability expansion): it is kernel-density / fixed k=l=1 discrete form, contradicting the paper's KSG estimator-agnostic §2.4 stance — a reviewer flag. Recommended (a) joint entropy as its own equation, (b) the `X=[x1,…,xn]` vector (read `z1`→`x1` typo; flagged vector-vs-scalar-`X` collision → bold `**X**`).
+
+**Decisions.**
+- AskUserQuestion → author selected **"Joint entropy + X vector (Recommended)"**. Declined the Markov-assumption equation and Chen's Eq.7.
+
+**Files changed.**
+- `reports/te-firewall-paper-final.md` — §2.1 only: (1) inserted `H(X,Y) = -Σ p(x,y) log p(x,y)` between the Shannon and MI blocks; (2) prepended a paragraph defining `**X** = [x1,x2,…,xn]` (Table 1) and mapping scalar source/target `Y`/`X` onto components `x_j`/`x_i`.
+- `pages/log.md`, `SYNTHESIS.md` — this entry + §0 bullet; log frontmatter `updated: 2026-08-10`.
+
+**Verification.**
+- Re-read edited §2.1 region: buildup now reads Shannon → joint entropy → MI (H(X)+H(Y)−H(X,Y) references a defined quantity); vector notation reconciled with the scalar equations that follow (untouched). LaTeX is standard (`\mathbf{X}`, `\dots`, `\sum`), pandoc/MathJax-safe.
+- Not done: docx/PDF regeneration (text-only edit; no figure/table impact).
+
+**Open items / next.**
+- Regenerate `te-firewall-paper.docx` (+ PDF if wanted) when the author wants the compiled artifact refreshed.
+- Carry-overs unchanged: W6 canonical Sobol/coherence foil cites; Tier 3 references; venue undecided; rotor-averaged-wind robustness check (server down).

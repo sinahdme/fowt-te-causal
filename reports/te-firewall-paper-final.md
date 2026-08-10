@@ -9,6 +9,15 @@ fontsize: 11pt
 linkcolor: blue
 ---
 
+<!--
+  ⚠ FROZEN / ARCHIVED as of 2026-08-10 (author decision).
+  The LIVE MASTER is reports/te-firewall-paper.docx — the author hand-numbered the §2.1
+  equations (1)–(6) and now edits directly in the docx (which pandoc cannot reproduce).
+  DO NOT regenerate the docx from this file: `pandoc ... -o te-firewall-paper.docx` is DESTRUCTIVE.
+  Edit the docx in place instead (unpack -> word/document.xml -> pack.py, PYTHONUTF8=1).
+  See SYNTHESIS.md §0 and the paper-two-copy-sync memory.
+-->
+
 ## Abstract
 
 Structural health monitoring of floating offshore wind turbines (FOWTs) largely inherits fixed-bottom methods that measure statistical association, not the *direction* of influence, and reveal nothing about whether the controller works. In a healthy FOWT the blade-pitch controller is shown to act as an information *firewall*, regulating rotor thrust so effectively that turbulent wind transfers essentially no information into platform motion. Using model-free transfer entropy (TE) with the Kraskov–Stögbauer–Grassberger estimator on 54 OpenFAST simulations of the IEA-15MW on VolturnUS-S, TE(Wind → platform pitch) averages 0.0009 nats (maximum 0.029; significant in 3.7% of cases) against 0.121 nats for wave forcing (100% significant); wind is selected as a significant source less often than chance — the firewall is total within the test's resolution. Linear coherence reports a strong apparent link (γ² ≈ 0.72) — shared spectral power, not causation — so the undirected tool misses the firewall; delay-resolved analysis confirms it is no lag artifact. The firewall is attributed to the controller, not wave dominance: SURD locates the wind information in the blade-pitch command, and an open-loop twin shows that influence collapsing once the loop opens. The firewall suggests a diagnostic: a fault degrading thrust regulation should re-admit wind information into the structure. This is framed as a motivated outlook, not a method — the dataset contains no computed fault-case TE — and the graded-fault validation required is specified. To the authors' knowledge, this is the first use of directed information flow to show how control shapes disturbance propagation into a floating turbine's structure.
@@ -63,10 +72,18 @@ This section sets out the transfer-entropy formalism (§2.1) and the simulation 
 
 ### 2.1 Transfer entropy and information-theoretic causality
 
+Throughout, the floating turbine is treated as a vector of $n$ synchronized channels, $\mathbf{X} = [x_1, x_2, \dots, x_n]$ (Table 1) — the environmental drivers, platform and structural responses, and control signals. Transfer entropy is a property of an *ordered pair* of channels, so the source $Y$ and target $X$ in the development below stand for any two components $x_j, x_i$ of $\mathbf{X}$; the directed analysis evaluates it over all such pairs, and the conditional and SURD extensions (§2.4, §2.7) condition on further components of $\mathbf{X}$.
+
 Transfer entropy (Schreiber, 2000) quantifies directed, model-free coupling between time series. It generalises Shannon's information theory from a static, symmetric measure of shared uncertainty into a directed, dynamic one, and the shortest route to it is to build it up from the classical quantities (Chen et al., 2019). The starting point is the Shannon entropy of a random variable $X$, the average uncertainty of its outcomes,
 
 $$
 H(X) = -\sum p(x)\, \log p(x),
+$$
+
+For a pair of variables, the joint entropy is their combined uncertainty,
+
+$$
+H(X, Y) = -\sum p(x, y)\, \log p(x, y),
 $$
 
 and the mutual information between two variables, the reduction in uncertainty about one that knowing the other provides,
