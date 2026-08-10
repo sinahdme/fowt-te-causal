@@ -2,7 +2,7 @@
 title: "Synthesis — conversation & decision record"
 type: synthesis
 created: 2026-07-09
-updated: 2026-08-03
+updated: 2026-08-10
 tags: [meta, log, sessions, decisions]
 ---
 
@@ -37,6 +37,20 @@ each new Claude session was forgetting what the last one discussed.
   [[project_paper_two_copy_sync]] (memory) and a `DO NOT REGENERATE` HTML-comment banner sits at the top of
   `te-firewall-paper-final.md`.
 
+- **Latest (2026-08-10, session 17): committed the Figure 2 work (`35140de`); cross-referenced §2.7 SURD from §2.1 and trimmed the duplicated atom listing.**
+  Reviewed the uncommitted session-16 Figure 2 insertion, independently re-verified the +1 figure renumbering
+  (captions + all in-text refs + internal cross-refs shift consistently), and committed it (`35140de`) with the
+  previously-uncommitted §2.1 equation back-references and finalized records. Then, on the author's structural
+  question ("should §2.7 SURD merge into §2.1 or move to §2.2?"), recommended **keep §2.7 in the methods cluster
+  + add a cross-reference** — rejecting merge-into-§2.1 (would mix general theory with study-specific SURD
+  params: `nbins=3`, atom names, normalization) and move-to-§2.2 (that section is the plant/campaign, not
+  analysis methods). §2.1 already ends with the SURD *motivation* ("a limitation of pairwise TE…"); §2.7 holds
+  the mechanics and directly feeds §2.8. Author agreed. Edited the canonical docx in place (`zipfile`, UTF-8):
+  §2.1's closing SURD paragraph now defers to §2.7 ("…decomposing…into those distinct components…; the
+  decomposition and its operating parameters are detailed in §2.7."), removing the duplicated
+  unique/redundant/synergistic+leak listing. Structure unchanged (390 paras, 10 imgs, 12 tbls, 113 eqs, 8
+  fig-caps); backup `.bak-20260810-175002-presurdxref`.
+
 - **Latest (2026-08-10, session 16): added OpenFAST module schematic as Figure 2 (§2.2), corrected + renumbered.**
   Author asked to add a coupled-model schematic "so everything is clear." Verified every label against the
   actual run (`sims/dlc16_v11ms_s00`) and found errors in the author's PNG: OpenFAST **4.2.1→4.2.0**; **BeamDyn
@@ -46,7 +60,7 @@ each new Claude session was forgetting what the last one discussed.
   canonical docx as **Figure 2** at the top of §2.2 (image10.png + rId1000 + caption + in-text ref; §2.2 now
   says "OpenFAST v4.2.0"), and renumbered old Figures **2→3 … 7→8** (4a/b/c→5a/b/c) across all 19 refs.
   Validation PASSED; captions now 1,2,3,4,5,5a/b/c,6,7,8. Rendered-PDF check skipped (no LibreOffice on this
-  box); PNG viewed OK. Backup `.bak-20260810-160945-prefig2`. **Not yet committed.**
+  box); PNG viewed OK. Backup `.bak-20260810-160945-prefig2`. **Committed `35140de`** (session 17).
 
 - **Latest (2026-08-10, session 15): cited equation numbers (1)–(6) in §2.1 text (docx edited in place).**
   Author numbered the six §2.1 theory equations manually in the docx and asked to cite them in the running

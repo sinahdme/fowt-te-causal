@@ -2122,3 +2122,24 @@ Verification: pack.py validation PASSED; 390 paras (+2); media 9→10; captions 
 distortion). NOT done: rendered-PDF visual check (no LibreOffice on this Windows box); the PNG itself was
 viewed and confirmed. Markdown stays frozen (docx canonical) — this figure/renumber is docx-only. Backup
 `.bak-20260810-160945-prefig2`.
+
+## [2026-08-10] paper | Cross-referenced §2.7 SURD from §2.1; trimmed duplicate atom listing
+
+Author asked whether §2.7 (SURD attribution) should merge into the end of §2.1 or move to §2.2. Recommended
+**neither** — keep §2.7 in the methods cluster and add a cross-reference — because (a) §2.1 already ends with
+the SURD *motivation* ("A limitation of pairwise TE is that it cannot separate redundant, unique, and
+synergistic contributions…"), so the theory hook is present; (b) merging would pull study-specific mechanics
+(variable set, `nbins=3`, atom names, normalization) into the general-formalism section; (c) §2.2 is the
+turbine model / simulation campaign, not an analysis-method home; and (d) §2.7 directly feeds §2.8
+(monitoring-signature construction), so it belongs adjacent to it. Author agreed (keep + cross-ref).
+
+Edited the **canonical docx** in place (Python `zipfile`, member-preserving repack, UTF-8):
+- §2.1 closing SURD paragraph: replaced the duplicated decomposition listing ("decomposes … into synergistic,
+  unique, and redundant components plus an unaccounted 'leak' term") with "resolves this by decomposing …
+  into those distinct components", and appended the pointer "; the decomposition and its operating parameters
+  are detailed in §2.7." No change to §2.7 itself.
+
+Verification: `zipfile.testzip()` clean; 26 members preserved; structure identical to the pre-edit backup —
+390 paras, 10 images, 12 tables, 113 `<m:oMath>` equations, 8 figure captions — so only the two intended
+`<w:t>` runs changed; §2.7 body byte-identical. Markdown stays frozen (docx canonical). Backup
+`.bak-20260810-175002-presurdxref`.
