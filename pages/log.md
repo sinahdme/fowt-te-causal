@@ -2096,3 +2096,29 @@ document.xml → pack.py, PYTHONUTF8=1; validation PASSED):
   embedded past."
 Verification: final docx has all six forward refs + both back-refs (8 "Eq." refs total); "IDTxl
 ActiveInformationStorage" spacing intact; 388→388 paras. Backup `.bak-20260810-154300-preeqbackref`.
+
+## [2026-08-10] paper | Added OpenFAST module schematic as Figure 2 (§2.2) + figure renumber
+
+Author asked to add an OpenFAST coupled-model schematic for clarity. Before inserting, verified every label
+against the ACTUAL campaign run (`sims/dlc16_v11ms_s00`: openfast.log + SeaState/HydroDyn/AeroDyn inputs).
+The author-supplied PNG had errors, corrected in a new generator:
+- **OpenFAST 4.2.1 → 4.2.0** (openfast.log: `OpenFAST-v4.2.0`).
+- **BeamDyn**: NOT used — ElastoDyn blades only (log has an ElastoDyn blade-deflection warning). Removed the
+  "+ optional BeamDyn" note; header now "ElastoDyn (blades, tower, nacelle, platform)".
+- **HydroDyn "Morison drag" → "potential-flow (WAMIT) + 2nd-order difference QTF"** — `NMembers=0` (no Morison
+  members); `PotMod=1`, `DiffQTF=12`.
+- **AeroDyn "dynamic stall" → "BEMT + tip-loss + dynamic wake (DBEMT)"** — `Wake_Mod=1`, `TipLoss/HubLoss=True`,
+  `DBEMT_Mod=2`; UA/dynamic-stall not confirmed so not claimed.
+- MoorDyn v2.3.8 (dynamic mooring; MoorPy quasi-static cross-check); SeaState JONSWAP (WaveMod=2).
+
+New generator `reports/figs/_make_fig0_openfast_modules.py` (matplotlib) regenerates
+`reports/figs/fig0-openfast-modules.png`. Inserted into the **canonical docx** as **Figure 2** at the top of
+§2.2 (unpack → edit document.xml → pack.py, PYTHONUTF8=1): image10.png + rId1000; caption; in-text ref
+("Figure 2 shows the coupled OpenFAST module structure…"); and §2.2 text now states "OpenFAST v4.2.0".
+Renumbered existing figures **2→3 … 7→8** (incl. 4a/b/c → 5a/b/c) across all 19 in-text references.
+
+Verification: pack.py validation PASSED; 390 paras (+2); media 9→10; captions now 1,2,3,4,5,5a,5b,5c,6,7,8
+(sequential, no gaps); case matrix correctly = Figure 3; extent cx/cy matches PNG 2401:1416 aspect (no
+distortion). NOT done: rendered-PDF visual check (no LibreOffice on this Windows box); the PNG itself was
+viewed and confirmed. Markdown stays frozen (docx canonical) — this figure/renumber is docx-only. Backup
+`.bak-20260810-160945-prefig2`.

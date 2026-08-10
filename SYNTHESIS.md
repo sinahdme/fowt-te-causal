@@ -37,6 +37,17 @@ each new Claude session was forgetting what the last one discussed.
   [[project_paper_two_copy_sync]] (memory) and a `DO NOT REGENERATE` HTML-comment banner sits at the top of
   `te-firewall-paper-final.md`.
 
+- **Latest (2026-08-10, session 16): added OpenFAST module schematic as Figure 2 (§2.2), corrected + renumbered.**
+  Author asked to add a coupled-model schematic "so everything is clear." Verified every label against the
+  actual run (`sims/dlc16_v11ms_s00`) and found errors in the author's PNG: OpenFAST **4.2.1→4.2.0**; **BeamDyn
+  not used** (ElastoDyn blades); HydroDyn **"Morison drag"→"potential-flow (WAMIT) + 2nd-order difference QTF"**
+  (`NMembers=0`, `DiffQTF=12`); AeroDyn **"dynamic stall"→"BEMT + tip-loss + dynamic wake (DBEMT)"**. Built a
+  matplotlib generator `reports/figs/_make_fig0_openfast_modules.py`, inserted the corrected PNG into the
+  canonical docx as **Figure 2** at the top of §2.2 (image10.png + rId1000 + caption + in-text ref; §2.2 now
+  says "OpenFAST v4.2.0"), and renumbered old Figures **2→3 … 7→8** (4a/b/c→5a/b/c) across all 19 refs.
+  Validation PASSED; captions now 1,2,3,4,5,5a/b/c,6,7,8. Rendered-PDF check skipped (no LibreOffice on this
+  box); PNG viewed OK. Backup `.bak-20260810-160945-prefig2`. **Not yet committed.**
+
 - **Latest (2026-08-10, session 15): cited equation numbers (1)–(6) in §2.1 text (docx edited in place).**
   Author numbered the six §2.1 theory equations manually in the docx and asked to cite them in the running
   text. Edited the docx in place (unpack → `document.xml` → repack; validation PASSED) — six `(Eq. N)` refs at
