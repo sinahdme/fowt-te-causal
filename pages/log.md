@@ -2160,3 +2160,21 @@ title in all three locations: `word/document.xml` (Title-styled paragraph), `doc
 and `docProps/app.xml` (`TitlesOfParts`). Verification: `testzip()` clean; 26 members; old string fully gone;
 body structure unchanged (390 paras, 10 imgs, 12 tbls, 113 eqs, 8 fig-caps). Markdown frontmatter title left
 frozen (docx canonical). Backup `.bak-20260810-181622-pretitle`.
+
+## [2026-08-10] paper | Shortened Figure 2 caption; moved module detail into §2.2 body
+
+Author: the Figure 2 caption was too long — move the substantive part into the text. The caption had grown to
+a full paragraph enumerating every module. Split it:
+- **Caption now one sentence:** "Figure 2. OpenFAST coupled aero-hydro-servo-elastic model — the modules used
+  in this work and their coupling." (dropped the External-conditions → applied-loads → turbine-dynamics
+  enumeration).
+- **Module map moved into the §2.2 lead-in**, expanding the "Figure 2 shows…" sentence into a flowing
+  description (TurbSim/InflowWind + SeaState → AeroDyn 15 (BEMT + Prandtl tip-loss + dynamic wake) + HydroDyn →
+  ServoDyn/ROSCO, ElastoDyn blades/tower/nacelle/platform, MoorDyn + MoorPy; ElastoDyn not BeamDyn; OpenFAST
+  orchestrates). Avoided re-stating the HydroDyn QTF params and ROSCO Fl_Mode/SS_Mode already in that
+  paragraph.
+
+Edited the canonical docx in place (Python `zipfile`, member-preserving repack, UTF-8). Verification:
+`testzip()` clean; 26 members; structure unchanged (390 paras, 10 imgs, 12 tbls, 113 eqs, 8 fig-caps); all
+module keywords (TurbSim/InflowWind, SeaState, AeroDyn 15, ServoDyn, ElastoDyn, MoorDyn, MoorPy, BeamDyn)
+still present — no content lost, only relocated. Backup `.bak-20260810-182831-prefig2cap`.

@@ -37,6 +37,13 @@ each new Claude session was forgetting what the last one discussed.
   [[project_paper_two_copy_sync]] (memory) and a `DO NOT REGENERATE` HTML-comment banner sits at the top of
   `te-firewall-paper-final.md`.
 
+- **Latest (2026-08-10, session 17): shortened the Figure 2 caption; moved the module detail into §2.2 body.**
+  Caption was a full paragraph enumerating every module. Trimmed it to one identifying sentence ("Figure 2.
+  OpenFAST coupled aero-hydro-servo-elastic model — the modules used in this work and their coupling.") and
+  relocated the enumeration into the §2.2 lead-in (external conditions → applied loads → turbine dynamics),
+  avoiding duplication of the HydroDyn-QTF and ROSCO settings already there. Docx edited in place; structure
+  unchanged; no content lost (all module keywords retained); backup `.bak-20260810-182831-prefig2cap`.
+
 - **Latest (2026-08-10, session 17): retitled the manuscript.**
   New title: **"An information-flow firewall in floating offshore wind turbines: the controller as structural
   shield"** (was "An Information Firewall Between Wind and Platform Motion in Floating Offshore Wind Turbines:
