@@ -37,6 +37,15 @@ each new Claude session was forgetting what the last one discussed.
   [[project_paper_two_copy_sync]] (memory) and a `DO NOT REGENERATE` HTML-comment banner sits at the top of
   `te-firewall-paper-final.md`.
 
+- **Latest (2026-08-10, session 17): retitled the manuscript.**
+  New title: **"An information-flow firewall in floating offshore wind turbines: the controller as structural
+  shield"** (was "An Information Firewall Between Wind and Platform Motion in Floating Offshore Wind Turbines:
+  A Transfer-Entropy Analysis with Implications for Health Monitoring"). Leads with the firewall concept,
+  credits the controller as the mechanism, and the "structural shield" subtitle stays within demonstrated
+  scope (avoids asserting the unvalidated malfunction-diagnosis application). Edited the canonical docx in
+  place across all three title locations (`document.xml` Title paragraph, `core.xml` `dc:title`, `app.xml`
+  `TitlesOfParts`); structure unchanged; backup `.bak-20260810-181622-pretitle`. Markdown title left frozen.
+
 - **Latest (2026-08-10, session 17): committed the Figure 2 work (`35140de`); cross-referenced §2.7 SURD from §2.1 and trimmed the duplicated atom listing.**
   Reviewed the uncommitted session-16 Figure 2 insertion, independently re-verified the +1 figure renumbering
   (captions + all in-text refs + internal cross-refs shift consistently), and committed it (`35140de`) with the

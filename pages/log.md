@@ -2143,3 +2143,20 @@ Verification: `zipfile.testzip()` clean; 26 members preserved; structure identic
 390 paras, 10 images, 12 tables, 113 `<m:oMath>` equations, 8 figure captions — so only the two intended
 `<w:t>` runs changed; §2.7 body byte-identical. Markdown stays frozen (docx canonical). Backup
 `.bak-20260810-175002-presurdxref`.
+
+## [2026-08-10] paper | Retitled the manuscript
+
+Author revised the title to lead with the firewall concept and name the controller as the mechanism, in a
+short title:subtitle form. Old title (overclaimed / long):
+"An Information Firewall Between Wind and Platform Motion in Floating Offshore Wind Turbines: A Transfer-Entropy
+Analysis with Implications for Health Monitoring". New title:
+**"An information-flow firewall in floating offshore wind turbines: the controller as structural shield"**.
+Rationale: leads with *information-flow firewall*, credits the *controller* (the paper's actual mechanism),
+and the subtitle "structural shield" describes what is demonstrated without asserting the unvalidated
+malfunction-diagnosis application (§3.4 is "a monitoring hypothesis, not yet tested").
+
+Edited the **canonical docx** in place (Python `zipfile`, member-preserving repack, UTF-8), replacing the old
+title in all three locations: `word/document.xml` (Title-styled paragraph), `docProps/core.xml` (`dc:title`),
+and `docProps/app.xml` (`TitlesOfParts`). Verification: `testzip()` clean; 26 members; old string fully gone;
+body structure unchanged (390 paras, 10 imgs, 12 tbls, 113 eqs, 8 fig-caps). Markdown frontmatter title left
+frozen (docx canonical). Backup `.bak-20260810-181622-pretitle`.
