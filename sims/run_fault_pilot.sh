@@ -91,6 +91,7 @@ for arm in "${ARMS[@]}"; do
   # without them the OpenCL import chain hangs. Install once: pip install ecos prettytable.
   $PY_TE analysis/te_pipeline.py "$outb" -o "$parq" \
       --gpu --gpus "$GPUS" --workers "$WORKERS" \
+      --sources Wind1VelX --targets PtfmPitch,PtfmSurge,PtfmHeave \
       --no-conditional --no-granger --no-ais --no-coherence \
       --n-perm 200 --tau 1 --slow-drift-tau 5 \
       --slow-drift-targets PtfmPitch,PtfmHeave,PtfmSurge,RootMxc1 \

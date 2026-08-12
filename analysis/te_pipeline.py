@@ -885,6 +885,12 @@ def main() -> int:
     parser.add_argument("--smoke", action="store_true",
                         help="Smoke-test mode: 1 env source × 1 response,"
                              " n_perm=50, no conditional/granger.")
+    parser.add_argument("--sources", type=str, default=None,
+                        help="Comma-separated env sources to compute, overriding the "
+                             "default (Wind1VelX,Wave1Elev). E.g. 'Wind1VelX'.")
+    parser.add_argument("--targets", type=str, default=None,
+                        help="Comma-separated response targets to compute, overriding "
+                             "the default 9 channels. E.g. 'PtfmPitch,PtfmSurge,PtfmHeave'.")
     args = parser.parse_args()
 
     if args.max_lag_sources and not (0 < args.max_lag_sources <= args.max_lag):
@@ -913,6 +919,12 @@ def main() -> int:
     if args.smoke:
         settings.env_sources = ("Wind1VelX",)
         settings.responses = ("PtfmPitch",)
+    if args.sources:
+        settings.env_sources = tuple(
+            s.strip() for s in args.sources.split(",") if s.strip())
+    if args.targets:
+        settings.responses = tuple(
+            t.strip() for t in args.targets.split(",") if t.strip())
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
