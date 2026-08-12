@@ -2592,3 +2592,75 @@ Process note: the master was open in Microsoft Word, which locked the file (Devi
 
 Verification: `PYTHONUTF8=1 validate.py` → "All validations PASSED", 449 paras; new title confirmed in both
 document.xml and core.xml of the packed master. Backup `…bak-<ts>-pretitle-hybrid`.
+
+## [2026-08-12] docs(paper) | Switch to feasibility-led title + match abstract opening
+
+Author reconsidered the title (session 36 hybrid) and chose a feasibility-LED framing, reasoning that "not yet
+tested" monitoring (§3.4) makes "feasibility" the honest register.
+  OLD (session 36): "An Information-Theoretic Firewall in Floating Offshore Wind Turbines: Feasibility for
+                     Blade-Pitch Controller Health Monitoring"
+  NEW: "Feasibility of a Transfer-Entropy Firewall Signature for Blade-Pitch Controller Health Monitoring in
+        Floating Offshore Wind Turbines"
+Chosen over the shorter "Feasibility of Information Theory for…" because it names the actual method (transfer
+entropy), keeps the demonstrated firewall result visible ("Firewall Signature"), and states the FOWT domain.
+Updated both the Title paragraph (document.xml) and dc:title (core.xml).
+
+Abstract opening realigned to match: inserted one aim sentence after the gap sentence — "This study assesses the
+feasibility of using directed information flow — transfer entropy from wind into platform motion — to monitor
+blade-pitch controller health." — foregrounding the feasibility aim before the firewall result. No overclaim: the
+later "framed as a motivated outlook, not a method" sentence is unchanged, preserving §3.4's honesty.
+
+Process: master was open in Word (file lock) again — staged to _title_check.docx, verified, finalized after author
+closed it.
+
+Verification: `PYTHONUTF8=1 validate.py` → "All validations PASSED", 449 paras; new title confirmed in document.xml
++ core.xml and the abstract aim sentence confirmed in the packed master. Backup `…bak-<ts>-pretitle-feasibilityled`.
+Note: supersedes the committed hybrid title in f04cd77 — this change is not yet committed.
+
+## [2026-08-12] research(fault-campaign) | Implement sims/run_fault.py — graded pitch-fault injector
+
+Built the injection half of the §4.3 graded pitch-fault campaign (to test the §3.4 monitoring hypothesis:
+does a pitch fault lift wind→platform TE above the ~0.029-nats healthy ceiling?). Plan: ~/.claude/plans/
+fluffy-forging-trinket.md (approved). Reuses sims/run_openloop.py's clone-patch-rerun machinery (imports
+run_openfast, sanity_check) and analysis/compute_fault_te.py (unchanged) for the TE breach test.
+
+New file `sims/run_fault.py`: clones a staged healthy case, regex-patches the deck to inject one of
+{pitchlock, stuck, gain}, inherits wind.bts+SeaState seed, re-runs OpenFAST, sanity-checks, and hardlinks a
+fault-tagged .outb into sims/faults/ for the TE pipeline (case id = .outb stem). Fault→knob:
+  - pitchlock: all blades seize at the healthy OPERATING pitch (not fine pitch, to avoid above-rated overspeed)
+    via native ServoDyn TPitManS/PitManRat/BlPitchF at onset; PCMode/VSContrl stay 5 (ROSCO torque active).
+  - stuck: same maneuver on one --blade only; others keep ROSCO control (partial-authority fault).
+  - gain: scale the 30-float PC_GS_KP & PC_GS_KI DISCON.IN rows by --severity (keeps pitch moving → SURD valid).
+
+Verification (offline, no OpenFAST): patchers applied to real deck copies — pitchlock sets TPitManS(1-3)=600,
+BlPitchF(1-3)=op-pitch, PCMode/VSContrl untouched; stuck touches blade 1 only; gain×0.10 scales both rows, 30
+floats preserved, first-entry ratio exactly 0.1000. Import chain + argparse + early-validation paths exercised
+(rc=1 on bad case). Fixed two bugs found during verification: the `\)\b` regex boundary (paren not followed by a
+word char → 0 hits; dropped \b) and a missing `if __name__=="__main__"` guard (main never ran). Fault→TE chain
+NOT yet run end-to-end (needs a real ~30-min OpenFAST run).
+
+Reality check: only dlc16_v11ms_s00-s05 (11 m/s) are staged on disk. The pilot's 15 & 20 m/s base cases must be
+staged first (run_campaign.py → TurbSim + a healthy run each, ~6 runs) before faults can be cloned. Per-run
+OpenFAST wall-clock measured at ~29 min (TMax 3600 s, 256 MB .outb); openfast exe at
+/c/Users/kunsanuni3/miniconda3/Library/bin/openfast. No paper text touched (results-gated).
+
+## [2026-08-12] research(fault-campaign) | Smoke test PASSED + server pilot driver + local JVM gotcha
+
+Local end-to-end smoke test (gain x0.10 @ 11 m/s on the staged dlc16_v11ms_s00) validated the full injection chain:
+run_fault.py cloned+patched the case, OpenFAST ran in 1543 s (~26 min), and the fault took physically — the
+gain-degraded controller under-regulates (RotSpeed swings to 9.95 rpm = 1.3x rated; GenPwr to ~19.7 MW), no
+overspeed/NaN; verify_fault confirms pitch still MOVES (BldPitch std ~2.04 deg after onset, i.e. a gain fault not
+a lock). Tagged output hardlinked to sims/faults/dlc16_v11ms_s00_gain010.outb. te_pipeline.py successfully loaded
++ preprocessed it (11 channels @ 5 Hz, N=15001, 63 IDTxl jobs) — so run_fault.py output is valid/ingestible.
+
+LOCAL ENV GOTCHA: the CPU TE backend (JIDT via jpype) failed with JVMNotFoundException — the te-fowt env has no
+JAVA_HOME set. Fix: `export JAVA_HOME="C:/Users/kunsanuni3/anaconda3/envs/te-fowt/Library/lib/jvm"` (jvm.dll lives
+at Library/lib/jvm/bin/server/). With that, jpype starts and TE computes. This is LOCAL-only; lams (fowt-te-gpu)
+already has Java configured (the healthy campaign ran there). gain@11 breach verdict computing in background.
+
+Also wrote `sims/run_fault_pilot.sh` — server driver for lams (env fowt-te-gpu): runs the 9-arm pilot
+(pitchlock @15/20 + gain x0.10 @15, x{s00,s01,s02}) — Phase 1 injects+runs OpenFAST on CPU (parallel, MAXJOBS
+cap), Phase 2 TEs each faulted .outb on GPU (te_pipeline --gpu --gpus 0,1) then compute_fault_te.py --eval-only
+for the 0.029-ceiling breach verdict. bash -n clean. Reuses server-staged healthy dlca_v15/v20 dirs directly (no
+re-staging; they carry the Linux libdiscon.so + wind.bts). Provenance note in-script: match --gpu/CPU to the
+healthy te_table backend. No paper text touched (results-gated).

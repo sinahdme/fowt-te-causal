@@ -28,7 +28,39 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-12)
 
-- **Latest (2026-08-12, session 36): retitled the paper (hybrid firewall + monitoring-feasibility).**
+- **Latest (2026-08-12, session 39): fault-injection smoke test PASSED; server pilot driver ready.**
+  Local gain×0.10 @11 m/s smoke test validated the whole chain: `run_fault.py` clone+patch → OpenFAST (1543 s) →
+  valid .outb → fault took physically (RotSpeed to 9.95 rpm, pitch still moving) → te_pipeline ingests it (63
+  IDTxl jobs). Local JVM gotcha found+fixed: te-fowt env needs `JAVA_HOME=…/te-fowt/Library/lib/jvm` for the CPU
+  JIDT backend (local-only; lams already has Java). gain@11 breach verdict computing in background (bonus; the
+  decisive test is above-rated on the server). Wrote `sims/run_fault_pilot.sh` (lams driver, 9 arms, CPU inject +
+  GPU TE + breach verdict; bash -n clean). **Next: commit run_fault.py + run_fault_pilot.sh and push
+  phase4-full-rerun so lams can pull** (branch is +17 ahead of origin with harmless doc commits; run-critical code
+  already on origin). Server confirmed: healthy dlca_v15/v20 still staged; GPU box runs both sims + TE.
+
+- **Prev (2026-08-12, session 38): started the graded pitch-fault campaign — built `sims/run_fault.py`.**
+  Goal: test the §3.4 "not yet tested" monitoring hypothesis by injecting real pitch faults and computing
+  wind→platform TE vs the ~0.029-nats ceiling (the §4.3 campaign). Approved plan:
+  `~/.claude/plans/fluffy-forging-trinket.md`. New injector `sims/run_fault.py` reuses run_openloop.py
+  (clone-patch-rerun) + compute_fault_te.py (unchanged); faults {pitchlock@operating-pitch, stuck-one-blade,
+  gain-reduction}. Patchers VERIFIED offline (regex hits, 30-float gain rows, ×0.10 ratio exact); fixed a `\)\b`
+  regex bug + a missing `__main__` guard. NOT yet run end-to-end (needs a ~30-min OpenFAST run). **Blocker for the
+  pilot:** only 11 m/s cases are staged on disk; the 15 & 20 m/s base cases must be staged first (~6 healthy runs).
+  Pilot design (approved): lock@15/20 + one gain×0.10 arm, ~2-3 seeds. Per-run ~29 min; server recommended for
+  parallelism. NO paper text changed (results-gated: "not yet tested" stays until a breach/null is computed).
+
+- **Prev (2026-08-12, session 37): switched to a feasibility-LED title + matched the abstract opening.**
+  Author reconsidered the hybrid and chose feasibility to lead (the §3.4 "not yet tested" monitoring makes
+  "feasibility" the honest register). NEW title: "Feasibility of a Transfer-Entropy Firewall Signature for
+  Blade-Pitch Controller Health Monitoring in Floating Offshore Wind Turbines" (keeps method + firewall result +
+  FOWT domain). Updated document.xml Title + core.xml dc:title. Abstract opening: inserted an aim sentence after
+  the gap sentence ("This study assesses the feasibility of using directed information flow … to monitor
+  blade-pitch controller health.") before the firewall result; the later "motivated outlook, not a method"
+  sentence is untouched, so no overclaim. Master was Word-locked again — staged + finalized after close.
+  validate.py PASSED, 449 paras. Backup `…bak-<ts>-pretitle-feasibilityled`. NOTE: supersedes the hybrid title
+  committed in f04cd77; this change is uncommitted.
+
+- **Prev (2026-08-12, session 36): retitled the paper (hybrid firewall + monitoring-feasibility).**
   Author proposed "feasibility of Information theory for blade pitch controller health monitoring"; flagged that a
   feasibility-led title would overclaim (monitoring is an untested outlook; the demonstrated results are the
   firewall + attribution). Author chose the hybrid — NEW title: "An Information-Theoretic Firewall in Floating
