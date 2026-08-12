@@ -66,15 +66,9 @@ def main():
     ys = {t: 8.1 - i for i, t in enumerate(ORDER)}   # 8.1 .. 2.1
     plat = ["PtfmPitch", "PtfmHeave", "PtfmSurge"]
 
-    # firewall band behind platform nodes
-    py = [ys[t] for t in plat]
-    ax.add_patch(FancyBboxPatch(
-        (x_tgt - 0.7, min(py) - 0.58), 1.75, (max(py) - min(py)) + 1.16,
-        boxstyle="round,pad=0.02,rounding_size=0.12",
-        facecolor="#C00000", alpha=0.08, edgecolor=WIND_C,
-        linestyle=(0, (5, 3)), linewidth=1.6, zorder=1))
-    ax.text(x_tgt + 1.55, sum(py) / len(py), "FIREWALL", ha="center", va="center",
-            fontsize=12, fontweight="bold", color=WIND_C, rotation=90, zorder=6)
+    # (The firewall is the ABSENT wind->platform edge, drawn below as a blocked
+    #  dashed pathway with an X — NOT a box around the platform, because waves
+    #  do drive the platform; only wind is blocked.)
 
     # wave TE edges (solid), width ~ te_frac
     maxte = max(W.values())
@@ -94,18 +88,26 @@ def main():
             bbox=dict(boxstyle="round,pad=0.2", facecolor="white",
                       edgecolor="#F0C4C4", lw=0.8))
 
-    # controller -> platform pitch (unique info): indigo
-    edge(ax, ctrl_xy, (x_tgt, ys["PtfmPitch"]), CTRL_C, 2.6, rad=-0.12)
-    ax.text(6.9, 6.55, "U = 0.167", ha="center", va="center",
-            fontsize=8.5, color=CTRL_C, fontweight="bold", zorder=6,
+    # controller -> platform pitch (unique info): indigo, bowed high over the
+    # firewall marker to keep the control path legible
+    edge(ax, ctrl_xy, (x_tgt, ys["PtfmPitch"]), CTRL_C, 2.6, rad=-0.28)
+    ax.text(7.35, 7.15, "U = 0.167", ha="center", va="center",
+            fontsize=8.5, color=CTRL_C, fontweight="bold", zorder=7,
             bbox=dict(boxstyle="round,pad=0.2", facecolor="white",
                       edgecolor="#C7C7E6", lw=0.8))
 
-    # firewall: no direct wind -> platform
-    ax.text(5.55, 4.95, "no direct\nwind → platform", ha="center", va="center",
-            fontsize=8.2, color=WIND_C, style="italic", zorder=6)
-    ax.text(5.55, 5.55, "✕", ha="center", va="center", fontsize=16,
-            color=WIND_C, fontweight="bold", zorder=6)
+    # firewall = the ABSENT direct wind->platform edge: a blocked dashed-red
+    # pathway leaving the controller toward the platform, cut by a bold X
+    ax.add_patch(FancyArrowPatch(
+        (5.35, 4.7), (6.35, 5.35), arrowstyle="-", color=WIND_C, lw=2.0,
+        linestyle=(0, (4, 2.5)), alpha=0.9, shrinkA=6, shrinkB=10, zorder=6))
+    ax.text(6.55, 5.5, "✕", ha="center", va="center", fontsize=19,
+            color=WIND_C, fontweight="bold", zorder=7)
+    ax.text(6.45, 4.5, "FIREWALL\nno direct wind → platform",
+            ha="center", va="center", fontsize=8.6, color=WIND_C,
+            fontweight="bold", linespacing=1.35, zorder=7,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                      edgecolor=WIND_C, lw=1.1))
 
     # nodes
     circle(ax, wave_xy, r, WAVE_C, "Wave", fs=8.5)

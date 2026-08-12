@@ -2,7 +2,7 @@
 title: "Synthesis — conversation & decision record"
 type: synthesis
 created: 2026-07-09
-updated: 2026-08-10
+updated: 2026-08-12
 tags: [meta, log, sessions, decisions]
 ---
 
@@ -26,7 +26,184 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-08-10)
+## §0 Current state — read this first (rewritten 2026-08-12)
+
+- **Latest (2026-08-12, session 36): retitled the paper (hybrid firewall + monitoring-feasibility).**
+  Author proposed "feasibility of Information theory for blade pitch controller health monitoring"; flagged that a
+  feasibility-led title would overclaim (monitoring is an untested outlook; the demonstrated results are the
+  firewall + attribution). Author chose the hybrid — NEW title: "An Information-Theoretic Firewall in Floating
+  Offshore Wind Turbines: Feasibility for Blade-Pitch Controller Health Monitoring" (was "An information-flow
+  firewall … the controller as structural shield"). Updated both the Title paragraph (document.xml) and dc:title
+  (core.xml); no body realignment (hybrid matches abstract/contributions). Master was open in Word (file lock) —
+  staged to _title_check.docx, finalized after author closed it. validate.py PASSED, 449 paras. Backup
+  `…bak-<ts>-pretitle-hybrid`.
+
+- **Prev (2026-08-12, session 35): revised Figure 6 (combined causal graph) — reframed the firewall as a blocked edge.**
+  Author: "figure 6 must be revised" and delegated the call. Numbers all verified correct (wave %s = te_frac;
+  U=0.167 matches Fig 5c; SURD≈0.40 matches §4), so it was a presentation fix. The red FIREWALL *box* wrapped the
+  platform nodes while grey WAVE arrows flowed into it — implying the platform is walled off, contradicting the
+  thesis (waves drive the platform; only wind is blocked). Fix in `_make_fig5_firewall_graph.py` (feeds docx Fig 6
+  = rId13 → image8.png): removed the box + rotated wordmark; drew the firewall as the ABSENT wind→platform edge —
+  a blocked dashed-red pathway cut by a bold ✗ with a white-boxed "FIREWALL / no direct wind → platform" label;
+  bowed the indigo U=0.167 edge higher for legibility. Same dims (1977×1321), validate.py PASSED, embedded
+  md5-identical, caption already matches. Backup `…bak-<ts>-prefig6revise`.
+
+- **Prev (2026-08-12, session 34): reconciled Figure 5c to the paired-seed numbers (0.167 / 0.0612).**
+  Author: "reconcile the figure to 0.167 summed over lags." Corrected a mis-diagnosis — summing lags is a no-op
+  (only lag=25 is non-zero, already the sum). The real gap: figure showed the 6-seed MEDIAN (0.140/0.065) while the
+  text uses the single s00 seed (0.167/0.0612), s00 being the seed the open-loop twin is built from. Author chose
+  same-seed paired framing in BOTH panels. Rewrote the open-loop block in `_make_surd_figs.py`: closed-loop
+  reference = s00 (0.0612 leak-drop, 0.167 U:BldPitch1) matching the text; other 5 seeds as light-grey context;
+  x-tick "controller ON (seed s00)"; legend updated. No text/caption edit (caption already says 0.167). Regenerated
+  surd-openloop.png only, swapped into docx (rId12 → media/image7.png, 1480×720). validate.py PASSED, 449 paras,
+  embedded md5-identical. Backup `…bak-<ts>-prefig5c167`. Follow-up: added a clause to the Figure 5c caption —
+  "Open-loop twin (11 m/s; seed s00, five sibling seeds shown as context)." — so the grey context dots are
+  explained (docx XML edit; validate.py PASSED; backup `…bak-<ts>-prefig5ccaption`).
+
+- **Prev (2026-08-12, session 33): cleaned up Figure 5c (open-loop twin) — added legend, stripped baked-in annotations.**
+  Author: add the missing legend; remove the two-sentence bottom caption; move "−59%" and "exactly 0" to the text.
+  Both facts already live in §3.3 ("collapses to exactly zero"; drop "0.0612→0.0265, −57%"), so no text edit. The
+  figure's −59% (median-of-seeds baseline) differed from the text's −57% (same-seed s00 baseline); author chose to
+  KEEP −57% and just drop the annotation. Edited `_make_surd_figs.py` open-loop block: removed the −59% / →exactly-0
+  panel annotations + `fig.text` caption, added a 3-entry legend (seeds / median / open-loop twin), kept data-value
+  labels. Regenerated surd-openloop.png only; swapped into docx (Figure 5c = rId12 → media/image7.png, 1480×720).
+  validate.py PASSED, 449 paras, embedded image md5-identical. Backup `…bak-<ts>-prefig5clegend`.
+
+- **Prev (2026-08-12, session 32): removed the redundant annotation box from Figure 5b.**
+  Author: "eliminate the box [on fig 5b] … I think it is already mentioned." Confirmed the §3.3 text already states
+  the TE-null / SURD-mediated-path point, so nothing moved to the body. Deleted the `ax.annotate` box in
+  `reports/figs/_make_surd_figs.py`, regenerated `surd-vs-te.png` (only 5b; other two SURD figs restored from
+  backup), and swapped it into the live master docx (Figure 5b = rId11 → media/image6.png, 1480×880 unchanged).
+  Also drops the stale "48/51 / 94%" stat (text says 2/54). validate.py PASSED, 449 paras (image-only), embedded
+  image md5-identical to source PNG. Backup `…bak-<ts>-prefig5bbox`.
+
+- **Prev (2026-08-12, session 31): merged "1.1 Background" into the Introduction.**
+  Author: "merge section 1. introduction and 1.1 background and the section name is introduction." Edited the
+  canonical master `reports/te-firewall-paper.docx` directly (XML). Removed the "1.1 Background" Heading3 (prose
+  folds into §1) and its unreferenced `background` bookmark; kept heading "1. Introduction"; renumbered
+  "1.2 Motivation and Contribution" → "1.1" (author decision) to keep numbering contiguous. Verified: validate.py
+  PASSED (PYTHONUTF8=1), 450→449 paras, pandoc shows §1 Introduction → §1.1 Motivation → §2, all Background prose
+  intact. Backup `…bak-<ts>-premergeintro`.
+
+- **Prev (2026-08-11, session 30): added an Abbreviations group to the Nomenclature (19 acronyms, alphabetical).**
+  Author: "add the abbreviations as well." Harvested acronyms from the docx, filtered out channel names (Table 1)
+  and citation-venue codes; added a bold "Abbreviations" subheading after Greek symbols: AIS, DLC, FOWT, GPU,
+  IDTxl, IEA, IEC, JIDT, JONSWAP, KSG, ML, NREL, OMA, OpenFAST, ROSCO, SCADA, SURD, TE, TurbSim (upright, same
+  layout). Expansions verified against first-use context. pack PASSED, 430→450 paras. Backup `…bak-<ts>-abbrevs`.
+
+- **Prev (2026-08-11, session 29): added a Nomenclature (Latin + Greek symbols, alphabetical) after the keywords.**
+  Author: "make a Nomenclature in alphabetic order, grouped by English and Greek." Harvested all symbols from the
+  docx math tokens + Greek contexts; inserted a Heading2 "Nomenclature" between keywords and §1 with two bold
+  subheadings — **Latin symbols** (28, alphabetical) and **Greek symbols** (α, γ²(f), Δf, τ). Symbols italic with
+  real sub/superscript runs; hanging-indent + tab layout; Compact style, left-justified. Acronyms NOT included
+  (author asked only for English+Greek symbol groups; offered separately). "English" → labelled "Latin symbols"
+  (standard convention). pack PASSED, 395→430 paras; pandoc verified both groups. Backup `…bak-<ts>-nomenclature`.
+
+- **Prev (2026-08-11, session 28): Fig 5b — materiality gate moved to legend; footnote facts moved to §3.3 text.**
+  Author: move the "SURD materiality gate 0.02" label to the legend, and the footnote (54 joined cases, first-pass
+  KSG TE table, TE nonzero in only 2, positive in all 54) to text. Fig 5b = `surd-vs-te.png`. Removed inline gate
+  annotation + added a "materiality gate (0.02)" legend entry; removed the `fig.text` footnote. Replaced the §3.3
+  roadmap sentence with one carrying the footnote facts and citing Fig 5b (positivity already stated by the
+  adjacent 5a sentence, so not repeated). Same PNG size (1480×880) → drop-in; other two SURD figs unchanged.
+  image6 md5 verified (bb594c31…); pack PASSED, 395 paras. Backup `…bak-<ts>-fig5b`. (The "48/51, 94%" box was
+  left in the figure — not part of the request; note it's still figure-only.)
+
+- **Prev (2026-08-11, session 27): stated the IEA-15MW rated wind speed (10.59 m/s) in methods + Fig 5a caption.**
+  The numeric rated speed was missing paper-wide despite the below/above-rated framing depending on it. Added
+  "with a rated wind speed of 10.59 m/s" to the methods turbine description (Gaertner et al., 2020) and "(10.59
+  m/s)" to the Fig 5a caption after "at and above rated". pack PASSED, 395 paras; both verified via pandoc.
+  Backup `…bak-<ts>-ratedspeed`. (Context: followed a Q&A on why 8 m/s has no active pitch control — below
+  rated the turbine is in Region 2, pitch parked at fine, torque loop active; pitch loop engages above rated.)
+
+- **Prev (2026-08-11, session 26): Figure 5a — two-tone regime background bands (inactive grey / active teal).**
+  Author asked to color-distinguish the two regimes; chose two-tone bands. Added two `axvspan` bands to the
+  dose-response block of `_make_surd_figs.py` (grey α0.08 below-rated, teal α0.10 at/above-rated) split by a
+  subtle dashed divider at the rated boundary (x=0.5, between 8 and 11 m/s), zorder 0–1 behind grid/data.
+  Same PNG size → drop-in replace of `media/image5.png`; other two SURD figs unchanged. image5 md5 verified
+  (254fea0f…); pack PASSED, 395 paras. Backup `…bak-<ts>-fig5a-bands`.
+
+- **Prev (2026-08-11, session 25): Figure 5a — added dot/bar/gate legend; moved footnote facts into the §3.3 text.**
+  Author: dot/bar/dash must be a legend; "circular-shift bias control subtracted / drop positive in 100%" must be
+  in the text. Fig 5a = `surd-dose-response.png` from `_make_surd_figs.py`. Added a 3-item Line2D legend
+  (individual case / regime median / materiality gate 0.02), removed the bottom footnote + redundant inline gate
+  label. Revised the §3.3 dose-response sentence to state the bias-correction (circular-shift surrogate) and the
+  "positive in every one of the 54 closed-loop cases." Same PNG size (1480×840) → drop-in; other two SURD figs
+  re-rendered identical. pack PASSED, 395 paras; image5 md5 verified. Backup `…bak-<ts>-fig5a-legend`.
+
+- **Prev (2026-08-11, session 24): narrated the Figure 5a dose–response result in Section 3.3.**
+  User asked whether Fig 5a's point (firewall strength scales with operating region, ~2.8×) was in the text.
+  It wasn't — §3.3 only pointed to the figure; the 2.8× factor and regime medians lived solely in the plot.
+  Added one sentence to the SURD-redirection paragraph (docx `document.xml`) stating it: corrected controller
+  leak-drop rises from a below-rated median 0.023 (pitch idle) to ~2.8× larger at/above rated (per-regime
+  medians 0.042–0.066), positive in all 54 cases (Figure 5a). Numbers verified against `media/image5.png`.
+  pack PASSED, 395 paras. Backup `…bak-<ts>-fig5a-doseresponse`.
+
+- **Prev (2026-08-11, session 23): normalized "§" → "Section"/"Sections" throughout the docx.**
+  Author: "the § sign within the text is not common." The docx already spelled out Section(s) in most places,
+  so the 27 § were the inconsistent minority. Converted all in `document.xml`: multi-ref runs got plural
+  grammar ("(Sections 2.2–2.9)", "(Sections 2.4 and 2.7)"); remaining single refs incl. Kraskov "§III.A" →
+  "Section III.A". Fixed a self-inflicted glue ("Section2.7"→"Section 2.7") and restored two trimmed trailing
+  spaces. Verified 0 § / 0 glued / 0 double-space; pack PASSED, 395 paras. Backup `…bak-<ts>-section-signs`.
+
+- **Title decision (2026-08-11): title KEPT as "An information-flow firewall in floating offshore wind turbines: the controller as structural shield."**
+  Author floated changing it to "information-flow considerations on Floating Offshore wind turbine." Claude pushed back
+  ("considerations on…" is a vague, finding-free pattern that drops the firewall hook; also singular/capitalization
+  slips) and offered a toned-down and a sober-descriptive alternative. Author chose **keep current**. No file change.
+
+- **Latest (2026-08-11, session 22): shortened Figure 4 caption; moved the detail into the running text.**
+  Author: "caption too long — make it shorter; if we keep it, it must be within the text." Trimmed the docx
+  caption (`document.xml`) from ~90 words to one sentence ("**Figure 4.** Directed transfer-entropy network
+  across the FOWT. Edge weight is the mean $TE_{frac}$ over the 54 cases."), removing the redundant second
+  $TE_{frac}$ math + descriptive prose. Relocated the kept content (wave propagation/significance; wind
+  intermittency + edge-label meaning; the firewall statement) into the paragraph that introduces the figure.
+  `PYTHONUTF8=1 pack.py` → validations PASSED, 395 paras; pandoc re-extract confirms. Backup `…bak-<ts>-fig4-caption`.
+
+- **Prev (2026-08-11, session 21): redesigned Figure 4 (TE network) — legible labels + a clearer firewall.**
+  Author: "white font not clear; firewall part must be clearer." Fig 4 in the docx = `media/image4.png` =
+  `reports/figs/fig3-te-network.png` from `_make_fig3_firewall_network.py`. Fixes to the generator:
+  (1) contrast-aware node labels (`_lum` → dark ink on the light-green platform nodes, white elsewhere, with
+  halos) — node colours unchanged; (2) firewall consolidated from 3 scattered cues into one motif — wind's
+  bold dashed arrow hits a hatched red **wall + ✕**, a faint arrow shows the blocked continuation into the
+  highlighted platform zone, plus one boxed **FIREWALL** label + a white-boxed "no significant edge (TE ≈ 0)"
+  callout. New PNG same size (1900×1309) → drop-in replace, no XML/extent change. Embedded via unpack→replace→
+  `PYTHONUTF8=1 pack.py`; validations PASSED, 395 paras; image4 md5 == fig3 md5; TNR + jc=both still intact.
+  Backup `…bak-<ts>-fig4-redesign`.
+
+- **Prev (2026-08-11, session 20): manuscript formatting pass on the canonical docx — Times New Roman, justified body, data-table rules removed.**
+  Author asked for three docx changes (final.md FROZEN, untouched): (1) font → **Times New Roman**
+  (changed `theme1.xml` major+minor `<a:latin>` from Aptos; Cambria Math + Consolas code kept — author
+  chose "keep code monospace"); (2) **justify** body prose (`jc="both"` on `BodyText` style → cascades to
+  FirstParagraph/Compact; headings + centered equations unaffected); (3) delete **data-table rules** — author
+  clarified this meant the horizontal rules *inside* the data tables (not equation boxes); the only visible
+  rules were 16 inline booktabs borders in **Table 1**, set `single`→`nil`; equation `TableGrid` boxes left
+  intact. Repack `PYTHONUTF8=1` → validations PASSED, 395 paras preserved. Round-trip verified at XML level
+  (no LibreOffice on this box → no PDF visual). Backup `…bak-<ts>-fmt-tnr-justify-rules`.
+
+- **Prev (2026-08-11, session 19): added in-text `(Eq. N)` citations for Eqs 7, 8, 9 in the canonical docx.**
+  Author asked to cite Eqs 7/8/9 within their introducing prose, as Eqs 1–6 already are. Edited
+  `reports/te-firewall-paper.docx` `document.xml` directly (final.md FROZEN, untouched): §2.5 AIS gets
+  "…storage of the target **(Eq. 7)**,"; §2.7 SURD gets "…synergistic atoms **(Eq. 8)**:"; §2.9 delay-resolved
+  TE gets "…candidate delay $d$ is **(Eq. 9)**:". Repack required `PYTHONUTF8=1` (cp949/Korean-locale codec
+  error in the validator on `fontTable.xml`); with UTF-8 forced, all validations PASSED, 395 paragraphs
+  preserved. Verified via pandoc re-extract. Backup `…bak-<ts>-eqcite789`. (The two §2.7 target/source slips
+  from session 18 remain unfixed — author has not yet asked.)
+
+- **Prev (2026-08-11, session 18): synced `te-firewall-paper-final.md` §2.7 to the docx's rewritten SURD paragraph; explained why Eq. 8 has no leak.**
+  Author added Eqs 7–9 to the docx and rewrote §2.7, and asked (a) why the leak is absent from the SURD
+  decomposition (Eq. 8) and (b) to revise the md to match. Answer to (a): Eq. 8 is an identity for the *mutual
+  information* `I(Q; sources) = R + U + S`; the leak is not part of the MI — it lives in the entropy budget
+  `H(Q) = I(Q; sources) + ΔI_leak`, so its omission is correct and matches the SURD convention
+  (Martínez-Sánchez et al., 2024). The md already carried Eqs 7/8/9 matching the docx; only §2.7 prose differed.
+  Per author choice ("mirror docx wording into md") the md §2.7 post-equation paragraph now uses the docx wording,
+  **with two corrections**: the docx says the leak captures "the source's future" and classifies atoms "about a
+  source" — both should be the *target's* future `Q` (the leak is defined against `H(Q)`); and the docx §2.7 XML
+  has a garbled duplicated tail fragment ("...3.1–3.2.ture entropy — ... 3.1–3.2."). The md was corrected/cleaned;
+  **the docx (canonical) still carries both slips + the dangling fragment — flagged to the author for a separate
+  in-place XML fix, not yet applied.**
+  **Update (later in session 18):** author flagged the garbled tail directly; the **duplicate/corrupt tail fragment
+  in the docx §2.7 was removed** (member-preserving XML edit; backup `…bak-20260811-130116-surd27junk`; testzip
+  clean, 26 members, structure intact, §2.7 now ends "…Sections 3.1–3.2."). The **two target/source slips in the
+  docx §2.7 remain unfixed** (author has not yet asked to change them; md already correct).
 
 - **⚠ CANONICAL SOURCE FLIPPED (2026-08-10, author decision): `reports/te-firewall-paper.docx` is the LIVE MASTER; `te-firewall-paper-final.md` is FROZEN.**
   The author hand-edited the docx (numbered §2.1 equations (1)–(6); minor prose tweaks) and Claude added the
@@ -1298,3 +1475,409 @@ campaign remain. Edits applied cleanly (Edit tool confirmed each).
 **Open items / next.**
 - Regenerate `te-firewall-paper.docx` (+ PDF if wanted) when the author wants the compiled artifact refreshed.
 - Carry-overs unchanged: W6 canonical Sobol/coherence foil cites; Tier 3 references; venue undecided; rotor-averaged-wind robustness check (server down).
+
+---
+
+## Session 18 — 2026-08-11 — Eq. 8 leak question + §2.7 md↔docx sync
+
+**Dialogue**
+- User: "I have added eq.7, eq.8 and eq.9. The 2.7 SURD attribution paragraph is totally changed. Please revise the md file based on the docx. In the SURD eq. (Eq. 8) the leak part is eliminated — does it have any specific reason?"
+- Claude: Yes, and it is correct. Eq. 8 decomposes the *mutual information* `I(Q; sources)`, which equals R + U + S
+  exactly; the leak is not an MI atom — it is the residual of the target's future *entropy*
+  (`H(Q) = I(Q; sources) + ΔI_leak`). Two different budgets / denominators, consistent with the manuscript's own
+  normalization sentence (atoms = fractions of max MI; leak = fraction of target future entropy). Standard SURD
+  convention (Martínez-Sánchez et al., 2024).
+- Claude also reported: the md already carried Eqs 7 (AIS, §2.5), 8 (SURD leak-free, §2.7), 9 (delay-resolved TE,
+  §2.9), all matching the docx; only the §2.7 prose differed, and the docx's rewrite had introduced a target/source
+  slip plus a garbled duplicate tail.
+- Asked how to reconcile, user chose **"Mirror docx wording into md."**
+
+**Decisions**
+- md §2.7 post-equation paragraph replaced with the docx wording, but with the leak/classification phrasing
+  corrected to reference the *target's* future `Q` (not "the source's future"), and the garbled duplicate tail
+  fragment dropped.
+- Docx (canonical master) left untouched this session; the two slips + dangling fragment in the docx §2.7 were
+  flagged for a later in-place XML fix.
+
+**Files changed**
+- `reports/te-firewall-paper-final.md` — §2.7 paragraph (no commit made this session).
+- `pages/log.md` — session entry appended; frontmatter `updated: 2026-08-11`.
+- `SYNTHESIS.md` — §0 latest bullet + this entry; frontmatter `updated: 2026-08-11`.
+
+**Open items / next steps**
+- Optional: apply the same two corrections (leak "source's future" → "target's future"; classification "about a
+  source" → "about the target") and remove the duplicated tail fragment **in the canonical docx** (unpack →
+  `word/document.xml` → `pack.py`, `PYTHONUTF8=1`). The garbled fragment lives in the single §2.7 run in
+  `word/document.xml`. Not done — awaiting author go-ahead.
+
+---
+
+## Session 19 — 2026-08-11 — Cite Eqs 7, 8, 9 in text
+
+**Dialogue**
+- User: "please cite the equations 7, 8, 9 within the text regarding the eqs."
+- Claude: confirmed the canonical master is the docx (final.md frozen per prior decision),
+  checked the existing `(Eq. 1)`…`(Eq. 6)` style, and applied the same convention to 7/8/9.
+
+**Decisions**
+- Match the established style: `(Eq. N)` closes the introductory clause immediately before the
+  display equation. Edit the canonical docx only; leave the frozen final.md alone.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — three `document.xml` text runs amended:
+  - §2.5 (AIS, Eq. 7): "…active information storage of the target **(Eq. 7)**,"
+  - §2.7 (SURD, Eq. 8): "…unique, and synergistic atoms **(Eq. 8)**:"
+  - §2.9 (delay-resolved TE, Eq. 9): "…each candidate delay $d$ is **(Eq. 9)**:"
+  - Backup: `te-firewall-paper.docx.bak-<ts>-eqcite789`
+- `pages/log.md` — appended entry.
+- `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Repack: `PYTHONUTF8=1 pack.py` → "All validations PASSED", 395 paragraphs preserved
+  (the default codepage triggered a cp949 error reading `fontTable.xml`; forcing UTF-8 fixed it —
+  environmental, not a document defect; only `document.xml` was edited).
+- pandoc re-extract shows "(Eq. 7),", "(Eq. 8):", "(Eq. 9):" at the three sites.
+
+**Open items / next steps**
+- Unchanged from session 18: the two §2.7 target/source slips ("source's future" / "about a source"
+  → should be target `Q`) remain in the docx, awaiting author go-ahead.
+
+---
+
+## Session 20 — 2026-08-11 — Manuscript formatting (TNR, justify, remove table rules)
+
+**Dialogue**
+- User: "the font must change to Times new roman and the paragraphs must be justified, and the
+  lines between sections must be deleted."
+- Claude: surveyed the docx; found body/heading font = theme `Aptos`, no justified paragraphs,
+  and two kinds of horizontal lines (equation `TableGrid` boxes; booktabs rules in data tables).
+  "Lines between sections" was ambiguous, so asked two clarifying questions (which lines; whether
+  inline code should also become TNR).
+- User answers: delete the **data-table rules** (leave equations); **keep code monospace**.
+
+**Decisions**
+- Font via theme (major+minor `<a:latin>` → Times New Roman) — cleanest, converts all prose+headings;
+  keep Cambria Math (equations) and Consolas (`VerbatimChar` code) explicit.
+- Justify via style inheritance: `jc="both"` on `BodyText` only (FirstParagraph/Compact inherit).
+- Table rules: only Table 1 had visible inline rules (16 booktabs borders); `single`→`nil`.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `theme1.xml` (2 latin typefaces), `styles.xml` (BodyText jc),
+  `document.xml` (16 Table-1 cell borders single→nil). Backup `…bak-<ts>-fmt-tnr-justify-rules`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Repack `PYTHONUTF8=1 pack.py` → "All validations PASSED", 395 paragraphs preserved.
+- Round-trip re-unpack of the packed file: theme = Times New Roman ×2 (no Aptos); 1 `jc="both"`;
+  0 `single` / 16 `nil` table borders; 606 Cambria Math runs; 32 Consolas refs; Eqs 7/8/9 citations present.
+- Caveat: no LibreOffice on this Windows box → could not render a PDF for visual confirmation;
+  verification is XML-level (definitive for these structural attributes).
+
+**Open items / next steps**
+- Unchanged from session 18: the two §2.7 target/source wording slips remain in the docx (author
+  hasn't asked to change them).
+- If the author wants a visual check, render the docx to PDF on a machine with Word/LibreOffice.
+
+---
+
+## Session 21 — 2026-08-11 — Redesign Figure 4 (TE network graph)
+
+**Dialogue**
+- User: "please redesign the figure 4 (white font color is not clear) and the firewall part must be clearer."
+- Claude: identified Fig 4 in the canonical docx = `media/image4.png`, byte-identical to
+  `reports/figs/fig3-te-network.png`, generated by `_make_fig3_firewall_network.py` (confirmed by md5).
+  Viewed the current PNG: white node labels illegible on the light-green platform nodes; the firewall was
+  three disconnected cues (pink box + mid-canvas ✕ + far-right vertical "FIREWALL").
+
+**Decisions**
+- Fix labels with a contrast-aware colour rule (`_lum` luminance test), not by recolouring nodes
+  (keeps palette consistent with the other figures). Add halos for extra crispness.
+- Consolidate the firewall into a single physical "wall" metaphor on the WIND path only (wave legitimately
+  reaches the platform, so no wall across the platform's approach): bold dashed wind arrow → hatched red
+  wall + ✕ → faint blocked continuation into the highlighted platform zone; one boxed FIREWALL label + one
+  white-boxed callout. Iterated once to move labels into clean pockets with white bboxes (first render had
+  the callout overlapping the wind fan / "sig 28%" label).
+
+**Files changed**
+- `reports/figs/_make_fig3_firewall_network.py` — imports (+Rectangle, patheffects), `_lum`, rewrote
+  `circle()`, added `_draw_wall()`, restyled protected-zone band, rewrote the firewall block.
+- `reports/figs/fig3-te-network.png` — regenerated (1900×1309, unchanged size).
+- `reports/te-firewall-paper.docx` — `media/image4.png` replaced with the new PNG.
+  Backup `te-firewall-paper.docx.bak-<ts>-fig4-redesign`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Regenerated figure inspected by eye: green-node labels now dark and legible; firewall reads clearly as
+  wind stopped at a wall, not reaching the platform.
+- Embedded `image4.png` md5 == `fig3-te-network.png` md5 (5f7c5992…).
+- Repack `PYTHONUTF8=1 pack.py` → "All validations PASSED", 395 paragraphs preserved; theme = Times New
+  Roman and `jc=both` still present; Figure 4 caption intact.
+- No LibreOffice on this box → no full-page PDF render; figure verified as a standalone PNG (definitive
+  for its content) and the docx verified structurally.
+
+**Open items / next steps**
+- Unchanged: the two §2.7 target/source wording slips remain in the docx (author hasn't asked to change them).
+
+---
+
+## Session 22 — 2026-08-11 — Shorten Figure 4 caption
+
+**Dialogue**
+- User: "figure 4's caption is too long please make it shorter, if we need to keep it it must be within the text."
+- Claude: trimmed the caption to a single identifying sentence and moved the substantive content into the
+  paragraph that introduces the figure (nothing dropped except the normalization gloss, which §2.5 already defines).
+
+**Decisions**
+- Caption keeps only figure identity + edge-weight definition (one $TE_{frac}$ math). Descriptive/interpretive
+  claims belong in the body per the author's instruction.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `document.xml`: caption paragraph trimmed (removed 2nd $TE_{frac}$ oMath +
+  long descriptive run; run before it shortened to " over the 54 cases."); intro paragraph expanded with the
+  relocated content. Backup `te-firewall-paper.docx.bak-<ts>-fig4-caption`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- `PYTHONUTF8=1 pack.py` → "All validations PASSED", 395 paragraphs preserved.
+- pandoc plain-text re-extract: caption now one sentence; intro paragraph carries wave/wind detail + firewall
+  statement and flows into the existing "The interpretation is not that wind…" paragraph.
+
+**Open items / next steps**
+- Unchanged: the two §2.7 target/source wording slips remain in the docx (author hasn't asked to change them).
+
+---
+
+## Session 23 — 2026-08-11 — Replace "§" with "Section"/"Sections"
+
+**Dialogue**
+- User: "I think the sign § within the text is not common within the text."
+- Claude: confirmed the docx already spelled out Section(s) in most places (so § was the inconsistent
+  minority), then converted all 27 § in `document.xml` to the spelled-out form.
+
+**Decisions**
+- Spell out "Section" (capital S, as a reference proper noun) everywhere; use plural "Sections" for
+  ranges/lists; convert the Kraskov "§III.A" citation refs to "Section III.A" for full consistency.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `document.xml`: 2 multi-ref runs edited for plural grammar; 22
+  single refs bulk-replaced (+ space/whitespace fixups). Backup `…bak-<ts>-section-signs`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- 0 "§" left, 0 glued "SectionN", 0 double spaces; `PYTHONUTF8=1 pack.py` → "All validations PASSED",
+  395 paragraphs preserved; pandoc re-extract confirms the converted refs.
+- Process note: the bulk replace first glued the number and trimmed two trailing spaces; both caught by
+  verification and fixed before repack — a reminder to check whitespace when replacing single chars in runs.
+
+**Open items / next steps**
+- Unchanged: the two §2.7 (now "Section 2.7") target/source wording slips remain in the docx.
+
+---
+
+## Session 24 — 2026-08-11 — Narrate Figure 5a dose–response in §3.3
+
+**Dialogue**
+- User: "what does figure 5a show?" → Claude described it (SURD firewall dose–response; below-rated median
+  0.023 vs at/above-rated ~0.064, 2.8×, positive in 100% of 54 cases).
+- User: "did you mention the point in the manuscript?" → Claude checked: the qualitative point appears in the
+  abstract/intro ("strength depends on the operating region") and §3.3 points to Figure 5, but the quantitative
+  result (2.8×, regime medians) was NOT in the body — only in the figure/caption.
+- User: "yes add it to Section 3.3."
+
+**Decisions**
+- Insert one prose sentence stating the dose–response result, right after the SURD-redirection sentence.
+  Keep the SURD code-term and the math symbol out of the sentence to avoid run fragmentation; cite Figure 5a.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `document.xml`: added the dose–response sentence to the §3.3 SURD-redirection
+  paragraph. Backup `te-firewall-paper.docx.bak-<ts>-fig5a-doseresponse`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Numbers cross-checked against Figure 5a (`media/image5.png`): 0.023 below-rated; per-regime medians
+  0.066/0.064/0.042 (range 0.042–0.066); "median 2.8x below-rated"; "positive in 100% of cases".
+- `PYTHONUTF8=1 pack.py` → "All validations PASSED", 395 paragraphs preserved; pandoc re-extract confirms the
+  sentence reads correctly in context.
+
+**Open items / next steps**
+- Fig 5b/5c results are similarly figure-only if the author wants the same treatment (not requested).
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
+
+---
+
+## Session 25 — 2026-08-11 — Figure 5a legend + footnote-to-text
+
+**Dialogue**
+- User: "in figure 5a, we need some changes: dot, bar, dash lines must be as legend, and 'circular-shift bias
+  control subtracted. drop is positive in 100% of the cases' must be mentioned within the text."
+
+**Decisions**
+- Convert the dot/bar/dashed-gate encoding into a proper 3-item legend; delete the explanatory footnote and the
+  redundant inline gate label. Relocate both footnote sentences into the §3.3 dose-response sentence (the
+  100%-positive claim was already added there in session 24; added the circular-shift bias-correction clause).
+
+**Files changed**
+- `reports/figs/_make_surd_figs.py` — dose-response block: +Line2D import, +legend, −footnote, −inline gate
+  annotation, `bottom` 0.16→0.18.
+- `reports/figs/surd-dose-response.png` — regenerated (1480×840, unchanged size).
+- `reports/te-firewall-paper.docx` — `document.xml` §3.3 sentence revised; `media/image5.png` replaced.
+  Backup `te-firewall-paper.docx.bak-<ts>-fig5a-legend`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- New figure inspected: clean 3-item legend (individual case / regime median / materiality gate 0.02), footnote gone.
+- Other two SURD figs (surd-openloop, surd-vs-te) re-rendered byte-identical (md5 unchanged) — no collateral change.
+- Embedded image5 md5 == surd-dose-response md5 (4918636e…); `PYTHONUTF8=1 pack.py` → "All validations PASSED",
+  395 paragraphs preserved; pandoc confirms the revised §3.3 sentence.
+
+**Open items / next steps**
+- No LibreOffice on this box → figure verified as standalone PNG; docx verified structurally.
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
+
+---
+
+## Session 26 — 2026-08-11 — Figure 5a two-tone regime bands
+
+**Dialogue**
+- User (after the "do we need pitch control inactive?" discussion — Claude recommended keeping it):
+  "shall we make a color spectral for this two parts?"
+- Claude: yes; clarified the look via AskUserQuestion (two-tone bands / color the dots / spectral gradient /
+  both). User chose **two-tone bands**.
+
+**Decisions**
+- Subtle background shading, not point recoloring: cool grey behind the inactive (below-rated) zone, light
+  teal (paper accent) behind the active (at/above-rated) zone; split at the rated boundary with a faint dashed
+  divider. Keep the existing bracket labels.
+
+**Files changed**
+- `reports/figs/_make_surd_figs.py` — dose-response block: two `axvspan` bands + `axvline` divider (zorder 0–1).
+- `reports/figs/surd-dose-response.png` — regenerated (1480×840, unchanged size).
+- `reports/te-firewall-paper.docx` — `media/image5.png` replaced. Backup `…bak-<ts>-fig5a-bands`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Figure inspected: grey vs teal bands read clearly; navy dots/medians and legend unaffected; labels sit over
+  their bands.
+- Other two SURD figs (surd-openloop, surd-vs-te) byte-identical (md5 unchanged).
+- Embedded image5 md5 == surd-dose-response md5 (254fea0f…); `PYTHONUTF8=1 pack.py` → "All validations PASSED",
+  395 paragraphs preserved.
+
+**Open items / next steps**
+- No LibreOffice → figure verified as standalone PNG; docx verified structurally.
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
+
+---
+
+## Session 27 — 2026-08-11 — State the rated wind speed (10.59 m/s)
+
+**Dialogue**
+- User: "why in 8 m/s there was no active controller?" → Claude explained the control regions (Region 2 below
+  rated: pitch parked at fine, generator-torque loop active; Region 3 above rated: collective-pitch loop
+  engages to shed power/regulate thrust — the regime where the firewall operates). Rated ≈ 10.59 m/s (IEA-15MW).
+- User: "the IEA-15MW has a rated wind speed of ~10.59 m/s. shall we mention it in the caption?"
+- Claude: found the value was absent from the whole manuscript; recommended methods + caption. User chose both.
+
+**Decisions**
+- Put the numeric rated speed in the methods (turbine description, its proper home, serves Table 4/§3.3/Fig 5a)
+  AND a compact "(10.59 m/s)" in the Fig 5a caption for standalone readability.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `document.xml`: methods sentence + Fig 5a caption. Backup `…bak-<ts>-ratedspeed`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- `PYTHONUTF8=1 pack.py` → "All validations PASSED", 395 paragraphs preserved; pandoc shows "10.59 m/s" at both
+  sites (methods turbine description; Fig 5a caption). Source: IEA-15-240-RWT (Gaertner et al., 2020).
+
+**Open items / next steps**
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
+
+---
+
+## Session 28 — 2026-08-11 — Fig 5b legend + footnote-to-text
+
+**Dialogue**
+- User: "5b is necessary?" → Claude: yes, keep it (most direct visual of the redirection thesis; carries the
+  figure-only 94% stat).
+- User: "surd materiality 0.02 move to legend; 54 joined cases (first-pass… TE is non-zero in only… move to text."
+
+**Decisions**
+- Fig 5b: gate label → legend (third entry, matching 5a's "materiality gate (0.02)"); footnote deleted.
+- Footnote facts → §3.3 by replacing the generic Figure-5 roadmap sentence with a Fig-5b sentence (54 cases,
+  first-pass KSG TE table, TE non-zero in only two). Positivity-in-all-54 not repeated (already in the 5a sentence).
+- Left the "48/51, 94%" annotation box in the figure (not requested; still figure-only — candidate for later text).
+
+**Files changed**
+- `reports/figs/_make_surd_figs.py` — surd-vs-te block: −inline gate annotation, +legend gate entry
+  (`get_legend_handles_labels` + Line2D), −footnote, bottom 0.18→0.13.
+- `reports/figs/surd-vs-te.png` — regenerated (1480×880, unchanged size).
+- `reports/te-firewall-paper.docx` — `document.xml` §3.3 sentence swapped; `media/image6.png` replaced.
+  Backup `te-firewall-paper.docx.bak-<ts>-fig5b`.
+- `pages/log.md` — appended entry. `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Figure inspected: legend now has the dashed gate; footnote gone.
+- Other two SURD figs (dose-response, openloop) byte-identical (md5 unchanged).
+- Embedded image6 md5 == surd-vs-te md5 (bb594c31…); `PYTHONUTF8=1 pack.py` → "All validations PASSED",
+  395 paragraphs preserved; pandoc confirms the §3.3 sentence.
+
+**Open items / next steps**
+- Fig 5b's "48/51, 94%" statistic is still figure-only — offer to add to text if the author wants.
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
+
+---
+
+## Session 29 — 2026-08-11 — Add Nomenclature (Latin + Greek)
+
+**Dialogue**
+- User: "make a Nomenclature in an alphabetic order, and groupby by English and Greek."
+
+**Decisions**
+- Two groups as requested: "Latin symbols" (= English/Latin-alphabet) and "Greek symbols", each alphabetical.
+- Placement after keywords, before §1 Introduction (Elsevier-style front matter).
+- Include only symbols (not acronyms) per the explicit English+Greek framing; offer an Abbreviations group separately.
+- Typography: italic symbols with real vertAlign sub/superscripts; hanging-indent (1620 dxa) + tab so
+  definitions align/wrap; Compact style, left-justified (override BodyText jc=both).
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `document.xml`: +35 paragraphs (Nomenclature heading + 2 subheadings +
+  28 Latin + 4 Greek entries) inserted after the keywords run. Backup `…bak-<ts>-nomenclature`.
+- `pages/log.md` — appended entry (full symbol list). `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Symbols harvested from docx math `m:t` tokens + per-Greek-letter context grep; borderline symbols (Hs, Tp,
+  n_perm, AIS, TE_frac, K, r) confirmed present in the text before listing (no invented entries).
+- `PYTHONUTF8=1 pack.py` → "All validations PASSED", paragraphs 395→430 (+35); pandoc re-extract shows both
+  groups alphabetical with symbols + definitions intact; Greek group = α, γ²(f), Δf, τ.
+
+**Open items / next steps**
+- Offered but not added: an Abbreviations/acronyms group (TE, SURD, KSG, AIS, FOWT, OpenFAST, IDTxl, ROSCO, DLC…).
+- If the author prefers the literal heading "English symbols" over "Latin symbols", trivial change.
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
+
+---
+
+## Session 30 — 2026-08-11 — Add Abbreviations to the Nomenclature
+
+**Dialogue**
+- User: "yes add the abbreviations as well" (following the offer at end of session 29).
+
+**Decisions**
+- Add "Abbreviations" as a third bold subheading after Greek symbols (upright acronyms, same hanging-indent+tab
+  layout). Include genuine acronyms + primary tools; exclude OpenFAST submodules, channel names, and citation
+  venues. "English"/Latin symbols and Greek from session 29 unchanged.
+
+**Files changed**
+- `reports/te-firewall-paper.docx` — `document.xml`: +20 paragraphs (Abbreviations subheading + 19 entries)
+  inserted after the τ (Greek) entry, before the frontmatter rule. Backup `…bak-<ts>-abbrevs`.
+- `pages/log.md` — appended entry (full acronym list). `SYNTHESIS.md` — §0 rewritten + this entry.
+
+**Verification**
+- Expansions verified against first-use context in the text (OMA, ML, FOWT, IDTxl, JIDT, ROSCO, SCADA, etc.).
+- `PYTHONUTF8=1 pack.py` → "All validations PASSED", paragraphs 430→450 (+20); pandoc re-extract shows the
+  Abbreviations group alphabetical with expansions intact (KSG = "Kraskov–Stögbauer–Grassberger").
+
+**Open items / next steps**
+- Nomenclature now has three groups: Latin symbols (28), Greek symbols (4), Abbreviations (19).
+- If the author prefers "English symbols" over "Latin symbols" heading, trivial change.
+- Unchanged: the two Section 2.7 target/source wording slips remain in the docx.
