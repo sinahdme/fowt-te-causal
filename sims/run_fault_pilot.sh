@@ -29,7 +29,7 @@ PY_SIM="${PY_SIM:-/home/lams/anaconda3/envs/fowt-openfast/bin/python}"   # Phase
 PY_TE="${PY_TE:-/home/lams/anaconda3/envs/fowt-te-gpu/bin/python}"       # Phase 2: TE (GPU)
 OPENFAST_EXE="${OPENFAST_EXE:-openfast}"          # set if `openfast` is not on PATH in fowt-openfast
 GPUS="${GPUS:-0,1}"
-WORKERS="${WORKERS:-8}"
+WORKERS="${WORKERS:-4}"
 MAXJOBS="${MAXJOBS:-6}"                           # concurrent OpenFAST runs (CPU)
 FAULTS_DIR="sims/faults"
 REPORTS="reports"
@@ -85,11 +85,12 @@ for arm in "${ARMS[@]}"; do
   parq="${REPORTS}/te_fault_${base}_${tag}.parquet"
   [[ -f "$outb" ]] || { echo "  SKIP ${base}_${tag}: no faulted .outb"; continue; }
   echo; echo "  --- ${base}_${tag} ---"
-  # CPU + bivariate-only: the OpenCL/--gpu IDTxl path is broken on lams, and the
-  # breach verdict only needs the bivariate wind->platform TE. --slow-drift-tau 5
-  # is required (default 0 hangs PtfmPitch at tau=1). Needs ecos+prettytable in the env.
+  # GPU (A100 OpenCL) + bivariate-only: the breach verdict only needs the bivariate
+  # wind->platform TE. --slow-drift-tau 5 is required (default 0 hangs PtfmPitch at
+  # tau=1). REQUIRES ecos+prettytable in fowt-te-gpu (undeclared IDTxl deps) -
+  # without them the OpenCL import chain hangs. Install once: pip install ecos prettytable.
   $PY_TE analysis/te_pipeline.py "$outb" -o "$parq" \
-      --workers "$WORKERS" \
+      --gpu --gpus "$GPUS" --workers "$WORKERS" \
       --no-conditional --no-granger --no-ais --no-coherence \
       --n-perm 200 --tau 1 --slow-drift-tau 5 \
       --slow-drift-targets PtfmPitch,PtfmHeave,PtfmSurge,RootMxc1 \
