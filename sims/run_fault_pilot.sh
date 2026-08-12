@@ -94,8 +94,14 @@ for arm in "${ARMS[@]}"; do
   $PY_TE analysis/compute_fault_te.py --eval-only "$parq"   # prints VERDICT (rc 0=breach, 2=no breach)
 done
 
+# ---------- Phase 3: aggregate summary table + plot ----------
+echo; echo "### Phase 3 - aggregate summary (CSV + plot)"
+$PY_TE analysis/collect_fault_pilot.py \
+  || echo "  (collector skipped/failed - run: $PY_TE analysis/collect_fault_pilot.py)"
+
 echo; echo "==================================================================="
 echo " PILOT COMPLETE. Per-arm TE tables: ${REPORTS}/te_fault_dlca_v*.parquet"
+echo " Summary: ${REPORTS}/fault_pilot_summary.csv  +  ${REPORTS}/figs/fault_pilot.png"
 echo " A breach = mean Wind->{PtfmPitch,Surge,Heave} TE > 0.029 nats AND significant."
 echo " If lock/gain @ above-rated breaches -> expand to the full 4.3 ROC campaign."
 echo " If null -> the firewall is robust/structural; report the null (no paper edits till then)."
