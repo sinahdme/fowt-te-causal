@@ -23,8 +23,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."                          # repo root
 
-PY="${PY:-python}"                               # fowt-te-gpu python
-OPENFAST_EXE="${OPENFAST_EXE:-openfast}"
+# lams has TWO envs: fowt-openfast runs OpenFAST + reads .outb (openfast_toolbox);
+# fowt-te-gpu runs the TE pipeline (idtxl + OpenCL). Override PY_SIM/PY_TE if paths differ.
+PY_SIM="${PY_SIM:-/home/lams/anaconda3/envs/fowt-openfast/bin/python}"   # Phase 1: inject + OpenFAST
+PY_TE="${PY_TE:-/home/lams/anaconda3/envs/fowt-te-gpu/bin/python}"       # Phase 2: TE (GPU)
+OPENFAST_EXE="${OPENFAST_EXE:-openfast}"          # set if `openfast` is not on PATH in fowt-openfast
 GPUS="${GPUS:-0,1}"
 WORKERS="${WORKERS:-4}"
 MAXJOBS="${MAXJOBS:-6}"                           # concurrent OpenFAST runs (CPU)
@@ -45,7 +48,9 @@ ARMS=(
 )
 
 echo "==================================================================="
-echo " Pitch-fault PILOT : ${#ARMS[@]} runs   PY=$PY  GPUS=$GPUS  MAXJOBS=$MAXJOBS"
+echo " Pitch-fault PILOT : ${#ARMS[@]} runs   GPUS=$GPUS  MAXJOBS=$MAXJOBS"
+echo " PY_SIM=$PY_SIM"
+echo " PY_TE =$PY_TE"
 echo "==================================================================="
 
 # ---------- Phase 1: inject + run OpenFAST (CPU, parallel with a cap) ----------
@@ -63,7 +68,7 @@ for arm in "${ARMS[@]}"; do
   # throttle to MAXJOBS
   while (( $(jobs -rp | wc -l) >= MAXJOBS )); do wait -n; done
   echo "  launch ${base}_${tag}"
-  ( $PY sims/run_fault.py "$bc" $extra --tag "$tag" --openfast-exe "$OPENFAST_EXE" \
+  ( $PY_SIM sims/run_fault.py "$bc" $extra --tag "$tag" --openfast-exe "$OPENFAST_EXE" \
         > "sims/fault_${base}_${tag}.log" 2>&1 ) &
   pids+=($!)
 done
@@ -80,13 +85,13 @@ for arm in "${ARMS[@]}"; do
   parq="${REPORTS}/te_fault_${base}_${tag}.parquet"
   [[ -f "$outb" ]] || { echo "  SKIP ${base}_${tag}: no faulted .outb"; continue; }
   echo; echo "  --- ${base}_${tag} ---"
-  $PY analysis/te_pipeline.py "$outb" -o "$parq" \
+  $PY_TE analysis/te_pipeline.py "$outb" -o "$parq" \
       --gpu --gpus "$GPUS" --workers "$WORKERS" \
       --decimate-target-hz 5.0 --transient-drop-s 600.0 --max-lag 150 \
       --n-perm 200 --tau 1 --slow-drift-tau 5 \
       --slow-drift-targets PtfmPitch,PtfmHeave,PtfmSurge,RootMxc1 \
       || { echo "  !! TE pipeline failed for ${base}_${tag}"; continue; }
-  $PY analysis/compute_fault_te.py --eval-only "$parq"   # prints VERDICT (rc 0=breach, 2=no breach)
+  $PY_TE analysis/compute_fault_te.py --eval-only "$parq"   # prints VERDICT (rc 0=breach, 2=no breach)
 done
 
 echo; echo "==================================================================="
