@@ -16,7 +16,9 @@ REPO = Path(__file__).resolve().parents[1]
 # optional path arg; default to the local te_table.parquet name
 TABLE = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO / "reports" / "te_table.parquet"
 SRCS = ("Wind1VelX", "Wave1Elev")
-TGTS = ("PtfmPitch", "PtfmSurge", "PtfmHeave")
+# platform (firewalled) + direct-aero blade/tower (should NOT be firewalled) as positive controls
+TGTS = ("PtfmPitch", "PtfmSurge", "PtfmHeave",
+        "RootMyc1", "RootMxc1", "TwrBsMyt", "FAIRTEN2")
 
 
 def main() -> int:
