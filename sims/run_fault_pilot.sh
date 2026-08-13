@@ -93,7 +93,7 @@ for arm in "${ARMS[@]}"; do
       --gpu --gpus "$GPUS" --workers "$WORKERS" \
       --sources Wind1VelX --targets PtfmPitch,PtfmSurge,PtfmHeave \
       --no-conditional --no-granger --no-ais --no-coherence \
-      --n-perm 200 --tau 1 --slow-drift-tau 5 \
+      --n-perm 200 --tau 1 --slow-drift-tau 5 --max-lag-sources 20 \
       --slow-drift-targets PtfmPitch,PtfmHeave,PtfmSurge,RootMxc1 \
       || { echo "  !! TE pipeline failed for ${base}_${tag}"; continue; }
   $PY_TE analysis/compute_fault_te.py --eval-only "$parq"   # prints VERDICT (rc 0=breach, 2=no breach)
