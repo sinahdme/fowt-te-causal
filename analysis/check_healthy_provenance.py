@@ -7,12 +7,14 @@ Prints, for bivariate_te_ksg Wind1VelX/Wave1Elev -> PtfmPitch/Surge/Heave: mean/
 %-significant, and the tau value(s) present. A strong Wave edge (~0.1) confirms the pipeline
 detects platform coupling; if it's ~0 at tau=5 but non-zero at tau=1, tau=5 is over-suppressing.
 """
+import sys
 from pathlib import Path
 
 import pandas as pd
 
 REPO = Path(__file__).resolve().parents[1]
-TABLE = REPO / "reports" / "te_table.parquet"
+# optional path arg; default to the local te_table.parquet name
+TABLE = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO / "reports" / "te_table.parquet"
 SRCS = ("Wind1VelX", "Wave1Elev")
 TGTS = ("PtfmPitch", "PtfmSurge", "PtfmHeave")
 
