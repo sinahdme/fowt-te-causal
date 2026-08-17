@@ -26,9 +26,114 @@ each new Claude session was forgetting what the last one discussed.
 
 ---
 
-## §0 Current state — read this first (rewritten 2026-08-12)
+## §0 Current state — read this first (rewritten 2026-08-17)
 
-- **Latest (2026-08-12, session 39): fault-injection smoke test PASSED; server pilot driver ready.**
+- **Latest (2026-08-17, session 43c): corrected §3.3 dataset COMPLETE — analyze_phase2 run on rotor-averaged wind; only docx edits remain.**
+  Ran `analyze_phase2.py` on the rotor-averaged SURD table + merged corrected-TE table after 3 plumbing
+  fixes (fcc5d0e/d6fb942/71bb305): join `--wind-src` (was hardcoded Wind1VelX), collector `--out` to
+  persist the merged table, case-id recovered from te_wsrc filename (te_pipeline stamps the .outb stem for
+  all), glob narrowed to `te_wsrc_dlc*` (output was self-ingesting). Clean numbers (point-wind in parens):
+  dose-response 2.5× (was 2.8×), positive 87%; magnitudes ~half point-wind (reduced model carries more on
+  correct wind); wind_into_controllers 100%; U:BldPitch1 rank #2; **wind-info→BldPitch1 0.79 (was 0.38 —
+  ~2×)**; SURD-vs-TE join 54 cases, TE-null in 38, mediation>0.02 in 29 = **76%** (was 94%); nonzero
+  wind→pitch TE in 4 cases (was 1). Firewall-with-mediation is DOMINANT not universal — honest framing.
+  OPEN-LOOP twin NOT on lams (regen = ~30 min OpenFAST, over time budget) — DECISION: carry over point-wind
+  −57% ON/OFF with a caveat (mechanism structural/wind-independent; magnitude on old wind). Corrected tables
+  on lams: reports/{te_wsrc_merged,surd_table_rtvavg}.parquet. NEXT (last results-gated piece): pull tables
+  to Windows; drop corrected §3.1 (TE) + §3.3 (SURD) numbers into docx; add open-loop caveat; update §2.7
+  SURD atoms ([120]) off Wind1VelX. See [[project_surd_subproject]], [[project_paper_two_copy_sync]].
+
+- **Prev (2026-08-17, session 43b): rotor-averaged SURD re-run COMPLETE — mediated path confirmed (wind_into_controllers 100%).**
+  Fixed two hardcoded-`Wind1VelX` blockers (commit 8429fa2): `surd_runner.py:247` + `phase2_campaign.py`
+  (had NO `--wind-src` flag at all + same hardcode line 114) — both now `DRIVERS[0]`/`args.wind_src`,
+  default-preserving. SURD had never been set up on lams: restored tracked `vendorlib.py` (0f9d106) +
+  cloned the gitignored vendored SURD ref (`vendor/SURD` @ 79dbdea) per surd/VENDOR.md (pymp native on
+  Linux). Ran `phase2_campaign.py --wind-src RtVAvgxh -o reports/surd_table_rtvavg.parquet`: **63 cases**
+  (54 healthy + 9 fault), 55251 rows, 165 s. Result: corrected drop @5s median 0.0230, **positive 87%**;
+  gates **wind_into_controllers=100%** (falsely-failed pre-fix; corrected wind DOES flow into both
+  controller channels => mediated wind→rotor→controller path confirmed), controller_drop_material=16%
+  (mediation directional but often sub-0.02-nat — a §3.3 caveat), state_info=62%. Fault `_pitchlock`
+  cases go NEGATIVE (seized controller can't mediate). Reading B holds on SURD too. Kept SEPARATE from
+  the original point-wind `surd_table.parquet`. NEXT: `analyze_phase2.py --table surd_table_rtvavg.parquet`
+  for the §3.3 cross-tab; pull parquet to Windows; drop rotor-averaged SURD numbers into docx §3.3 +
+  update §2.7 SURD atoms ([120]). See [[project_surd_subproject]], [[project_fault_campaign]].
+
+- **Prev (2026-08-17, session 43): RtVAvgxh 54-case campaign COMPLETE on lams; collector merged; structural firewall CONFIRMED (Reading B).**
+  Monitored the run to completion this session (status-only until it finished). 54/54 healthy
+  `dlc*_v*ms_s##` cases done (last `reports/te_wsrc_dlcb_v20ms_s05.parquet`, 2026-08-17 14:35;
+  both driver + worker PIDs gone; high-wind v20 cases ran ~105–108 min each vs ~70 min low-wind).
+  `analysis/collect_wind_struct.py` merged 54 healthy + 9 fault cases cleanly. RESULT (mean_te/%sig,
+  n=54): **RtVAvgxh→rotor/tower FIRES** (RootMxc1 0.0024/63%, RootMyc1 0.0109/43%, TwrBsMyt 0.0150/39%)
+  **→platform ≈0** (PtfmPitch 0.0006/7%, PtfmHeave 0.0007/7%, PtfmSurge −0.0009/2%); **Wave1Elev→platform
+  STRONG** (PtfmPitch 0.0228/96%) so the platform IS detectable and it is *wind* that is blocked;
+  **Wind1VelX→everything ≈0** incl. blades (observability artifact confirmed); **FAULT n=9:
+  RtVAvgxh→PtfmPitch = 0.0/0%** => firewall survives controller fault, monitoring settled NEGATIVE.
+  Every structural-firewall (Reading B) prediction holds on the full corrected campaign. RESULTS GATE
+  CLEARED. NEXT (results-gated work now unblocked): drop numbers into docx §3.1 rotor-averaged rows +
+  Tables 2–4 + Figures; run the §3.3 SURD rotor-averaged re-run; update §2.7 SURD atoms ([120]) off
+  Wind1VelX. Merged table lives in reports/ on lams — pull it before editing the docx. Logged in
+  pages/log.md. See [[project_fault_campaign]], [[project_te_paper_thesis]], [[project_paper_two_copy_sync]].
+
+- **Prev (2026-08-14, session 42): RtVAvgxh campaign still RUNNING on lams (~2 days); reframe pre-staged, thesis fork RESOLVED = Reading B.**
+  No server access from this Windows box (no ssh alias; results live on lams). Did results-independent prep:
+  (1) VERIFIED the post-campaign aggregator `analysis/collect_wind_struct.py` against the pipeline schema —
+  `method=="bivariate_te_ksg"` + cols `case/te_nats/significant` match `te_pipeline.py:617,760`, so the 1-2 day GPU
+  run won't be lost to a broken collector. (2) Author chose **Reading B** for the corrected thesis: the wind->platform
+  firewall is **structural-PRIMARY** (rotor + lightly-damped platform filter wind before the platform) with the
+  controller a **secondary contributor** — SURD redirection + open-loop twin stay VALID; the new decisive fact is the
+  firewall **survives controller fault** (RtVAvgxh->platform ~0 under pitch-lock/gain), which demotes control from
+  *the* barrier to *a* contributor and **NEGATES the wind->platform-TE pitch-fault monitor**. So the feasibility-of-
+  monitoring title (session 37) is no longer honest -> retitle pending (candidates staged; T2 recommended).
+  CORRECTION to my session-start read: the docx PROSE reframe is NOT pending — a prior 2026-08-14 session (docx mtime
+  13:14, after the log entry) already reframed title/abstract/§1/§3.3/§3.4/§4.1/§4.2(all 4 paras)/§4.3/§5 to the
+  structural thesis, and an audit (python-docx dump of paras 146-205) confirms it is already Reading-B-aligned
+  (§4.1 [177] "structural property... to which active control contributes but which it does not create"; §4.2/§5
+  monitoring = negative; §4.3 [189] rotor-averaged caveat DISCHARGED into results). Title is now "Wind reaches the
+  blades but not the platform: a structural information firewall in FOWTs revealed by directed transfer entropy".
+  ONE DEFECT FOUND + FIXED: §3.6 Summary [para 174] was MISSED by the reframe — still asserted the OLD thesis
+  ("firewall attributable to the controller"; "monitoring... an outlook... fault-case TE not computed... no breach
+  exhibited"), contradicting §3.4/§4.2/§5, and said "wind reaches the blades" (true only for rotor-averaged). Author
+  approved (Reading B); rewrote para 174 to structural-firewall + monitoring-settled-negative + "rotor-averaged wind
+  does reach the blades", via docx XML edit (unpack->Edit->pack, no pandoc). validate.py PASSED, 449->449 paras;
+  re-extract confirmed. Backup te-firewall-paper.bak-20260814-160428-pre36summary.docx. Logged in pages/log.md.
+  Then ran a full-doc stale-thesis sweep: no monitoring-feasibility stragglers; one non-gated gap FIXED — §2.2
+  Methods + Table 1 defined the wind source as point Wind1VelX only, so added RtVAvgxh as the PRIMARY wind source
+  (Table 1 row + §2.2 drivers sentence; Wind1VelX relabeled "point-sensor contrast"). docx XML edit, validate.py
+  PASSED 449->453 (+4 = new table-row cells), verified. Backup ...bak-20260814-163013-pre-s2windsrc.docx.
+  STILL results-gated on the running campaign: §3.1 rotor-averaged rows/Tables 2-4/Figs, §2.7 SURD atoms on
+  Wind1VelX [120], and the §3.3 SURD re-run with rotor-averaged wind. NEXT: user to confirm the lams run is alive
+  (parquet count climbing); when the collector prints, drop numbers into §3.1 tables/figs + §3.3 SURD.
+  See [[project_fault_campaign]], [[project_te_paper_thesis]], [[project_paper_two_copy_sync]].
+
+- **Prev (2026-08-13/14, session 41): fault pilot NULL -> point-wind observability -> RtVAvgxh PHYSICAL firewall.
+  THESIS-CHANGING; full corrected campaign RUNNING.**
+  Pilot: 0/9 breach (firewall holds under pitch-lock/gain fault; rotor perturbed x1.6-3.5 but platform decoupled).
+  Rigor checks revealed the point-wind `Wind1VelX` carries ~0 TE into EVERY structural channel (incl. directly
+  wind-loaded blades) while `Wave1Elev`->platform fires 87-96% — a point-sensor OBSERVABILITY limit. Decisive test:
+  the ROTOR-AVERAGED wind `RtVAvgxh` DOES fire into the blades (->RootMyc1=0.0195, 75% sig) yet stays 0 into the
+  platform (pitch/heave), including all 9 fault cases (surge marginal 0.0077). => The wind->platform firewall is
+  PHYSICAL + STRUCTURAL (wind reaches blades not platform; survives controller fault), NOT control-erected. This
+  corrects the paper's central thesis: structural firewall + methodological point-wind vs rotor-averaged caution +
+  monitoring = reported negative. The whole quantitative campaign used the WRONG wind source (Wind1VelX) and must be
+  redone with `RtVAvgxh`. Launched the full 54-case RtVAvgxh campaign (`sims/rtvavg_full_campaign.sh` ->
+  te_wsrc_*.parquet; `analysis/collect_wind_struct.py` merges with te_table_full). ~1-2 day GPU run, resumable, on
+  lams. NEXT: when it finishes, reframe title/abstract/§3.3-§4 around the corrected result. See [[project_fault_campaign]],
+  [[project_te_paper_thesis]]. NO manuscript edits yet (results-gated). All tooling pushed to phase4-full-rerun.
+
+- **Prev (2026-08-12, session 40): graded pitch-fault PILOT RUNNING on lams.**
+  All 9 fault sims completed on lams (OpenFAST **v4.2.1 from raft-env**, not the fowt-openfast v3.5.3 which FATALs
+  on the .fst — [[project_lams_openfast_version]]). Pitchlock verified: pitch frozen at 11.16° (BldPitch std 0.03°
+  after onset), mild overspeed to 1.48× rated — a valid seizure. TE (Phase 2) then stalled through a chain now
+  RESOLVED: (1) IDTxl undeclared deps `ecos`+`prettytable` missing → both `--gpu` and `--workers` hung; fixed by
+  `pip install ecos prettytable` in fowt-te-gpu; (2) added `--sources`/`--targets` to te_pipeline.py + set pilot to
+  `--sources Wind1VelX --targets PtfmPitch,PtfmSurge,PtfmHeave` → 3 GPU jobs/arm (~6× faster, provenance-preserved);
+  (3) stale `origin` ref on lams — must `git fetch` before `git checkout origin/... -- file`. Pilot now running:
+  ~10 min/arm × 9 ≈ ~1.5 h, per-arm breach verdict vs 0.029 ceiling + Phase-3 collector. First datapoint:
+  Wind→PtfmSurge TE=0.0000 (null) under pitchlock@15 — firewall may hold under fault. AWAITING the 9 verdicts;
+  paste `sims/fault_pilot_run.log` or run `analysis/collect_fault_pilot.py`. NO paper text changed (results-gated).
+  All fault code pushed to phase4-full-rerun (HEAD 042c1b8). See [[project_fault_campaign]].
+
+- **Prev (2026-08-12, session 39): fault-injection smoke test PASSED; server pilot driver ready.**
   Local gain×0.10 @11 m/s smoke test validated the whole chain: `run_fault.py` clone+patch → OpenFAST (1543 s) →
   valid .outb → fault took physically (RotSpeed to 9.95 rpm, pitch still moving) → te_pipeline ingests it (63
   IDTxl jobs). Local JVM gotcha found+fixed: te-fowt env needs `JAVA_HOME=…/te-fowt/Library/lib/jvm` for the CPU
