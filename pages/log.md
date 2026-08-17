@@ -2918,3 +2918,13 @@ by viewing the PNGs: dose-response medians 0.023/0.066/0.064/0.042 (2.8×); netw
 x-axis w/ the two nonzero cases (dlcb_v15ms_s00, dlcb_v11ms_s03). 3 changed (committed 03f59cc), 2
 byte-identical. docx embedded copies NOT re-embedded (already consistent). Commit 03f59cc pushed. See
 [[project_paper_two_copy_sync]], SYNTHESIS §0.
+
+## [2026-08-17] docs(paper) | Final title set — dropped the "Wind reaches the blades…" prefix
+
+Author's final title decision: "A structural information firewall in floating offshore wind turbines
+revealed by directed transfer entropy" (drops the prior descriptive prefix "Wind reaches the blades but
+not the platform:"). Updated both locations per the two-copy rule — word/document.xml Title paragraph
+[0] and docProps/core.xml dc:title — via direct XML edit (assert count==1 each, no pandoc). VERIFIED:
+XML well-formed, 26 zip members, python-docx reopen 242 paras, both title fields read the new string;
+grep confirms no "Wind reaches the blades" remnant anywhere in the package (no headers/footers).
+Backup te-firewall-paper.bak-20260817-pretitle.docx. See [[project_paper_two_copy_sync]], SYNTHESIS §0.

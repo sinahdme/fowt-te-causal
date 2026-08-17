@@ -28,6 +28,10 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-17)
 
+- **FINAL TITLE (2026-08-17, author's decision):** "A structural information firewall in floating offshore
+  wind turbines revealed by directed transfer entropy" — dropped the prior "Wind reaches the blades but not
+  the platform:" prefix. Updated in docx document.xml Title [0] + core.xml dc:title (verified; no remnant).
+
 - **Latest (2026-08-17, session 43d): docx §4.3 rotor-averaged SURD caveat DISCHARGED — last results-gated manuscript piece DONE.**
   Author chose the minimal two-tier-preserving integration (keep §3.3 point-wind primary; discharge the
   §4.3 caveat) over rotor-averaged-primary. 3 direct document.xml edits (unpack→replace→repack, no pandoc,
