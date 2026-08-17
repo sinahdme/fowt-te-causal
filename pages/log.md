@@ -2884,3 +2884,24 @@ NEXT (last results-gated piece): drop corrected §3.1 (TE) + §3.3 (SURD) number
 open-loop caveat sentence, update §2.7 SURD atoms ([120]) off Wind1VelX. Corrected tables live in reports/
 on lams (te_wsrc_merged.parquet, surd_table_rtvavg.parquet) — pull before editing. See [[project_surd_subproject]],
 [[project_paper_two_copy_sync]], SYNTHESIS §0.
+
+## [2026-08-17] docs(paper) | §4.3 rotor-averaged SURD caveat DISCHARGED (docx XML edit)
+
+Integrated the rotor-averaged SURD results into the frozen master via direct document.xml edit
+(unpack → 3 str-replace w/ per-edit count==1 assert → repack, NO pandoc; per two-copy-sync rule).
+Author chose the minimal, two-tier-preserving path (keep §3.3 point-wind primary; discharge the §4.3
+rotor-averaged caveat) over making rotor-averaged primary in §3.3. Three edits:
+- §4.3 [190]: the "surd_wind_into_bldpitch ≈ 0.4 should be confirmed … under a rotor-averaged wind
+  input" caveat → now reports the re-run was DONE and confirms/strengthens: wind→blade-pitch rises to
+  ≈0.79 (normalized), wind informs both control channels in every case, dose-response persists ≈2.5×,
+  controller marginal leak-drop more modest than point-wind. Finer-binning caveat kept open (untested).
+- §3.3 [148]: forward-ref "is re-examined with rotor-averaged wind (§4.3)" → "has been re-examined …,
+  which confirms and strengthens it (§4.3)".
+- §3.3 [154]: appended open-loop carry-over caveat — the single-seed −57%/0.167 twin uses point-wind and
+  was NOT recomputed on rotor-averaged (regen = ~30 min OpenFAST, over time budget); population
+  redirection re-confirmed on rotor-averaged, so −57% is a point-wind magnitude.
+VERIFICATION: XML well-formed (ET.parse); zip member set identical (26); python-docx reopen PASSED,
+242 paras (unchanged); edited paras re-extracted and confirmed. Backup
+te-firewall-paper.bak-20260817-pre-surd-rtvavg.docx. §2.7/§3.1 unchanged (point-wind stays primary per
+Option 1). This closes the last results-gated manuscript piece from the RtVAvgxh correction. See
+[[project_paper_two_copy_sync]], [[project_surd_subproject]], SYNTHESIS §0.

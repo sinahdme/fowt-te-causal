@@ -28,7 +28,20 @@ each new Claude session was forgetting what the last one discussed.
 
 ## §0 Current state — read this first (rewritten 2026-08-17)
 
-- **Latest (2026-08-17, session 43c): corrected §3.3 dataset COMPLETE — analyze_phase2 run on rotor-averaged wind; only docx edits remain.**
+- **Latest (2026-08-17, session 43d): docx §4.3 rotor-averaged SURD caveat DISCHARGED — last results-gated manuscript piece DONE.**
+  Author chose the minimal two-tier-preserving integration (keep §3.3 point-wind primary; discharge the
+  §4.3 caveat) over rotor-averaged-primary. 3 direct document.xml edits (unpack→replace→repack, no pandoc,
+  per [[project_paper_two_copy_sync]]): §4.3 [190] caveat → "re-run DONE, confirms/strengthens: wind→pitch
+  ≈0.79, both channels 100%, dose-response 2.5×, marginal leak-drop more modest" (finer-binning caveat kept
+  open); §3.3 [148] forward-ref "has been re-examined … confirms and strengthens it"; §3.3 [154] open-loop
+  point-wind carry-over caveat (−57% is a point-wind magnitude, single-seed twin not recomputed). VERIFIED:
+  XML well-formed, zip members identical (26), python-docx reopen 242 paras unchanged, edited paras
+  re-extracted OK. Backup te-firewall-paper.bak-20260817-pre-surd-rtvavg.docx. §2.7/§3.1 untouched (point-
+  wind stays primary). The docx already reflected Reading B from prior sessions; this only added the
+  quantitative rotor-averaged SURD confirmation. Manuscript now fully consistent with the corrected wind.
+  Uncommitted: SYNTHESIS.md, pages/log.md, reports/te-firewall-paper.docx. See [[project_surd_subproject]].
+
+- **Prev (2026-08-17, session 43c): corrected §3.3 dataset COMPLETE — analyze_phase2 run on rotor-averaged wind; only docx edits remain.**
   Ran `analyze_phase2.py` on the rotor-averaged SURD table + merged corrected-TE table after 3 plumbing
   fixes (fcc5d0e/d6fb942/71bb305): join `--wind-src` (was hardcoded Wind1VelX), collector `--out` to
   persist the merged table, case-id recovered from te_wsrc filename (te_pipeline stamps the .outb stem for
