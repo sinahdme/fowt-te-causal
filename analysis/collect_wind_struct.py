@@ -57,7 +57,8 @@ def main() -> int:
                          "join in analyze_phase2.py --te-table")
     args = ap.parse_args()
 
-    rt = load_glob("te_wsrc_*.parquet")          # RtVAvgxh full campaign (new)
+    rt = load_glob("te_wsrc_dlc*.parquet")       # RtVAvgxh full campaign (new); dlc* so a
+                                                 # merged/derived te_wsrc_*.parquet is never re-ingested
     full = REPO / "reports" / "te_table_full.parquet"
     ft = pd.read_parquet(full) if full.exists() else pd.DataFrame()
     if not ft.empty:
