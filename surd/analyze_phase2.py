@@ -39,6 +39,9 @@ def main() -> int:
                     default=Path("reports/surd_table.parquet"))
     ap.add_argument("--te-table", type=Path,
                     default=Path("reports/te_table.parquet"))
+    ap.add_argument("--wind-src", default="Wind1VelX",
+                    help="wind source channel for the Section-4 TE join; pass "
+                         "RtVAvgxh for the rotor-averaged TE (default Wind1VelX)")
     args = ap.parse_args()
 
     df = pd.read_parquet(args.table)
@@ -129,7 +132,7 @@ def main() -> int:
         print("4. SURD vs TE join (first-pass bivariate KSG)")
         print("=" * 72)
         te = pd.read_parquet(args.te_table)
-        wp = te[(te.source == "Wind1VelX") & (te.target == "PtfmPitch")
+        wp = te[(te.source == args.wind_src) & (te.target == "PtfmPitch")
                 & (te.method == "bivariate_te_ksg")][
                     ["case", "te_nats", "significant"]]
         j = corr.merge(wp, on="case", how="inner",

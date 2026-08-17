@@ -8,6 +8,7 @@ source x target summary over the healthy population. Also reports the firewall u
 
 Works on partial results (run anytime during the campaign).
 """
+import argparse
 import glob
 import re
 from pathlib import Path
@@ -39,6 +40,13 @@ def load_glob(pattern: str) -> pd.DataFrame:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--out", type=Path, default=None,
+                    help="write the merged per-case healthy table (RtVAvgxh + "
+                         "Wind1VelX/Wave1Elev) to this parquet, for the SURD "
+                         "join in analyze_phase2.py --te-table")
+    args = ap.parse_args()
+
     rt = load_glob("te_wsrc_*.parquet")          # RtVAvgxh full campaign (new)
     full = REPO / "reports" / "te_table_full.parquet"
     ft = pd.read_parquet(full) if full.exists() else pd.DataFrame()
@@ -50,6 +58,11 @@ def main() -> int:
     if healthy.empty:
         print("no data yet - run sims/rtvavg_full_campaign.sh (and/or check te_table_full.parquet)")
         return 1
+    if args.out is not None:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        healthy.to_parquet(args.out, compression="zstd")
+        print(f"wrote merged healthy table -> {args.out} "
+              f"({healthy['case'].nunique()} cases, {len(healthy)} rows)")
     summarize(healthy, f"HEALTHY corrected wind->structure  "
                        f"(RtVAvgxh: {n_rt} cases done; Wind1VelX/Wave1Elev from te_table_full)")
 
