@@ -2905,3 +2905,16 @@ VERIFICATION: XML well-formed (ET.parse); zip member set identical (26); python-
 te-firewall-paper.bak-20260817-pre-surd-rtvavg.docx. §2.7/§3.1 unchanged (point-wind stays primary per
 Option 1). This closes the last results-gated manuscript piece from the RtVAvgxh correction. See
 [[project_paper_two_copy_sync]], [[project_surd_subproject]], SYNTHESIS §0.
+
+## [2026-08-17] figs(paper) | Refreshed §3.1/§3.3 figures from point-wind tables (consistency, not rotor-averaged)
+
+Author asked to regenerate the §3.1/§3.3 figures "with the corrected tables"; flagged that under the
+Option-1 docx decision (§3.1/§3.3 keep point-wind primary) switching the figures to rotor-averaged would
+put 2.5×/0.79 in a figure next to 2.8×/0.4 in the text. Author chose "refresh on point-wind (keep
+consistent)". Regenerated Fig 4 (_make_fig3_firewall_network.py), Fig 5a/b/c (_make_surd_figs.py), Fig 6
+(_make_fig5_firewall_graph.py) from te_table.parquet + surd_table.parquet. VERIFIED each against the text
+by viewing the PNGs: dose-response medians 0.023/0.066/0.064/0.042 (2.8×); network Wind1VelX→RootMxc1 39%
+/ →TwrBsMyt 28% + wave TE_frac; open-loop 0.0612→0.0265 & U:BldPitch1 0.167→0; surd-vs-te point-wind
+x-axis w/ the two nonzero cases (dlcb_v15ms_s00, dlcb_v11ms_s03). 3 changed (committed 03f59cc), 2
+byte-identical. docx embedded copies NOT re-embedded (already consistent). Commit 03f59cc pushed. See
+[[project_paper_two_copy_sync]], SYNTHESIS §0.
