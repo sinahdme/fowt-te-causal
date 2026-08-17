@@ -111,7 +111,7 @@ def run_case(outb: Path) -> tuple[str, list[dict]]:
         for term, v in terms.items():
             add(up_tgt, HEADLINE_LAG, "rus", term, v)
         wind_totals[up_tgt] = sum(v for k, v in terms.items()
-                                  if "Wind1VelX" in k and v > 0.001)
+                                  if DRIVERS[0] in k and v > 0.001)
         add(up_tgt, HEADLINE_LAG, "drop", "wind_total", wind_totals[up_tgt])
 
     # Per-case Phase 1 gate (same rules as surd_runner --pitch-rate mode).
@@ -136,7 +136,12 @@ def main() -> int:
                     help=".outb paths (globs expanded internally on Windows)")
     ap.add_argument("-o", "--output", type=Path,
                     default=Path("reports/surd_table.parquet"))
+    ap.add_argument("--wind-src", default="Wind1VelX",
+                    help="wind driver channel; pass RtVAvgxh for the "
+                         "rotor-averaged-wind re-run (default Wind1VelX, "
+                         "back-compatible)")
     args = ap.parse_args()
+    DRIVERS[0] = args.wind_src  # rotor-averaged re-run: --wind-src RtVAvgxh
 
     files: list[Path] = []
     for pat in args.inputs:

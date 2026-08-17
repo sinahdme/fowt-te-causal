@@ -150,7 +150,12 @@ def main() -> int:
                          "leak so the state closure is measurable")
     ap.add_argument("-o", "--out", type=Path, default=None,
                     help="output stem (default surd/phase1_<case>)")
+    ap.add_argument("--wind-src", default="Wind1VelX",
+                    help="wind driver channel; pass RtVAvgxh for the "
+                         "rotor-averaged-wind re-run (default Wind1VelX = point "
+                         "wind, back-compatible)")
     args = ap.parse_args()
+    DRIVERS[0] = args.wind_src  # rotor-averaged re-run: --wind-src RtVAvgxh
 
     case = args.outb.parent.parent.name if args.outb.parent.name.startswith(
         "IEA-15") else args.outb.stem
@@ -239,7 +244,7 @@ def main() -> int:
                                        args.rank)
         terms = norm_terms(I_R, I_S, MI, names)
         wind_terms = {k: v for k, v in terms.items()
-                      if "Wind1VelX" in k and v > 0.001}
+                      if args.wind_src in k and v > 0.001}
         wind_total = sum(wind_terms.values())
         upstream[up_tgt] = {"leak": leak, "wind_terms": wind_terms,
                             "wind_total": wind_total}
