@@ -35,7 +35,17 @@ def summarize(df: pd.DataFrame, title: str) -> None:
 
 
 def load_glob(pattern: str) -> pd.DataFrame:
-    frames = [pd.read_parquet(p) for p in sorted(glob.glob(str(REPO / "reports" / pattern)))]
+    frames = []
+    for p in sorted(glob.glob(str(REPO / "reports" / pattern))):
+        df = pd.read_parquet(p)
+        # te_pipeline stamps `case` as the .outb stem (IEA-15-240-RWT-UMaineSemi,
+        # identical for every case); the real campaign id lives in the filename
+        # te_wsrc_<caseid>.parquet. Recover it so per-case joins (analyze_phase2
+        # Section 4) line up with the SURD table's case ids.
+        m = re.match(r"te_wsrc_(.+)\.parquet$", Path(p).name)
+        if m:
+            df["case"] = m.group(1)
+        frames.append(df)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
